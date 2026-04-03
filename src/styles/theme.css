@@ -1,0 +1,243 @@
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 16px;
+
+  /* Premium Cyberpunk Color System */
+  /* Pure Darkness */
+  --cyber-void: #0A0A12;
+  --cyber-deep: #0D0D15;
+  --cyber-surface: #1C2533;
+
+  /* Neon Accents */
+  --cyber-cyan: #00F0FF;
+  --cyber-cyan-dim: #00D3F2;
+  --cyber-blue: #00B8FF;
+  --cyber-purple: #8A5CFF;
+  --cyber-green: #05DF72;
+
+  /* Text */
+  --cyber-text-primary: #E0F8FF;
+  --cyber-text-secondary: #A0D0E0;
+  --cyber-text-tertiary: #6B8199;
+
+  /* Glass/Holographic Panels */
+  --cyber-glass: rgba(28, 37, 51, 0.35);
+  --cyber-glass-border: rgba(0, 240, 255, 0.3);
+
+  /* Glow Effects */
+  --glow-cyan: rgba(0, 240, 255, 0.6);
+  --glow-blue: rgba(0, 184, 255, 0.6);
+  --glow-purple: rgba(138, 92, 255, 0.6);
+  --glow-green: rgba(5, 223, 114, 0.6);
+
+  /* Typography */
+  --font-display: 'Orbitron', sans-serif;
+  --font-ui: 'Rajdhani', sans-serif;
+
+  /* Component defaults */
+  --background: var(--cyber-void);
+  --foreground: var(--cyber-text-primary);
+  --card: var(--cyber-glass);
+  --card-foreground: var(--cyber-text-primary);
+  --popover: var(--cyber-surface);
+  --popover-foreground: var(--cyber-text-primary);
+  --primary: var(--cyber-cyan);
+  --primary-foreground: var(--cyber-void);
+  --secondary: var(--cyber-surface);
+  --secondary-foreground: var(--cyber-text-secondary);
+  --muted: var(--cyber-surface);
+  --muted-foreground: var(--cyber-text-tertiary);
+  --accent: var(--cyber-cyan);
+  --accent-foreground: var(--cyber-void);
+  --destructive: #FF3366;
+  --destructive-foreground: var(--cyber-text-primary);
+  --border: var(--cyber-glass-border);
+  --input: var(--cyber-glass-border);
+  --input-background: var(--cyber-glass);
+  --switch-background: var(--cyber-glass);
+  --font-weight-medium: 600;
+  --font-weight-normal: 400;
+  --ring: var(--cyber-cyan);
+  --chart-1: var(--cyber-cyan);
+  --chart-2: var(--cyber-blue);
+  --chart-3: var(--cyber-purple);
+  --chart-4: var(--cyber-green);
+  --chart-5: #FF3366;
+  --radius: 12px;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  /* Cyber Custom colors */
+  --color-cyber-void: var(--cyber-void);
+  --color-cyber-deep: var(--cyber-deep);
+  --color-cyber-surface: var(--cyber-surface);
+  --color-cyber-cyan: var(--cyber-cyan);
+  --color-cyber-cyan-dim: var(--cyber-cyan-dim);
+  --color-cyber-blue: var(--cyber-blue);
+  --color-cyber-purple: var(--cyber-purple);
+  --color-cyber-green: var(--cyber-green);
+  --color-cyber-text-primary: var(--cyber-text-primary);
+  --color-cyber-text-secondary: var(--cyber-text-secondary);
+  --color-cyber-text-tertiary: var(--cyber-text-tertiary);
+  --color-cyber-glass: var(--cyber-glass);
+  --color-cyber-glass-border: var(--cyber-glass-border);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-ui);
+    overflow: hidden;
+  }
+
+  html {
+    font-size: var(--font-size);
+  }
+
+  h1 {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.2;
+    font-family: var(--font-display);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-shadow: 0 0 20px var(--glow-cyan);
+  }
+
+  h2 {
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.3;
+    font-family: var(--font-display);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-shadow: 0 0 15px var(--glow-cyan);
+  }
+
+  h3 {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    font-family: var(--font-ui);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  h4 {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+    font-family: var(--font-ui);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  label {
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.5;
+    font-family: var(--font-ui);
+    letter-spacing: 0.04em;
+  }
+
+  button {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.5;
+    font-family: var(--font-ui);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  input {
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.5;
+    font-family: var(--font-ui);
+  }
+}
+
+/* Custom glow utility classes */
+@layer utilities {
+  .glow-cyan {
+    box-shadow: 0 0 20px var(--glow-cyan);
+  }
+
+  .glow-cyan-strong {
+    box-shadow: 0 0 30px var(--glow-cyan), 0 0 60px var(--glow-cyan);
+  }
+
+  .glow-blue {
+    box-shadow: 0 0 20px var(--glow-blue);
+  }
+
+  .glow-purple {
+    box-shadow: 0 0 20px var(--glow-purple);
+  }
+
+  .glow-green {
+    box-shadow: 0 0 20px var(--glow-green);
+  }
+
+  .text-glow-cyan {
+    text-shadow: 0 0 20px var(--glow-cyan);
+  }
+
+  .text-glow-blue {
+    text-shadow: 0 0 20px var(--glow-blue);
+  }
+
+  .text-glow-green {
+    text-shadow: 0 0 20px var(--glow-green);
+  }
+
+  .glass-panel {
+    background: var(--cyber-glass);
+    border: 1px solid var(--cyber-glass-border);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
+  }
+
+  .glass-panel-strong {
+    background: rgba(28, 37, 51, 0.5);
+    border: 1px solid rgba(0, 240, 255, 0.4);
+    backdrop-filter: blur(15px);
+    box-shadow: 0 0 30px rgba(0, 240, 255, 0.2);
+  }
+}
