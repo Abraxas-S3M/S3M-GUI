@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "dev": "vite"
+    "dev": "vite",
+    "typecheck": "tsc -p tsconfig.backend-integration.json --noEmit",
+    "test:integration": "vitest run --config vitest.config.ts",
+    "test:integration:report": "vitest run --config vitest.config.ts --coverage"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
@@ -67,9 +70,21 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "4.1.12",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^25.5.2",
+    "@types/react": "^18.3.28",
+    "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "4.7.0",
+    "@vitest/coverage-v8": "^4.1.2",
+    "jsdom": "^29.0.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-test-renderer": "^18.3.1",
     "tailwindcss": "4.1.12",
-    "vite": "6.3.5"
+    "typescript": "^6.0.2",
+    "vite": "6.3.5",
+    "vitest": "^4.1.2"
   },
   "peerDependencies": {
     "react": "18.3.1",
