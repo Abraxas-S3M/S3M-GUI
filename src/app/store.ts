@@ -34,6 +34,129 @@ export type WorkspaceType =
   | 'communication'
   | 'surveillance';
 
+export interface ThreatTrack {
+  id: string;
+  [key: string]: unknown;
+}
+
+export interface Decision {
+  id: string;
+  title: string;
+  risk: number;
+  confidence: number;
+  description: string;
+  status: 'pending' | 'approved' | 'rejected';
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  [key: string]: unknown;
+}
+
+export interface RiskMetrics {
+  [key: string]: unknown;
+}
+
+export interface ReadinessStatus {
+  [key: string]: unknown;
+}
+
+export interface Message {
+  id: string;
+  [key: string]: unknown;
+}
+
+export interface TimelineEvent {
+  id: string;
+  [key: string]: unknown;
+}
+
+export interface ISRAsset {
+  id: string;
+  [key: string]: unknown;
+}
+
+export interface OperationalDirectives {
+  [key: string]: unknown;
+}
+
+interface AppOperationalData {
+  tracks: ThreatTrack[];
+  decisions: Decision[];
+  riskMetrics: RiskMetrics;
+  readinessStatus: ReadinessStatus;
+  messages: Message[];
+  timelineEvents: TimelineEvent[];
+  surveillanceAssets: ISRAsset[];
+  operationalDirectives: OperationalDirectives;
+}
+
+type DataSourceType = 'backend' | 'mock';
+type OperationalDataKey = keyof AppOperationalData;
+
+const operationalDataKeys: OperationalDataKey[] = [
+  'tracks',
+  'decisions',
+  'riskMetrics',
+  'readinessStatus',
+  'messages',
+  'timelineEvents',
+  'surveillanceAssets',
+  'operationalDirectives'
+];
+
+const defaultDataSource: Record<string, DataSourceType> = operationalDataKeys.reduce((acc, key) => {
+  acc[key] = 'mock';
+  return acc;
+}, {} as Record<string, DataSourceType>);
+
+const mockOperationalData: AppOperationalData = {
+  tracks: [],
+  decisions: [
+    {
+      id: 'R001',
+      title: 'ENGAGE UAV-02',
+      risk: 82,
+      confidence: 74,
+      description: 'Weapons release Track 218',
+      status: 'pending',
+      severity: 'CRITICAL'
+    },
+    {
+      id: 'R002',
+      title: 'REROUTE CVY-A',
+      risk: 45,
+      confidence: 91,
+      description: 'Reroute via Delta',
+      status: 'pending',
+      severity: 'MEDIUM'
+    },
+    {
+      id: 'R003',
+      title: 'ESCALATE SIG-01',
+      risk: 67,
+      confidence: 88,
+      description: 'Escalate SIGINT to INTSUM',
+      status: 'pending',
+      severity: 'HIGH'
+    }
+  ],
+  riskMetrics: {},
+  readinessStatus: {},
+  messages: [],
+  timelineEvents: [],
+  surveillanceAssets: [],
+  operationalDirectives: {}
+};
+
+const emptyOperationalData: AppOperationalData = {
+  tracks: [],
+  decisions: [],
+  riskMetrics: {},
+  readinessStatus: {},
+  messages: [],
+  timelineEvents: [],
+  surveillanceAssets: [],
+  operationalDirectives: {}
+};
+
 interface AppState {
   activeWorkspace: WorkspaceType;
   setActiveWorkspace: (workspace: WorkspaceType) => void;
@@ -90,7 +213,7 @@ interface AppState {
   markCommsMessageRead: (id: string, source?: 'backend' | 'mock' | 'websocket') => void;
 }
 
-export const useAppStore = create<AppState>((set) => ({
+export const useAppStore = create<AppState>((set, get) => ({
   activeWorkspace: 'command',
   setActiveWorkspace: (workspace) => set({ activeWorkspace: workspace }),
 
