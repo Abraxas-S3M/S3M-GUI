@@ -104,13 +104,13 @@ export function RiskWorkspace() {
       <div className="flex items-center gap-4">
         <div className="relative bg-s3m-card border border-s3m-border-default rounded px-3 py-2">
           <div className="flex items-center gap-2">
-            <span className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+            <span className="text-base text-s3m-text-tertiary uppercase tracking-wider font-semibold">
               EVALUATING:
             </span>
             <select
               value={selectedRiskView}
               onChange={(e) => setSelectedRiskView(e.target.value as any)}
-              className="bg-s3m-elevated border border-s3m-border-default rounded px-2 py-1 text-[11px] font-semibold text-s3m-text-primary cursor-pointer focus:outline-none focus:border-s3m-cyan transition-colors"
+              className="bg-s3m-elevated border border-s3m-border-default rounded px-2 py-1 text-base font-semibold text-s3m-text-primary cursor-pointer focus:outline-none focus:border-s3m-cyan transition-colors"
             >
               <option value="all">All Risk Domains</option>
               <option value="mission">Mission Risk</option>
@@ -129,10 +129,10 @@ export function RiskWorkspace() {
           .map((domain) => (
           <CommandCard key={domain.name}>
             <div className="text-center">
-              <div className="text-[10px] uppercase tracking-wider text-s3m-text-tertiary font-semibold mb-2">
+              <div className="text-xs uppercase tracking-wider text-s3m-text-tertiary font-semibold mb-2">
                 {domain.name}
               </div>
-              <div className="font-mono text-[20px] font-bold mb-1" style={{ color: domain.color }}>
+              <div className="font-mono text-2xl font-bold mb-1" style={{ color: domain.color }}>
                 {domain.value}
               </div>
               <div className="flex items-center justify-center gap-1 mb-2">
@@ -141,7 +141,7 @@ export function RiskWorkspace() {
                 ) : (
                   <TrendingDown className="w-3 h-3 text-s3m-operational" />
                 )}
-                <span className="font-mono text-[10px]" style={{ color: domain.change > 0 ? domain.color : '#22C55E' }}>
+                <span className="font-mono text-xs" style={{ color: domain.change > 0 ? domain.color : '#22C55E' }}>
                   {domain.change > 0 ? '+' : ''}{domain.change}%
                 </span>
               </div>
@@ -160,7 +160,7 @@ export function RiskWorkspace() {
               <RingGauge value={58} severity="caution" />
             </div>
             <div className="border-t border-s3m-border-default pt-3 mt-3">
-              <div className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider mb-2">
+              <div className="text-base text-s3m-text-tertiary uppercase tracking-wider mb-2">
                 TOP CONTRIBUTORS
               </div>
               <div className="space-y-1.5">
@@ -169,7 +169,7 @@ export function RiskWorkspace() {
                   { label: 'Casualty Risk', value: 72, color: '#EF4444' },
                   { label: 'Logistics Fragility', value: 71, color: '#EF4444' }
                 ].map((item, i) => (
-                  <div key={i} className="flex items-center justify-between text-[10px]">
+                  <div key={i} className="flex items-center justify-between text-xs">
                     <span className="text-s3m-text-secondary">{item.label}</span>
                     <span className="font-mono font-semibold" style={{ color: item.color }}>
                       {item.value}
@@ -182,10 +182,10 @@ export function RiskWorkspace() {
 
           <CommandCard accentColor="#8B5CF6">
             <div className="border-l-2 border-s3m-purple bg-s3m-purple/5 p-3 rounded">
-              <div className="text-[9px] text-s3m-purple uppercase tracking-wider font-semibold mb-2">
+              <div className="text-base text-s3m-purple uppercase tracking-wider font-semibold mb-2">
                 CROSS-DOMAIN CORRELATION
               </div>
-              <div className="text-[11px] text-s3m-text-secondary leading-relaxed">
+              <div className="text-base text-s3m-text-secondary leading-relaxed">
                 Media exposure → Political sensitivity → Coalition restrictions → Mission failure probability chain
               </div>
             </div>
@@ -215,12 +215,12 @@ export function RiskWorkspace() {
                           <ChevronRight className="w-4 h-4" style={{ color: category.color }} />
                         )}
                         <Icon className="w-4 h-4" style={{ color: category.color }} />
-                        <span className="text-[11px] font-semibold text-s3m-text-primary">
+                        <span className="text-base font-semibold text-s3m-text-primary">
                           {category.name}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-[13px] font-bold" style={{ color: category.color }}>
+                        <span className="font-mono text-base font-bold" style={{ color: category.color }}>
                           {category.composite}
                         </span>
                       </div>
@@ -231,13 +231,13 @@ export function RiskWorkspace() {
                         {category.risks.map((risk: any, i: number) => (
                           <div key={i} className="bg-s3m-card rounded p-2.5 border-l-2" style={{ borderLeftColor: risk.color }}>
                             <div className="flex items-start justify-between mb-2">
-                              <span className="text-[10px] font-semibold text-s3m-text-primary">
+                              <span className="text-xs font-semibold text-s3m-text-primary">
                                 {risk.label}
                               </span>
                               <div className="text-right">
                                 {typeof risk.value === 'number' ? (
                                   <div className="flex items-center gap-1">
-                                    <span className="font-mono text-[12px] font-bold" style={{ color: risk.color }}>
+                                    <span className="font-mono text-sm font-bold" style={{ color: risk.color }}>
                                       {risk.value}
                                     </span>
                                     {risk.trend !== undefined && (
@@ -247,20 +247,20 @@ export function RiskWorkspace() {
                                         ) : (
                                           <TrendingDown className="w-3 h-3 text-s3m-operational" />
                                         )}
-                                        <span className="font-mono text-[9px]" style={{ color: risk.trend > 0 ? risk.color : '#22C55E' }}>
+                                        <span className="font-mono text-base" style={{ color: risk.trend > 0 ? risk.color : '#22C55E' }}>
                                           {risk.trend > 0 ? '+' : ''}{risk.trend}
                                         </span>
                                       </div>
                                     )}
                                   </div>
                                 ) : (
-                                  <span className="font-mono text-[11px] font-bold" style={{ color: risk.color }}>
+                                  <span className="font-mono text-base font-bold" style={{ color: risk.color }}>
                                     {risk.value}
                                   </span>
                                 )}
                               </div>
                             </div>
-                            <div className="text-[10px] text-s3m-text-tertiary leading-relaxed mb-2">
+                            <div className="text-xs text-s3m-text-tertiary leading-relaxed mb-2">
                               {risk.detail}
                             </div>
                             {risk.numeric !== undefined && (
@@ -291,7 +291,7 @@ export function RiskWorkspace() {
                 { label: '+24H', value: 52, color: '#EAB308' }
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <span className="text-[10px] uppercase tracking-wider text-s3m-text-tertiary font-semibold w-12">
+                  <span className="text-xs uppercase tracking-wider text-s3m-text-tertiary font-semibold w-12">
                     {item.label}
                   </span>
                   <div className="flex-1">
@@ -304,7 +304,7 @@ export function RiskWorkspace() {
                         }}
                       />
                       <div className="absolute inset-0 flex items-center justify-end pr-2">
-                        <span className="font-mono text-[11px] text-s3m-text-primary font-semibold">
+                        <span className="font-mono text-base text-s3m-text-primary font-semibold">
                           {item.value}
                         </span>
                       </div>
@@ -316,18 +316,18 @@ export function RiskWorkspace() {
 
             <div className="space-y-2">
               <div className="border-l-2 border-s3m-critical bg-s3m-critical/5 p-2.5 rounded">
-                <div className="text-[9px] text-s3m-critical uppercase tracking-wider font-semibold mb-1">
+                <div className="text-base text-s3m-critical uppercase tracking-wider font-semibold mb-1">
                   CRITICAL ALERT
                 </div>
-                <div className="text-[10px] text-s3m-text-secondary">
+                <div className="text-xs text-s3m-text-secondary">
                   Fuel stockout in 14h 32m at current consumption
                 </div>
               </div>
               <div className="border-l-2 border-s3m-yellow bg-s3m-yellow/5 p-2.5 rounded">
-                <div className="text-[9px] text-s3m-yellow uppercase tracking-wider font-semibold mb-1">
+                <div className="text-base text-s3m-yellow uppercase tracking-wider font-semibold mb-1">
                   ESCALATION WARNING
                 </div>
-                <div className="text-[10px] text-s3m-text-secondary">
+                <div className="text-xs text-s3m-text-secondary">
                   Media exposure likely to trigger coalition review
                 </div>
               </div>
@@ -350,16 +350,16 @@ export function RiskWorkspace() {
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[11px] text-s3m-text-primary">
+                    <span className="text-base text-s3m-text-primary">
                       {scenario.name}
                     </span>
                     {scenario.severity === 'operational' && (
-                      <span className="text-[9px] text-s3m-operational uppercase tracking-wider font-semibold">
+                      <span className="text-base text-s3m-operational uppercase tracking-wider font-semibold">
                         RECOMMENDED
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 text-[10px]">
+                  <div className="flex items-center gap-3 text-xs">
                     <div className="flex items-center gap-1">
                       <span className="text-s3m-text-tertiary">Delta:</span>
                       <span
@@ -390,7 +390,7 @@ export function RiskWorkspace() {
 
           <CommandCard>
             <div className="space-y-2">
-              <div className="text-[10px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
+              <div className="text-xs text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
                 MITIGATION ACTIONS
               </div>
               {[
@@ -400,14 +400,14 @@ export function RiskWorkspace() {
               ].map((item, i) => (
                 <div key={i} className="bg-s3m-elevated rounded p-2 hover:bg-s3m-elevated-hover transition-colors cursor-pointer">
                   <div className="flex items-start justify-between mb-1">
-                    <span className="text-[10px] text-s3m-text-secondary flex-1">
+                    <span className="text-xs text-s3m-text-secondary flex-1">
                       {item.action}
                     </span>
-                    <span className="font-mono text-[10px] text-s3m-operational ml-2">
+                    <span className="font-mono text-xs text-s3m-operational ml-2">
                       {item.impact}
                     </span>
                   </div>
-                  <div className="text-[9px] text-s3m-text-tertiary">
+                  <div className="text-base text-s3m-text-tertiary">
                     Target: {item.target}
                   </div>
                 </div>

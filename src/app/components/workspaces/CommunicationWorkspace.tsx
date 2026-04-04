@@ -232,7 +232,7 @@ export function CommunicationWorkspace() {
           {commsChannels.map((channel, i) => (
             <div key={i}>
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[11px] text-cyber-text-primary">{channel.channel}</span>
+                <span className="text-lg text-cyber-text-primary">{channel.channel}</span>
                 <ConfidenceBadge value={channel.confidence} />
               </div>
               <ProgressBar
@@ -257,7 +257,7 @@ export function CommunicationWorkspace() {
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <Radio className="w-4 h-4 text-cyber-cyan" style={{ filter: 'drop-shadow(0 0 4px rgba(0, 240, 255, 0.6))' }} />
-                    <span className="text-[11px] text-cyber-cyan font-semibold font-mono">
+                    <span className="text-lg text-cyber-cyan font-semibold font-mono">
                       {chat.callsign}
                     </span>
                   </div>
@@ -265,7 +265,7 @@ export function CommunicationWorkspace() {
                     className={`w-2 h-2 rounded-full ${chat.status === 'ACTIVE' ? 'bg-cyber-green glow-green' : 'bg-cyber-text-tertiary'}`}
                   />
                 </div>
-                <div className="flex items-center justify-between text-[10px] text-cyber-text-tertiary mb-1">
+                <div className="flex items-center justify-between text-lg text-cyber-text-tertiary mb-1">
                   <span>FREQ: {chat.frequency} MHz</span>
                   <span className="font-mono">{chat.time}</span>
                 </div>
@@ -277,7 +277,7 @@ export function CommunicationWorkspace() {
                   }}
                 >
                   <Play className="w-3 h-3 text-cyber-cyan" />
-                  <span className="text-[10px] text-cyber-cyan uppercase tracking-wider font-semibold">
+                  <span className="text-lg text-cyber-cyan uppercase tracking-wider font-semibold">
                     LISTEN
                   </span>
                 </button>
@@ -296,16 +296,16 @@ export function CommunicationWorkspace() {
               >
                 <div className="flex items-start justify-between mb-2">
                   <div>
-                    <span className="text-[11px] text-cyber-text-primary font-semibold font-mono">
+                    <span className="text-lg text-cyber-text-primary font-semibold font-mono">
                       {chat.callsign}
                     </span>
-                    <div className="text-[9px] text-cyber-text-tertiary mt-0.5">
+                    <div className="text-lg text-cyber-text-tertiary mt-0.5">
                       {chat.timestamp} • {chat.duration}
                     </div>
                   </div>
-                  <span className="text-[9px] text-cyber-text-tertiary font-mono">{chat.id}</span>
+                  <span className="text-lg text-cyber-text-tertiary font-mono">{chat.id}</span>
                 </div>
-                <div className="text-[10px] text-cyber-text-secondary mb-2 leading-relaxed">
+                <div className="text-lg text-cyber-text-secondary mb-2 leading-relaxed">
                   {chat.summary}
                 </div>
                 <button
@@ -316,7 +316,7 @@ export function CommunicationWorkspace() {
                   }}
                 >
                   <Play className="w-3 h-3 text-cyber-purple" />
-                  <span className="text-[10px] text-cyber-purple uppercase tracking-wider font-semibold">
+                  <span className="text-lg text-cyber-purple uppercase tracking-wider font-semibold">
                     PLAYBACK
                   </span>
                 </button>
@@ -338,7 +338,7 @@ export function CommunicationWorkspace() {
             <ChevronRight className="w-4 h-4 text-s3m-cyan" />
           )}
           <Wifi className="w-4 h-4 text-s3m-cyan" />
-          <span className="text-[11px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+          <span className="text-base text-s3m-text-tertiary uppercase tracking-wider font-semibold">
             BEARER HEALTH
           </span>
         </button>
@@ -353,7 +353,7 @@ export function CommunicationWorkspace() {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <bearer.icon className="w-4 h-4" style={{ color: getStatusColor(bearer.status) }} />
-                    <span className="text-[11px] text-s3m-text-primary font-semibold">{bearer.type}</span>
+                    <span className="text-base text-s3m-text-primary font-semibold">{bearer.type}</span>
                   </div>
                   <div
                     className="w-2 h-2 rounded-full"
@@ -362,27 +362,27 @@ export function CommunicationWorkspace() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between bg-s3m-card rounded p-1 text-[8px]">
+                  <div className="flex items-center justify-between bg-s3m-card rounded p-1 text-base">
                     <span className="text-s3m-text-tertiary uppercase">Latency</span>
                     <span className="font-mono text-s3m-text-primary">{bearer.latency}</span>
                   </div>
-                  <div className="flex items-center justify-between bg-s3m-card rounded p-1 text-[8px]">
+                  <div className="flex items-center justify-between bg-s3m-card rounded p-1 text-base">
                     <span className="text-s3m-text-tertiary uppercase">Loss</span>
                     <span className="font-mono" style={{ color: parseFloat(bearer.packetLoss) > 10 ? '#EF4444' : parseFloat(bearer.packetLoss) > 5 ? '#EAB308' : '#22C55E' }}>
                       {bearer.packetLoss}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between bg-s3m-card rounded p-1 text-[8px]">
+                  <div className="flex items-center justify-between bg-s3m-card rounded p-1 text-base">
                     <span className="text-s3m-text-tertiary uppercase">Failovers</span>
                     <span className="font-mono" style={{ color: bearer.failoverEvents > 5 ? '#EF4444' : bearer.failoverEvents > 2 ? '#EAB308' : '#22C55E' }}>
                       {bearer.failoverEvents}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between bg-s3m-card rounded p-1 text-[8px]">
+                  <div className="flex items-center justify-between bg-s3m-card rounded p-1 text-base">
                     <span className="text-s3m-text-tertiary uppercase">Bandwidth</span>
                     <span className="font-mono text-s3m-cyan">{bearer.bandwidth}</span>
                   </div>
-                  <div className="flex items-center justify-between bg-s3m-card rounded p-1 text-[8px]">
+                  <div className="flex items-center justify-between bg-s3m-card rounded p-1 text-base">
                     <span className="text-s3m-text-tertiary uppercase">Uptime</span>
                     <span className="font-mono text-s3m-green">{bearer.uptime}</span>
                   </div>
@@ -405,21 +405,21 @@ export function CommunicationWorkspace() {
             <ChevronRight className="w-4 h-4 text-s3m-cyan" />
           )}
           <MessageSquare className="w-4 h-4 text-s3m-cyan" />
-          <span className="text-[11px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+          <span className="text-lg text-s3m-text-tertiary uppercase tracking-wider font-semibold">
             MESSAGE ASSURANCE
           </span>
           <div className="ml-auto flex items-center gap-3">
             <div className="flex items-center gap-1.5">
-              <span className="text-[8px] text-s3m-text-tertiary uppercase">Total:</span>
-              <span className="text-[11px] font-mono font-semibold text-s3m-text-primary">{messageAssurance.summary.total}</span>
+              <span className="text-lg text-s3m-text-tertiary uppercase">Total:</span>
+              <span className="text-lg font-mono font-semibold text-s3m-text-primary">{messageAssurance.summary.total}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-[8px] text-s3m-text-tertiary uppercase">Delivered:</span>
-              <span className="text-[11px] font-mono font-semibold text-s3m-green">{messageAssurance.summary.delivered}</span>
+              <span className="text-lg text-s3m-text-tertiary uppercase">Delivered:</span>
+              <span className="text-lg font-mono font-semibold text-s3m-green">{messageAssurance.summary.delivered}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-[8px] text-s3m-text-tertiary uppercase">Dropped:</span>
-              <span className="text-[11px] font-mono font-semibold text-s3m-red">{messageAssurance.summary.dropped}</span>
+              <span className="text-lg text-s3m-text-tertiary uppercase">Dropped:</span>
+              <span className="text-lg font-mono font-semibold text-s3m-red">{messageAssurance.summary.dropped}</span>
             </div>
           </div>
         </button>
@@ -428,34 +428,34 @@ export function CommunicationWorkspace() {
           <div className="space-y-3">
             <div className="grid grid-cols-5 gap-3">
               <div className="bg-s3m-elevated rounded p-2">
-                <div className="text-[8px] text-s3m-text-tertiary uppercase mb-1">Delivered</div>
-                <div className="font-mono text-[14px] font-semibold text-s3m-green">{messageAssurance.summary.delivered}</div>
-                <div className="text-[8px] text-s3m-text-tertiary">{((messageAssurance.summary.delivered / messageAssurance.summary.total) * 100).toFixed(1)}%</div>
+                <div className="text-lg text-s3m-text-tertiary uppercase mb-1">Delivered</div>
+                <div className="font-mono text-lg font-semibold text-s3m-green">{messageAssurance.summary.delivered}</div>
+                <div className="text-lg text-s3m-text-tertiary">{((messageAssurance.summary.delivered / messageAssurance.summary.total) * 100).toFixed(1)}%</div>
               </div>
               <div className="bg-s3m-elevated rounded p-2">
-                <div className="text-[8px] text-s3m-text-tertiary uppercase mb-1">Delayed</div>
-                <div className="font-mono text-[14px] font-semibold text-s3m-yellow">{messageAssurance.summary.delayed}</div>
-                <div className="text-[8px] text-s3m-text-tertiary">{((messageAssurance.summary.delayed / messageAssurance.summary.total) * 100).toFixed(1)}%</div>
+                <div className="text-lg text-s3m-text-tertiary uppercase mb-1">Delayed</div>
+                <div className="font-mono text-lg font-semibold text-s3m-yellow">{messageAssurance.summary.delayed}</div>
+                <div className="text-lg text-s3m-text-tertiary">{((messageAssurance.summary.delayed / messageAssurance.summary.total) * 100).toFixed(1)}%</div>
               </div>
               <div className="bg-s3m-elevated rounded p-2">
-                <div className="text-[8px] text-s3m-text-tertiary uppercase mb-1">Dropped</div>
-                <div className="font-mono text-[14px] font-semibold text-s3m-red">{messageAssurance.summary.dropped}</div>
-                <div className="text-[8px] text-s3m-text-tertiary">{((messageAssurance.summary.dropped / messageAssurance.summary.total) * 100).toFixed(1)}%</div>
+                <div className="text-lg text-s3m-text-tertiary uppercase mb-1">Dropped</div>
+                <div className="font-mono text-lg font-semibold text-s3m-red">{messageAssurance.summary.dropped}</div>
+                <div className="text-lg text-s3m-text-tertiary">{((messageAssurance.summary.dropped / messageAssurance.summary.total) * 100).toFixed(1)}%</div>
               </div>
               <div className="bg-s3m-elevated rounded p-2">
-                <div className="text-[8px] text-s3m-text-tertiary uppercase mb-1">Retransmitted</div>
-                <div className="font-mono text-[14px] font-semibold text-s3m-text-primary">{messageAssurance.summary.retransmitted}</div>
-                <div className="text-[8px] text-s3m-text-tertiary">{((messageAssurance.summary.retransmitted / messageAssurance.summary.total) * 100).toFixed(1)}%</div>
+                <div className="text-lg text-s3m-text-tertiary uppercase mb-1">Retransmitted</div>
+                <div className="font-mono text-lg font-semibold text-s3m-text-primary">{messageAssurance.summary.retransmitted}</div>
+                <div className="text-lg text-s3m-text-tertiary">{((messageAssurance.summary.retransmitted / messageAssurance.summary.total) * 100).toFixed(1)}%</div>
               </div>
               <div className="bg-s3m-elevated rounded p-2">
-                <div className="text-[8px] text-s3m-text-tertiary uppercase mb-1">Acknowledged</div>
-                <div className="font-mono text-[14px] font-semibold text-s3m-cyan">{messageAssurance.summary.acknowledged}</div>
-                <div className="text-[8px] text-s3m-text-tertiary">{((messageAssurance.summary.acknowledged / messageAssurance.summary.total) * 100).toFixed(1)}%</div>
+                <div className="text-lg text-s3m-text-tertiary uppercase mb-1">Acknowledged</div>
+                <div className="font-mono text-lg font-semibold text-s3m-cyan">{messageAssurance.summary.acknowledged}</div>
+                <div className="text-lg text-s3m-text-tertiary">{((messageAssurance.summary.acknowledged / messageAssurance.summary.total) * 100).toFixed(1)}%</div>
               </div>
             </div>
 
             <div>
-              <div className="text-[10px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">Recent Messages</div>
+              <div className="text-lg text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">Recent Messages</div>
               <div className="space-y-2">
                 {messageAssurance.recentMessages.map((msg) => (
                   <div
@@ -464,11 +464,11 @@ export function CommunicationWorkspace() {
                   >
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-[9px] text-s3m-text-tertiary">{msg.id}</span>
-                        <span className="text-[9px] text-s3m-text-primary">{msg.from} → {msg.to}</span>
+                        <span className="font-mono text-lg text-s3m-text-tertiary">{msg.id}</span>
+                        <span className="text-lg text-s3m-text-primary">{msg.from} → {msg.to}</span>
                       </div>
                       <span
-                        className="text-[8px] uppercase font-semibold px-1.5 py-0.5 rounded"
+                        className="text-lg uppercase font-semibold px-1.5 py-0.5 rounded"
                         style={{
                           color: getMessageStatusColor(msg.status),
                           background: `${getMessageStatusColor(msg.status)}20`,
@@ -478,7 +478,7 @@ export function CommunicationWorkspace() {
                         {msg.status}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between text-[8px]">
+                    <div className="flex items-center justify-between text-lg">
                       <span className="text-s3m-text-tertiary">Priority: <span className="text-s3m-cyan">{msg.priority}</span></span>
                       <span className="text-s3m-text-tertiary">Latency: <span className="font-mono text-s3m-text-primary">{msg.latency}</span></span>
                       <span className="text-s3m-text-tertiary">Retries: <span className="font-mono" style={{ color: msg.retries > 3 ? '#EF4444' : msg.retries > 0 ? '#EAB308' : '#22C55E' }}>{msg.retries}</span></span>
@@ -503,7 +503,7 @@ export function CommunicationWorkspace() {
             <ChevronRight className="w-4 h-4 text-s3m-cyan" />
           )}
           <Layers className="w-4 h-4 text-s3m-cyan" />
-          <span className="text-[11px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+          <span className="text-lg text-s3m-text-tertiary uppercase tracking-wider font-semibold">
             PRIORITY ROUTING
           </span>
         </button>
@@ -521,10 +521,10 @@ export function CommunicationWorkspace() {
                       className="w-3 h-3 rounded"
                       style={{ backgroundColor: route.color }}
                     />
-                    <span className="text-[11px] text-s3m-text-primary font-semibold">{route.category}</span>
+                    <span className="text-lg text-s3m-text-primary font-semibold">{route.category}</span>
                   </div>
                   <span
-                    className="text-[9px] uppercase font-semibold px-2 py-0.5 rounded"
+                    className="text-lg uppercase font-semibold px-2 py-0.5 rounded"
                     style={{
                       color: route.color,
                       background: `${route.color}20`,
@@ -537,21 +537,21 @@ export function CommunicationWorkspace() {
 
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between bg-s3m-card rounded p-1.5">
-                    <span className="text-[9px] text-s3m-text-tertiary uppercase">Active</span>
-                    <span className="text-[11px] font-mono font-semibold text-s3m-text-primary">{route.active}</span>
+                    <span className="text-lg text-s3m-text-tertiary uppercase">Active</span>
+                    <span className="text-lg font-mono font-semibold text-s3m-text-primary">{route.active}</span>
                   </div>
                   <div className="flex items-center justify-between bg-s3m-card rounded p-1.5">
-                    <span className="text-[9px] text-s3m-text-tertiary uppercase">Bandwidth</span>
-                    <span className="text-[11px] font-mono font-semibold text-s3m-cyan">{route.bandwidth}</span>
+                    <span className="text-lg text-s3m-text-tertiary uppercase">Bandwidth</span>
+                    <span className="text-lg font-mono font-semibold text-s3m-cyan">{route.bandwidth}</span>
                   </div>
                   <div className="flex items-center justify-between bg-s3m-card rounded p-1.5">
-                    <span className="text-[9px] text-s3m-text-tertiary uppercase">Avg Latency</span>
-                    <span className="text-[11px] font-mono font-semibold text-s3m-text-primary">{route.avgLatency}</span>
+                    <span className="text-lg text-s3m-text-tertiary uppercase">Avg Latency</span>
+                    <span className="text-lg font-mono font-semibold text-s3m-text-primary">{route.avgLatency}</span>
                   </div>
                   <div className="flex items-center justify-between bg-s3m-card rounded p-1.5">
-                    <span className="text-[9px] text-s3m-text-tertiary uppercase">Queue Depth</span>
+                    <span className="text-lg text-s3m-text-tertiary uppercase">Queue Depth</span>
                     <span
-                      className="text-[11px] font-mono font-semibold"
+                      className="text-lg font-mono font-semibold"
                       style={{ color: route.queueDepth > 20 ? '#EF4444' : route.queueDepth > 10 ? '#EAB308' : '#22C55E' }}
                     >
                       {route.queueDepth}
@@ -576,12 +576,12 @@ export function CommunicationWorkspace() {
             <ChevronRight className="w-4 h-4 text-s3m-cyan" />
           )}
           <Lightbulb className="w-4 h-4 text-s3m-cyan" />
-          <span className="text-[11px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+          <span className="text-lg text-s3m-text-tertiary uppercase tracking-wider font-semibold">
             COMMS DEGRADATION ADVISOR
           </span>
           <div className="ml-auto">
             <span
-              className="text-[9px] uppercase font-semibold px-2 py-0.5 rounded"
+              className="text-lg uppercase font-semibold px-2 py-0.5 rounded"
               style={{
                 color: getStatusColor(commsAdvisor.severity),
                 background: `${getStatusColor(commsAdvisor.severity)}20`,
@@ -601,11 +601,11 @@ export function CommunicationWorkspace() {
                 className="bg-s3m-elevated border border-s3m-border-default rounded-lg p-3 hover:border-s3m-cyan/40 transition-all cursor-pointer"
               >
                 <div className="flex items-start justify-between mb-2">
-                  <div className="text-[11px] text-s3m-text-primary font-semibold">
+                  <div className="text-lg text-s3m-text-primary font-semibold">
                     {rec.action}
                   </div>
                   <span
-                    className="text-[9px] uppercase font-semibold px-2 py-0.5 rounded"
+                    className="text-lg uppercase font-semibold px-2 py-0.5 rounded"
                     style={{
                       color: getImpactColor(rec.impact),
                       background: `${getImpactColor(rec.impact)}20`,
@@ -615,19 +615,19 @@ export function CommunicationWorkspace() {
                     {rec.impact} Impact
                   </span>
                 </div>
-                <div className="text-[9px] text-s3m-text-tertiary mb-2">{rec.reason}</div>
+                <div className="text-lg text-s3m-text-tertiary mb-2">{rec.reason}</div>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="bg-s3m-card rounded p-1.5">
-                    <div className="text-[8px] text-s3m-text-tertiary uppercase mb-0.5">Bandwidth</div>
-                    <div className="font-mono text-[10px] font-semibold text-s3m-cyan">{rec.bandwidth}</div>
+                    <div className="text-lg text-s3m-text-tertiary uppercase mb-0.5">Bandwidth</div>
+                    <div className="font-mono text-lg font-semibold text-s3m-cyan">{rec.bandwidth}</div>
                   </div>
                   <div className="bg-s3m-card rounded p-1.5">
-                    <div className="text-[8px] text-s3m-text-tertiary uppercase mb-0.5">Latency</div>
-                    <div className="font-mono text-[10px] font-semibold text-s3m-text-primary">{rec.latency}</div>
+                    <div className="text-lg text-s3m-text-tertiary uppercase mb-0.5">Latency</div>
+                    <div className="font-mono text-lg font-semibold text-s3m-text-primary">{rec.latency}</div>
                   </div>
                   <div className="bg-s3m-card rounded p-1.5">
-                    <div className="text-[8px] text-s3m-text-tertiary uppercase mb-0.5">Complexity</div>
-                    <div className="text-[10px] font-semibold" style={{ color: rec.complexity === 'Low' ? '#22C55E' : rec.complexity === 'Medium' ? '#EAB308' : '#EF4444' }}>
+                    <div className="text-lg text-s3m-text-tertiary uppercase mb-0.5">Complexity</div>
+                    <div className="text-lg font-semibold" style={{ color: rec.complexity === 'Low' ? '#22C55E' : rec.complexity === 'Medium' ? '#EAB308' : '#EF4444' }}>
                       {rec.complexity}
                     </div>
                   </div>

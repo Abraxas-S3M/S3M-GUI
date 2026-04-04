@@ -213,13 +213,13 @@ export function PlanningWorkspace() {
       {/* Mission Selector */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+          <span className="text-[11px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
             PLANNING FOR:
           </span>
           <select
             value={selectedMission}
             onChange={(e) => setSelectedMission(e.target.value)}
-            className="bg-s3m-elevated border border-s3m-border-default rounded px-3 py-1.5 text-[11px] font-semibold text-s3m-text-primary cursor-pointer focus:outline-none focus:border-s3m-cyan transition-colors"
+            className="bg-s3m-elevated border border-s3m-border-default rounded px-3 py-1.5 text-[15px] font-semibold text-s3m-text-primary cursor-pointer focus:outline-none focus:border-s3m-cyan transition-colors"
           >
             {missions.map(mission => (
               <option key={mission.id} value={mission.id}>
@@ -231,7 +231,7 @@ export function PlanningWorkspace() {
         {currentMission && (
           <div className="flex items-center gap-2">
             <span
-              className="text-[9px] uppercase tracking-wider font-semibold px-2 py-1 rounded"
+              className="text-[15px] uppercase tracking-wider font-semibold px-2 py-1 rounded"
               style={{
                 color: currentMission.priority === 'CRITICAL' ? '#EF4444' : currentMission.priority === 'HIGH' ? '#EAB308' : currentMission.priority === 'MEDIUM' ? '#38BDF8' : '#22C55E',
                 backgroundColor: currentMission.priority === 'CRITICAL' ? '#EF444420' : currentMission.priority === 'HIGH' ? '#EAB30820' : currentMission.priority === 'MEDIUM' ? '#38BDF820' : '#22C55E20'
@@ -251,13 +251,13 @@ export function PlanningWorkspace() {
             <CommandCard key={item.metric}>
               <div className="flex items-center gap-2 mb-2">
                 <Icon className="w-4 h-4" style={{ color: item.color }} />
-                <span className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+                <span className="text-[15px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
                   BEST BY {item.metric.toUpperCase()}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[12px] font-semibold text-s3m-text-primary">{item.coa}</span>
-                <span className="font-mono text-[14px] font-bold" style={{ color: item.color }}>
+                <span className="text-[13px] font-semibold text-s3m-text-primary">{item.coa}</span>
+                <span className="font-mono text-[15px] font-bold" style={{ color: item.color }}>
                   {item.value}
                 </span>
               </div>
@@ -295,15 +295,15 @@ export function PlanningWorkspace() {
                           ) : (
                             <ChevronRight className="w-4 h-4" style={{ color: coa.color }} />
                           )}
-                          <span className="font-mono text-[11px] text-s3m-text-tertiary">
+                          <span className="font-mono text-[15px] text-s3m-text-tertiary">
                             {coa.id}
                           </span>
-                          <span className="text-[12px] font-semibold text-s3m-text-primary">
+                          <span className="text-[13px] font-semibold text-s3m-text-primary">
                             {coa.name}
                           </span>
                         </div>
                         <span
-                          className="text-[9px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded"
+                          className="text-[15px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded"
                           style={{
                             color: coa.color,
                             backgroundColor: `${coa.color}20`
@@ -312,13 +312,13 @@ export function PlanningWorkspace() {
                           {coa.risk} RISK
                         </span>
                       </div>
-                      <div className="text-[10px] text-s3m-text-tertiary text-left">
+                      <div className="text-[11px] text-s3m-text-tertiary text-left">
                         {coa.desc}
                       </div>
                       {coa.recommended && (
                         <div className="flex items-center gap-1 text-s3m-operational mt-2">
                           <CheckCircle2 className="w-3 h-3" />
-                          <span className="text-[9px] uppercase tracking-wider font-semibold">
+                          <span className="text-[15px] uppercase tracking-wider font-semibold">
                             RECOMMENDED
                           </span>
                         </div>
@@ -331,13 +331,13 @@ export function PlanningWorkspace() {
                         <div>
                           <div className="flex items-center gap-2 mb-2">
                             <Target className="w-3.5 h-3.5 text-s3m-cyan" />
-                            <span className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+                            <span className="text-[15px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
                               OBJECTIVES
                             </span>
                           </div>
                           <ul className="space-y-1">
                             {coa.objectives.map((obj, i) => (
-                              <li key={i} className="text-[10px] text-s3m-text-secondary flex items-start gap-2">
+                              <li key={i} className="text-[11px] text-s3m-text-secondary flex items-start gap-2">
                                 <span className="text-s3m-cyan">•</span>
                                 <span>{obj}</span>
                               </li>
@@ -349,7 +349,7 @@ export function PlanningWorkspace() {
                         <div>
                           <div className="flex items-center gap-2 mb-2">
                             <Users className="w-3.5 h-3.5 text-s3m-purple" />
-                            <span className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+                            <span className="text-[15px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
                               ASSETS
                             </span>
                           </div>
@@ -357,7 +357,7 @@ export function PlanningWorkspace() {
                             {coa.assets.map((asset, i) => (
                               <span
                                 key={i}
-                                className="text-[9px] px-2 py-1 rounded bg-s3m-elevated text-s3m-text-secondary"
+                                className="text-[15px] px-2 py-1 rounded bg-s3m-elevated text-s3m-text-secondary"
                               >
                                 {asset}
                               </span>
@@ -370,11 +370,11 @@ export function PlanningWorkspace() {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <Clock className="w-3.5 h-3.5 text-s3m-yellow" />
-                              <span className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+                              <span className="text-[15px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
                                 TIME WINDOW
                               </span>
                             </div>
-                            <span className="font-mono text-[11px] text-s3m-text-primary font-semibold">
+                            <span className="font-mono text-[15px] text-s3m-text-primary font-semibold">
                               {coa.timeWindow}
                             </span>
                           </div>
@@ -384,13 +384,13 @@ export function PlanningWorkspace() {
                         <div>
                           <div className="flex items-center gap-2 mb-2">
                             <Wrench className="w-3.5 h-3.5 text-s3m-operational" />
-                            <span className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+                            <span className="text-[15px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
                               SUPPORT REQUIREMENTS
                             </span>
                           </div>
                           <ul className="space-y-1">
                             {coa.support.map((supp, i) => (
-                              <li key={i} className="text-[10px] text-s3m-text-secondary flex items-start gap-2">
+                              <li key={i} className="text-[11px] text-s3m-text-secondary flex items-start gap-2">
                                 <span className="text-s3m-operational">•</span>
                                 <span>{supp}</span>
                               </li>
@@ -403,46 +403,46 @@ export function PlanningWorkspace() {
                           <div className="bg-s3m-blue/10 border-l-2 border-s3m-blue rounded p-2">
                             <div className="flex items-center gap-2 mb-1">
                               <GitBranch className="w-3 h-3 text-s3m-blue" />
-                              <span className="text-[9px] text-s3m-blue uppercase tracking-wider font-semibold">
+                              <span className="text-[15px] text-s3m-blue uppercase tracking-wider font-semibold">
                                 BRANCH PLAN
                               </span>
                             </div>
-                            <div className="text-[10px] text-s3m-text-secondary">{coa.branch}</div>
+                            <div className="text-[11px] text-s3m-text-secondary">{coa.branch}</div>
                           </div>
                           <div className="bg-s3m-purple/10 border-l-2 border-s3m-purple rounded p-2">
                             <div className="flex items-center gap-2 mb-1">
                               <Activity className="w-3 h-3 text-s3m-purple" />
-                              <span className="text-[9px] text-s3m-purple uppercase tracking-wider font-semibold">
+                              <span className="text-[15px] text-s3m-purple uppercase tracking-wider font-semibold">
                                 SEQUEL PLAN
                               </span>
                             </div>
-                            <div className="text-[10px] text-s3m-text-secondary">{coa.sequel}</div>
+                            <div className="text-[11px] text-s3m-text-secondary">{coa.sequel}</div>
                           </div>
                         </div>
 
                         {/* Performance Metrics */}
                         <div className="grid grid-cols-2 gap-2">
                           <div className="bg-s3m-elevated rounded p-2">
-                            <div className="text-[9px] text-s3m-text-tertiary mb-1">Speed</div>
-                            <div className="font-mono text-[11px] font-semibold" style={{ color: coa.speed >= 80 ? '#22C55E' : coa.speed >= 50 ? '#EAB308' : '#EF4444' }}>
+                            <div className="text-[15px] text-s3m-text-tertiary mb-1">Speed</div>
+                            <div className="font-mono text-[15px] font-semibold" style={{ color: coa.speed >= 80 ? '#22C55E' : coa.speed >= 50 ? '#EAB308' : '#EF4444' }}>
                               {coa.speed}
                             </div>
                           </div>
                           <div className="bg-s3m-elevated rounded p-2">
-                            <div className="text-[9px] text-s3m-text-tertiary mb-1">Survivability</div>
-                            <div className="font-mono text-[11px] font-semibold" style={{ color: coa.survivability >= 80 ? '#22C55E' : coa.survivability >= 50 ? '#EAB308' : '#EF4444' }}>
+                            <div className="text-[15px] text-s3m-text-tertiary mb-1">Survivability</div>
+                            <div className="font-mono text-[15px] font-semibold" style={{ color: coa.survivability >= 80 ? '#22C55E' : coa.survivability >= 50 ? '#EAB308' : '#EF4444' }}>
                               {coa.survivability}
                             </div>
                           </div>
                           <div className="bg-s3m-elevated rounded p-2">
-                            <div className="text-[9px] text-s3m-text-tertiary mb-1">Logistics Cost</div>
-                            <div className="font-mono text-[11px] font-semibold" style={{ color: coa.logisticsCost <= 40 ? '#22C55E' : coa.logisticsCost <= 70 ? '#EAB308' : '#EF4444' }}>
+                            <div className="text-[15px] text-s3m-text-tertiary mb-1">Logistics Cost</div>
+                            <div className="font-mono text-[15px] font-semibold" style={{ color: coa.logisticsCost <= 40 ? '#22C55E' : coa.logisticsCost <= 70 ? '#EAB308' : '#EF4444' }}>
                               {coa.logisticsCost}
                             </div>
                           </div>
                           <div className="bg-s3m-elevated rounded p-2">
-                            <div className="text-[9px] text-s3m-text-tertiary mb-1">Political Risk</div>
-                            <div className="font-mono text-[11px] font-semibold" style={{ color: coa.politicalSensitivity <= 40 ? '#22C55E' : coa.politicalSensitivity <= 70 ? '#EAB308' : '#EF4444' }}>
+                            <div className="text-[15px] text-s3m-text-tertiary mb-1">Political Risk</div>
+                            <div className="font-mono text-[15px] font-semibold" style={{ color: coa.politicalSensitivity <= 40 ? '#22C55E' : coa.politicalSensitivity <= 70 ? '#EAB308' : '#EF4444' }}>
                               {coa.politicalSensitivity}
                             </div>
                           </div>
@@ -477,7 +477,7 @@ export function PlanningWorkspace() {
                           <ChevronRight className="w-4 h-4" style={{ color: constraint.color }} />
                         )}
                         <Icon className="w-4 h-4" style={{ color: constraint.color }} />
-                        <span className="text-[11px] font-semibold text-s3m-text-primary">
+                        <span className="text-[15px] font-semibold text-s3m-text-primary">
                           {constraint.name}
                         </span>
                       </div>
@@ -488,12 +488,12 @@ export function PlanningWorkspace() {
                         {constraint.items.map((item, i) => (
                           <div key={i} className="bg-s3m-card rounded p-2">
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-[10px] text-s3m-text-secondary">{item.label}</span>
-                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-s3m-elevated text-s3m-text-tertiary font-semibold uppercase tracking-wider">
+                              <span className="text-[11px] text-s3m-text-secondary">{item.label}</span>
+                              <span className="text-[15px] px-1.5 py-0.5 rounded bg-s3m-elevated text-s3m-text-tertiary font-semibold uppercase tracking-wider">
                                 {item.status}
                               </span>
                             </div>
-                            <div className="text-[10px] font-mono text-s3m-text-primary">
+                            <div className="text-[11px] font-mono text-s3m-text-primary">
                               {item.value}
                             </div>
                           </div>
@@ -523,7 +523,7 @@ export function PlanningWorkspace() {
                     <ChevronRight className="w-4 h-4 text-s3m-purple" />
                   )}
                   <AlertTriangle className="w-4 h-4 text-s3m-purple" />
-                  <span className="text-[10px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+                  <span className="text-[11px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
                     AUTO-REPLAN TRIGGERS
                   </span>
                 </div>
@@ -533,14 +533,14 @@ export function PlanningWorkspace() {
                   {replanTriggers.map((trigger, i) => (
                     <div key={i} className="bg-s3m-elevated rounded p-2">
                       <div className="flex items-start justify-between mb-1">
-                        <span className="text-[10px] text-s3m-text-primary flex-1">
+                        <span className="text-[11px] text-s3m-text-primary flex-1">
                           {trigger.condition}
                         </span>
                         {trigger.locked && (
                           <Lock className="w-3 h-3 text-s3m-yellow ml-2" />
                         )}
                       </div>
-                      <div className="text-[9px] text-s3m-text-tertiary">
+                      <div className="text-[15px] text-s3m-text-tertiary">
                         → {trigger.action}
                       </div>
                     </div>
@@ -553,7 +553,7 @@ export function PlanningWorkspace() {
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <GitBranch className="w-4 h-4 text-s3m-cyan" />
-                <span className="text-[10px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+                <span className="text-[11px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
                   ALTERNATE ROUTES
                 </span>
               </div>
@@ -561,14 +561,14 @@ export function PlanningWorkspace() {
                 {alternateRoutes.map((route) => (
                   <div key={route.id} className="bg-s3m-elevated rounded p-2">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] font-semibold text-s3m-text-primary">
+                      <span className="text-[11px] font-semibold text-s3m-text-primary">
                         {route.id}
                       </span>
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-s3m-card text-s3m-text-tertiary font-semibold uppercase tracking-wider">
+                      <span className="text-[15px] px-1.5 py-0.5 rounded bg-s3m-card text-s3m-text-tertiary font-semibold uppercase tracking-wider">
                         {route.status}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between text-[9px]">
+                    <div className="flex items-center justify-between text-[15px]">
                       <span className="text-s3m-text-tertiary">Time: {route.time}</span>
                       <span
                         className="px-1.5 py-0.5 rounded"
@@ -589,11 +589,11 @@ export function PlanningWorkspace() {
             <div className="bg-s3m-yellow/10 border border-s3m-yellow/40 rounded p-3">
               <div className="flex items-center gap-2 mb-2">
                 <Users className="w-4 h-4 text-s3m-yellow" />
-                <span className="text-[10px] uppercase tracking-wider font-semibold text-s3m-yellow">
+                <span className="text-[11px] uppercase tracking-wider font-semibold text-s3m-yellow">
                   RESERVE ACTIVATION
                 </span>
               </div>
-              <div className="space-y-1.5 text-[10px] text-s3m-text-secondary">
+              <div className="space-y-1.5 text-[11px] text-s3m-text-secondary">
                 <div className="flex items-center justify-between">
                   <span>QRF Alpha</span>
                   <span className="text-s3m-operational">READY</span>
@@ -628,9 +628,9 @@ export function PlanningWorkspace() {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] text-s3m-text-primary">{phase.name}</span>
+                        <span className="text-[15px] text-s3m-text-primary">{phase.name}</span>
                         <span
-                          className="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded"
+                          className="text-[15px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded"
                           style={{
                             color: phase.color,
                             backgroundColor: `${phase.color}20`
@@ -660,10 +660,10 @@ export function PlanningWorkspace() {
             <ChevronRight className="w-3 h-3 text-s3m-cyan" />
           )}
           <Sparkles className="w-3 h-3 text-s3m-cyan" />
-          <span className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+          <span className="text-[15px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
             S3M PLANNING SUGGESTIONS
           </span>
-          <span className="text-[8px] text-s3m-text-tertiary ml-auto">
+          <span className="text-[11px] text-s3m-text-tertiary ml-auto">
             LAST UPDATED: {new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}
           </span>
         </button>
@@ -679,7 +679,7 @@ export function PlanningWorkspace() {
                 <div className="flex items-center gap-1.5">
                   <Lightbulb className="w-3 h-3" style={{ color: suggestion.color }} />
                   <span
-                    className="text-[8px] uppercase tracking-wider font-semibold px-1 py-0.5 rounded"
+                    className="text-[11px] uppercase tracking-wider font-semibold px-1 py-0.5 rounded"
                     style={{
                       color: suggestion.color,
                       backgroundColor: `${suggestion.color}20`
@@ -689,7 +689,7 @@ export function PlanningWorkspace() {
                   </span>
                 </div>
                 <span
-                  className="text-[8px] uppercase tracking-wider font-semibold px-1 py-0.5 rounded"
+                  className="text-[11px] uppercase tracking-wider font-semibold px-1 py-0.5 rounded"
                   style={{
                     color: suggestion.impact === 'CRITICAL' ? '#EF4444' : suggestion.impact === 'HIGH' ? '#EAB308' : '#38BDF8',
                     backgroundColor: suggestion.impact === 'CRITICAL' ? '#EF444420' : suggestion.impact === 'HIGH' ? '#EAB30820' : '#38BDF820'
@@ -699,16 +699,16 @@ export function PlanningWorkspace() {
                 </span>
               </div>
 
-              <div className="text-[10px] font-semibold text-s3m-text-primary mb-1.5">
+              <div className="text-[11px] font-semibold text-s3m-text-primary mb-1.5">
                 {suggestion.title}
               </div>
 
-              <div className="text-[9px] text-s3m-text-tertiary mb-2 leading-snug">
+              <div className="text-[15px] text-s3m-text-tertiary mb-2 leading-snug">
                 {suggestion.description}
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-[8px] text-s3m-text-tertiary">
+                <span className="text-[11px] text-s3m-text-tertiary">
                   Confidence
                 </span>
                 <div className="flex items-center gap-1.5">
@@ -722,7 +722,7 @@ export function PlanningWorkspace() {
                     />
                   </div>
                   <span
-                    className="font-mono text-[9px] font-semibold"
+                    className="font-mono text-[15px] font-semibold"
                     style={{
                       color: suggestion.confidence >= 80 ? '#22C55E' : suggestion.confidence >= 60 ? '#EAB308' : '#EF4444'
                     }}

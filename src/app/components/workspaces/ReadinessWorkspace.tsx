@@ -178,7 +178,7 @@ export function ReadinessWorkspace() {
             <ChevronRight className="w-4 h-4 text-s3m-operational" />
           )}
           <Users className="w-4 h-4 text-s3m-operational" />
-          <span className="text-[10px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+          <span className="text-xs text-s3m-text-tertiary uppercase tracking-wider font-semibold">
             DETAILED PERSONNEL STATUS
           </span>
         </button>
@@ -188,36 +188,36 @@ export function ReadinessWorkspace() {
             {/* Deployable Status */}
             <div className="grid grid-cols-3 gap-3">
               <div className="bg-s3m-elevated rounded p-3 border-l-2 border-s3m-operational">
-                <div className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider mb-1">Deployable</div>
-                <div className="font-mono text-[18px] font-semibold text-s3m-operational">{personnelReadiness[0].deployable}</div>
-                <div className="text-[8px] text-s3m-text-tertiary mt-1">
+                <div className="text-base text-s3m-text-tertiary uppercase tracking-wider mb-1">Deployable</div>
+                <div className="font-mono text-xl font-semibold text-s3m-operational">{personnelReadiness[0].deployable}</div>
+                <div className="text-xs text-s3m-text-tertiary mt-1">
                   {((personnelReadiness[0].deployable / personnelReadiness[0].total) * 100).toFixed(1)}% of force
                 </div>
               </div>
               <div className="bg-s3m-elevated rounded p-3 border-l-2 border-s3m-caution">
-                <div className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider mb-1">Non-Deployable</div>
-                <div className="font-mono text-[18px] font-semibold text-s3m-caution">{personnelReadiness[0].nonDeployable}</div>
-                <div className="text-[8px] text-s3m-text-tertiary mt-1">
+                <div className="text-base text-s3m-text-tertiary uppercase tracking-wider mb-1">Non-Deployable</div>
+                <div className="font-mono text-xl font-semibold text-s3m-caution">{personnelReadiness[0].nonDeployable}</div>
+                <div className="text-xs text-s3m-text-tertiary mt-1">
                   {((personnelReadiness[0].nonDeployable / personnelReadiness[0].total) * 100).toFixed(1)}% of force
                 </div>
               </div>
               <div className="bg-s3m-elevated rounded p-3">
-                <div className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider mb-1">Total Force</div>
-                <div className="font-mono text-[18px] font-semibold text-s3m-text-primary">{personnelReadiness[0].total}</div>
-                <div className="text-[8px] text-s3m-text-tertiary mt-1">Authorized strength</div>
+                <div className="text-base text-s3m-text-tertiary uppercase tracking-wider mb-1">Total Force</div>
+                <div className="font-mono text-xl font-semibold text-s3m-text-primary">{personnelReadiness[0].total}</div>
+                <div className="text-xs text-s3m-text-tertiary mt-1">Authorized strength</div>
               </div>
             </div>
 
             {/* Non-Deployable Reasons */}
             <div>
-              <div className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
+              <div className="text-base text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
                 NON-DEPLOYABLE BREAKDOWN
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {personnelReadiness[0].reasons.map((reason, i) => (
                   <div key={i} className="bg-s3m-elevated rounded p-2 flex items-center justify-between">
-                    <span className="text-[10px] text-s3m-text-secondary">{reason.reason}</span>
-                    <span className="font-mono text-[10px] font-semibold" style={{ color: reason.color }}>
+                    <span className="text-xs text-s3m-text-secondary">{reason.reason}</span>
+                    <span className="font-mono text-xs font-semibold" style={{ color: reason.color }}>
                       {reason.count}
                     </span>
                   </div>
@@ -227,29 +227,29 @@ export function ReadinessWorkspace() {
 
             {/* Certification Currency */}
             <div>
-              <div className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
+              <div className="text-base text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
                 CERTIFICATION CURRENCY
               </div>
               <div className="space-y-2">
                 {certificationCurrency.map((cert, i) => (
                   <div key={i} className="bg-s3m-elevated rounded p-2">
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10px] font-semibold text-s3m-text-primary">{cert.cert}</span>
-                      <span className="text-[9px] font-mono" style={{ color: cert.color }}>
+                      <span className="text-xs font-semibold text-s3m-text-primary">{cert.cert}</span>
+                      <span className="text-base font-mono" style={{ color: cert.color }}>
                         {((cert.current / cert.total) * 100).toFixed(0)}% current
                       </span>
                     </div>
-                    <div className="grid grid-cols-3 gap-1.5 text-[9px]">
+                    <div className="grid grid-cols-3 gap-1.5 text-base">
                       <div className="bg-s3m-card rounded p-1.5">
-                        <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Current</div>
+                        <div className="text-xs text-s3m-text-tertiary mb-0.5">Current</div>
                         <div className="font-mono text-s3m-operational">{cert.current}</div>
                       </div>
                       <div className="bg-s3m-card rounded p-1.5">
-                        <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Expiring 30d</div>
+                        <div className="text-xs text-s3m-text-tertiary mb-0.5">Expiring 30d</div>
                         <div className="font-mono text-s3m-caution">{cert.expiring30}</div>
                       </div>
                       <div className="bg-s3m-card rounded p-1.5">
-                        <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Expired</div>
+                        <div className="text-xs text-s3m-text-tertiary mb-0.5">Expired</div>
                         <div className="font-mono text-s3m-critical">{cert.expired}</div>
                       </div>
                     </div>
@@ -260,7 +260,7 @@ export function ReadinessWorkspace() {
 
             {/* Language Capability */}
             <div>
-              <div className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5">
+              <div className="text-base text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5">
                 <Languages className="w-3.5 h-3.5" />
                 LANGUAGE CAPABILITY
               </div>
@@ -268,9 +268,9 @@ export function ReadinessWorkspace() {
                 {languageCapability.map((lang, i) => (
                   <div key={i} className="bg-s3m-elevated rounded p-2">
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10px] font-semibold text-s3m-text-primary">{lang.language}</span>
+                      <span className="text-xs font-semibold text-s3m-text-primary">{lang.language}</span>
                       <span
-                        className="text-[8px] uppercase px-1.5 py-0.5 rounded font-semibold"
+                        className="text-xs uppercase px-1.5 py-0.5 rounded font-semibold"
                         style={{
                           color: lang.gap > 50 ? '#EF4444' : lang.gap > 20 ? '#EAB308' : '#22C55E',
                           backgroundColor: lang.gap > 50 ? '#EF444420' : lang.gap > 20 ? '#EAB30820' : '#22C55E20'
@@ -279,21 +279,21 @@ export function ReadinessWorkspace() {
                         {lang.gap} GAP
                       </span>
                     </div>
-                    <div className="grid grid-cols-4 gap-1.5 text-[9px]">
+                    <div className="grid grid-cols-4 gap-1.5 text-base">
                       <div className="bg-s3m-card rounded p-1.5">
-                        <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Proficient</div>
+                        <div className="text-xs text-s3m-text-tertiary mb-0.5">Proficient</div>
                         <div className="font-mono text-s3m-operational">{lang.proficient}</div>
                       </div>
                       <div className="bg-s3m-card rounded p-1.5">
-                        <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Basic</div>
+                        <div className="text-xs text-s3m-text-tertiary mb-0.5">Basic</div>
                         <div className="font-mono text-s3m-text-secondary">{lang.basic}</div>
                       </div>
                       <div className="bg-s3m-card rounded p-1.5">
-                        <div className="text-[8px] text-s3m-text-tertiary mb-0.5">None</div>
+                        <div className="text-xs text-s3m-text-tertiary mb-0.5">None</div>
                         <div className="font-mono text-s3m-text-tertiary">{lang.none}</div>
                       </div>
                       <div className="bg-s3m-card rounded p-1.5">
-                        <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Required</div>
+                        <div className="text-xs text-s3m-text-tertiary mb-0.5">Required</div>
                         <div className="font-mono text-s3m-cyan">{lang.required}</div>
                       </div>
                     </div>
@@ -304,7 +304,7 @@ export function ReadinessWorkspace() {
 
             {/* Shift/Rotation Fatigue */}
             <div>
-              <div className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5">
+              <div className="text-base text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5">
                 <TrendingDown className="w-3.5 h-3.5" />
                 SHIFT/ROTATION FATIGUE
               </div>
@@ -313,11 +313,11 @@ export function ReadinessWorkspace() {
                   <div key={i} className="bg-s3m-elevated rounded p-2">
                     <div className="flex items-center justify-between mb-1.5">
                       <div>
-                        <div className="text-[10px] font-semibold text-s3m-text-primary">{shift.shift}</div>
-                        <div className="text-[8px] text-s3m-text-tertiary">{shift.personnel} personnel</div>
+                        <div className="text-xs font-semibold text-s3m-text-primary">{shift.shift}</div>
+                        <div className="text-xs text-s3m-text-tertiary">{shift.personnel} personnel</div>
                       </div>
                       <span
-                        className="text-[8px] uppercase px-1.5 py-0.5 rounded font-semibold"
+                        className="text-xs uppercase px-1.5 py-0.5 rounded font-semibold"
                         style={{
                           color: shift.status === 'CRITICAL' ? '#EF4444' : shift.status === 'CAUTION' ? '#EAB308' : '#22C55E',
                           backgroundColor: shift.status === 'CRITICAL' ? '#EF444420' : shift.status === 'CAUTION' ? '#EAB30820' : '#22C55E20'
@@ -327,13 +327,13 @@ export function ReadinessWorkspace() {
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <div className="text-[9px] text-s3m-text-tertiary">
+                      <div className="text-base text-s3m-text-tertiary">
                         Avg {shift.avgDaysOn} days continuous ops
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[8px] text-s3m-text-tertiary">Fatigue Score</span>
+                        <span className="text-xs text-s3m-text-tertiary">Fatigue Score</span>
                         <span
-                          className="font-mono text-[10px] font-semibold"
+                          className="font-mono text-xs font-semibold"
                           style={{
                             color: shift.fatigueScore >= 65 ? '#EF4444' : shift.fatigueScore >= 45 ? '#EAB308' : '#22C55E'
                           }}
@@ -349,7 +349,7 @@ export function ReadinessWorkspace() {
 
             {/* Training Recency */}
             <div>
-              <div className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5">
+              <div className="text-base text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5" />
                 TRAINING RECENCY
               </div>
@@ -357,19 +357,19 @@ export function ReadinessWorkspace() {
                 {trainingRecency.map((training, i) => (
                   <div key={i} className="bg-s3m-elevated rounded p-2">
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10px] font-semibold text-s3m-text-primary">{training.training}</span>
+                      <span className="text-xs font-semibold text-s3m-text-primary">{training.training}</span>
                     </div>
-                    <div className="grid grid-cols-3 gap-1.5 text-[9px]">
+                    <div className="grid grid-cols-3 gap-1.5 text-base">
                       <div className="bg-s3m-card rounded p-1.5">
-                        <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Within 90d</div>
+                        <div className="text-xs text-s3m-text-tertiary mb-0.5">Within 90d</div>
                         <div className="font-mono text-s3m-operational">{training.within90}</div>
                       </div>
                       <div className="bg-s3m-card rounded p-1.5">
-                        <div className="text-[8px] text-s3m-text-tertiary mb-0.5">90-180d</div>
+                        <div className="text-xs text-s3m-text-tertiary mb-0.5">90-180d</div>
                         <div className="font-mono text-s3m-caution">{training.within180}</div>
                       </div>
                       <div className="bg-s3m-card rounded p-1.5">
-                        <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Over 180d</div>
+                        <div className="text-xs text-s3m-text-tertiary mb-0.5">Over 180d</div>
                         <div className="font-mono text-s3m-critical">{training.over180}</div>
                       </div>
                     </div>
@@ -394,7 +394,7 @@ export function ReadinessWorkspace() {
               <ChevronRight className="w-4 h-4 text-s3m-blue" />
             )}
             <Users className="w-4 h-4 text-s3m-blue" />
-            <span className="text-[10px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+            <span className="text-xs text-s3m-text-tertiary uppercase tracking-wider font-semibold">
               AUTHORIZED VS ASSIGNED
             </span>
           </button>
@@ -404,9 +404,9 @@ export function ReadinessWorkspace() {
               {unitManning.map((unit, i) => (
                 <div key={i} className="bg-s3m-elevated rounded p-3 border border-s3m-border-default">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-semibold text-s3m-text-primary">{unit.unit}</span>
+                    <span className="text-base font-semibold text-s3m-text-primary">{unit.unit}</span>
                     <span
-                      className="font-mono text-[12px] font-semibold"
+                      className="font-mono text-sm font-semibold"
                       style={{
                         color: unit.manning >= 90 ? '#22C55E' : unit.manning >= 80 ? '#EAB308' : '#EF4444'
                       }}
@@ -417,25 +417,25 @@ export function ReadinessWorkspace() {
 
                   <div className="grid grid-cols-2 gap-2 mb-3">
                     <div className="bg-s3m-card rounded p-1.5">
-                      <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Assigned</div>
-                      <div className="font-mono text-[11px] font-semibold text-s3m-text-primary">{unit.assigned}</div>
+                      <div className="text-xs text-s3m-text-tertiary mb-0.5">Assigned</div>
+                      <div className="font-mono text-base font-semibold text-s3m-text-primary">{unit.assigned}</div>
                     </div>
                     <div className="bg-s3m-card rounded p-1.5">
-                      <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Authorized</div>
-                      <div className="font-mono text-[11px] font-semibold text-s3m-text-secondary">{unit.authorized}</div>
+                      <div className="text-xs text-s3m-text-tertiary mb-0.5">Authorized</div>
+                      <div className="font-mono text-base font-semibold text-s3m-text-secondary">{unit.authorized}</div>
                     </div>
                   </div>
 
-                  <div className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
+                  <div className="text-base text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
                     CRITICAL MOS GAPS
                   </div>
                   <div className="space-y-1.5">
                     {unit.criticalGaps.map((gap, j) => (
                       <div key={j} className="bg-s3m-card rounded p-2">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-[10px] font-semibold text-s3m-text-primary">{gap.mos}</span>
+                          <span className="text-xs font-semibold text-s3m-text-primary">{gap.mos}</span>
                           <span
-                            className="text-[8px] uppercase px-1.5 py-0.5 rounded font-semibold"
+                            className="text-xs uppercase px-1.5 py-0.5 rounded font-semibold"
                             style={{
                               color: gap.criticality === 'CRITICAL' ? '#EF4444' : gap.criticality === 'HIGH' ? '#EAB308' : gap.criticality === 'MEDIUM' ? '#38BDF8' : '#22C55E',
                               backgroundColor: gap.criticality === 'CRITICAL' ? '#EF444420' : gap.criticality === 'HIGH' ? '#EAB30820' : gap.criticality === 'MEDIUM' ? '#38BDF820' : '#22C55E20'
@@ -444,7 +444,7 @@ export function ReadinessWorkspace() {
                             {gap.criticality}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between text-[9px]">
+                        <div className="flex items-center justify-between text-base">
                           <span className="text-s3m-text-tertiary">
                             {gap.assigned} / {gap.authorized}
                           </span>
@@ -465,7 +465,7 @@ export function ReadinessWorkspace() {
 
               {/* Specialist Shortage Heatmap */}
               <div className="bg-s3m-card rounded p-3 border border-s3m-border-default">
-                <div className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5">
+                <div className="text-base text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5">
                   <AlertCircle className="w-3.5 h-3.5" />
                   SPECIALIST SHORTAGE HEATMAP
                 </div>
@@ -473,11 +473,11 @@ export function ReadinessWorkspace() {
                   {specialistShortageHeatmap.map((spec, i) => (
                     <div key={i} className="bg-s3m-elevated rounded p-2">
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[10px] font-semibold text-s3m-text-primary">{spec.specialty}</span>
+                        <span className="text-xs font-semibold text-s3m-text-primary">{spec.specialty}</span>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[8px] text-s3m-text-tertiary">Impact</span>
+                          <span className="text-xs text-s3m-text-tertiary">Impact</span>
                           <span
-                            className="font-mono text-[9px] font-semibold"
+                            className="font-mono text-base font-semibold"
                             style={{ color: spec.color }}
                           >
                             {spec.impactScore}
@@ -485,11 +485,11 @@ export function ReadinessWorkspace() {
                         </div>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-[9px] text-s3m-text-tertiary">
+                        <span className="text-base text-s3m-text-tertiary">
                           {spec.units.join(', ')}
                         </span>
                         <span
-                          className="font-mono text-[9px] font-semibold"
+                          className="font-mono text-base font-semibold"
                           style={{ color: spec.color }}
                         >
                           -{spec.shortage}
@@ -515,7 +515,7 @@ export function ReadinessWorkspace() {
               <ChevronRight className="w-4 h-4 text-s3m-purple" />
             )}
             <Award className="w-4 h-4 text-s3m-purple" />
-            <span className="text-[10px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+            <span className="text-xs text-s3m-text-tertiary uppercase tracking-wider font-semibold">
               MULTI-DIMENSIONAL VIEW
             </span>
           </button>
@@ -524,7 +524,7 @@ export function ReadinessWorkspace() {
             <div className="space-y-4">
               {/* By Mission Profile */}
               <div>
-                <div className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5">
+                <div className="text-base text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5">
                   <Target className="w-3.5 h-3.5" />
                   BY MISSION PROFILE
                 </div>
@@ -532,22 +532,22 @@ export function ReadinessWorkspace() {
                   {qualificationMatrix.byMissionProfile.map((mission, i) => (
                     <div key={i} className="bg-s3m-elevated rounded p-2">
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[10px] font-semibold text-s3m-text-primary">{mission.mission}</span>
-                        <span className="text-[9px] text-s3m-text-tertiary">
+                        <span className="text-xs font-semibold text-s3m-text-primary">{mission.mission}</span>
+                        <span className="text-base text-s3m-text-tertiary">
                           Req: {mission.requirement}
                         </span>
                       </div>
-                      <div className="grid grid-cols-3 gap-1.5 text-[9px]">
+                      <div className="grid grid-cols-3 gap-1.5 text-base">
                         <div className="bg-s3m-card rounded p-1">
-                          <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Qualified</div>
+                          <div className="text-xs text-s3m-text-tertiary mb-0.5">Qualified</div>
                           <div className="font-mono text-s3m-operational">{mission.qualified}</div>
                         </div>
                         <div className="bg-s3m-card rounded p-1">
-                          <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Training</div>
+                          <div className="text-xs text-s3m-text-tertiary mb-0.5">Training</div>
                           <div className="font-mono text-s3m-caution">{mission.training}</div>
                         </div>
                         <div className="bg-s3m-card rounded p-1">
-                          <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Not Qual</div>
+                          <div className="text-xs text-s3m-text-tertiary mb-0.5">Not Qual</div>
                           <div className="font-mono text-s3m-critical">{mission.notQualified}</div>
                         </div>
                       </div>
@@ -558,29 +558,29 @@ export function ReadinessWorkspace() {
 
               {/* By Platform */}
               <div>
-                <div className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
+                <div className="text-base text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
                   BY PLATFORM
                 </div>
                 <div className="space-y-2">
                   {qualificationMatrix.byPlatform.map((platform, i) => (
                     <div key={i} className="bg-s3m-elevated rounded p-2">
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[10px] font-semibold text-s3m-text-primary">{platform.platform}</span>
-                        <span className="text-[9px] text-s3m-text-tertiary">
+                        <span className="text-xs font-semibold text-s3m-text-primary">{platform.platform}</span>
+                        <span className="text-base text-s3m-text-tertiary">
                           Req: {platform.requirement}
                         </span>
                       </div>
-                      <div className="grid grid-cols-3 gap-1.5 text-[9px]">
+                      <div className="grid grid-cols-3 gap-1.5 text-base">
                         <div className="bg-s3m-card rounded p-1">
-                          <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Qualified</div>
+                          <div className="text-xs text-s3m-text-tertiary mb-0.5">Qualified</div>
                           <div className="font-mono text-s3m-operational">{platform.qualified}</div>
                         </div>
                         <div className="bg-s3m-card rounded p-1">
-                          <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Training</div>
+                          <div className="text-xs text-s3m-text-tertiary mb-0.5">Training</div>
                           <div className="font-mono text-s3m-caution">{platform.training}</div>
                         </div>
                         <div className="bg-s3m-card rounded p-1">
-                          <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Not Qual</div>
+                          <div className="text-xs text-s3m-text-tertiary mb-0.5">Not Qual</div>
                           <div className="font-mono text-s3m-critical">{platform.notQualified}</div>
                         </div>
                       </div>
@@ -591,7 +591,7 @@ export function ReadinessWorkspace() {
 
               {/* By Classification */}
               <div>
-                <div className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5">
+                <div className="text-base text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5">
                   <Shield className="w-3.5 h-3.5" />
                   BY CLASSIFICATION CAVEAT
                 </div>
@@ -599,22 +599,22 @@ export function ReadinessWorkspace() {
                   {qualificationMatrix.byClassification.map((classification, i) => (
                     <div key={i} className="bg-s3m-elevated rounded p-2">
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[10px] font-semibold text-s3m-text-primary">{classification.level}</span>
-                        <span className="text-[9px] text-s3m-text-tertiary">
+                        <span className="text-xs font-semibold text-s3m-text-primary">{classification.level}</span>
+                        <span className="text-base text-s3m-text-tertiary">
                           Req: {classification.required}
                         </span>
                       </div>
-                      <div className="grid grid-cols-3 gap-1.5 text-[9px]">
+                      <div className="grid grid-cols-3 gap-1.5 text-base">
                         <div className="bg-s3m-card rounded p-1">
-                          <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Current</div>
+                          <div className="text-xs text-s3m-text-tertiary mb-0.5">Current</div>
                           <div className="font-mono text-s3m-operational">{classification.current}</div>
                         </div>
                         <div className="bg-s3m-card rounded p-1">
-                          <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Pending</div>
+                          <div className="text-xs text-s3m-text-tertiary mb-0.5">Pending</div>
                           <div className="font-mono text-s3m-caution">{classification.pending}</div>
                         </div>
                         <div className="bg-s3m-card rounded p-1">
-                          <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Expired</div>
+                          <div className="text-xs text-s3m-text-tertiary mb-0.5">Expired</div>
                           <div className="font-mono text-s3m-critical">{classification.expired}</div>
                         </div>
                       </div>
@@ -625,19 +625,19 @@ export function ReadinessWorkspace() {
 
               {/* By Coalition Access */}
               <div>
-                <div className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
+                <div className="text-base text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
                   BY COALITION ACCESS LEVEL
                 </div>
                 <div className="space-y-2">
                   {qualificationMatrix.byCoalitionAccess.map((coalition, i) => (
                     <div key={i} className="bg-s3m-elevated rounded p-2">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-semibold text-s3m-text-primary">{coalition.level}</span>
-                        <span className="text-[9px] text-s3m-text-tertiary">
+                        <span className="text-xs font-semibold text-s3m-text-primary">{coalition.level}</span>
+                        <span className="text-base text-s3m-text-tertiary">
                           Req: {coalition.required}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between text-[9px]">
+                      <div className="flex items-center justify-between text-base">
                         <div className="flex items-center gap-2">
                           <span className="text-s3m-text-tertiary">Current:</span>
                           <span className="font-mono text-s3m-operational">{coalition.current}</span>
@@ -659,13 +659,13 @@ export function ReadinessWorkspace() {
       {/* Bottom Row - Readiness Forecast */}
       <CommandCard accentColor="#EF4444" title="READINESS FORECAST" indicator>
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+          <span className="text-base text-s3m-text-tertiary uppercase tracking-wider font-semibold">
             FORECAST VIEW:
           </span>
           <select
             value={selectedForecastView}
             onChange={(e) => setSelectedForecastView(e.target.value as any)}
-            className="bg-s3m-elevated border border-s3m-border-default rounded px-2 py-1 text-[10px] font-semibold text-s3m-text-primary cursor-pointer focus:outline-none focus:border-s3m-cyan transition-colors"
+            className="bg-s3m-elevated border border-s3m-border-default rounded px-2 py-1 text-xs font-semibold text-s3m-text-primary cursor-pointer focus:outline-none focus:border-s3m-cyan transition-colors"
           >
             <option value="7day">7 Day Readiness</option>
             <option value="30day">30 Day Readiness</option>
@@ -675,35 +675,35 @@ export function ReadinessWorkspace() {
 
         <div className="grid grid-cols-3 gap-4 mb-4">
           <div className="bg-s3m-elevated rounded p-3 border-l-2" style={{ borderColor: currentForecast.overallReadiness >= 75 ? '#22C55E' : currentForecast.overallReadiness >= 60 ? '#EAB308' : '#EF4444' }}>
-            <div className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider mb-1">
+            <div className="text-base text-s3m-text-tertiary uppercase tracking-wider mb-1">
               {selectedForecastView === '7day' ? '7-Day' : selectedForecastView === '30day' ? '30-Day' : '90-Day'} Readiness
             </div>
             <div
-              className="font-mono text-[24px] font-semibold"
+              className="font-mono text-3xl font-semibold"
               style={{
                 color: currentForecast.overallReadiness >= 75 ? '#22C55E' : currentForecast.overallReadiness >= 60 ? '#EAB308' : '#EF4444'
               }}
             >
               {currentForecast.overallReadiness}%
             </div>
-            <div className="flex items-center gap-1 text-[9px] text-s3m-critical mt-1">
+            <div className="flex items-center gap-1 text-base text-s3m-critical mt-1">
               <TrendingDown className="w-3 h-3" />
               <span className="font-semibold">{currentForecast.trend}%</span>
             </div>
           </div>
 
           <div className="col-span-2 bg-s3m-elevated rounded p-3">
-            <div className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
+            <div className="text-base text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
               PREDICTED QUALIFICATION GAPS
             </div>
             <div className="space-y-1.5">
               {currentForecast.qualificationGaps.map((gap, i) => (
                 <div key={i} className="flex items-center justify-between bg-s3m-card rounded p-2">
-                  <span className="text-[10px] text-s3m-text-secondary">{gap.type}</span>
+                  <span className="text-xs text-s3m-text-secondary">{gap.type}</span>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-[10px] font-semibold text-s3m-text-primary">{gap.count}</span>
+                    <span className="font-mono text-xs font-semibold text-s3m-text-primary">{gap.count}</span>
                     <span
-                      className="text-[8px] uppercase px-1.5 py-0.5 rounded font-semibold"
+                      className="text-xs uppercase px-1.5 py-0.5 rounded font-semibold"
                       style={{
                         color: gap.impact === 'CRITICAL' ? '#EF4444' : gap.impact === 'HIGH' ? '#EAB308' : '#38BDF8',
                         backgroundColor: gap.impact === 'CRITICAL' ? '#EF444420' : gap.impact === 'HIGH' ? '#EAB30820' : '#38BDF820'
@@ -721,7 +721,7 @@ export function ReadinessWorkspace() {
         <div className="bg-s3m-critical/10 border border-s3m-critical/40 rounded p-3">
           <div className="flex items-center gap-2 mb-3">
             <Calendar className="w-4 h-4 text-s3m-critical" />
-            <span className="text-[10px] text-s3m-critical uppercase tracking-wider font-semibold">
+            <span className="text-xs text-s3m-critical uppercase tracking-wider font-semibold">
               UPCOMING EXPIRATION CLIFFS
             </span>
           </div>
@@ -729,9 +729,9 @@ export function ReadinessWorkspace() {
             {currentForecast.expirationCliffs.map((cliff, i) => (
               <div key={i} className="bg-s3m-elevated rounded p-2">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] font-semibold text-s3m-text-primary">{cliff.item}</span>
+                  <span className="text-xs font-semibold text-s3m-text-primary">{cliff.item}</span>
                   <span
-                    className="text-[8px] uppercase px-1.5 py-0.5 rounded font-semibold"
+                    className="text-xs uppercase px-1.5 py-0.5 rounded font-semibold"
                     style={{
                       color: cliff.criticality === 'CRITICAL' ? '#EF4444' : cliff.criticality === 'HIGH' ? '#EAB308' : '#38BDF8',
                       backgroundColor: cliff.criticality === 'CRITICAL' ? '#EF444420' : cliff.criticality === 'HIGH' ? '#EAB30820' : '#38BDF820'
@@ -740,7 +740,7 @@ export function ReadinessWorkspace() {
                     {cliff.criticality}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-[9px]">
+                <div className="flex items-center justify-between text-base">
                   <span className="text-s3m-text-tertiary">{cliff.count} expiring</span>
                   <span className="font-mono font-semibold text-s3m-critical">{cliff.daysUntil} days</span>
                 </div>

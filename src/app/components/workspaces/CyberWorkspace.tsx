@@ -194,21 +194,21 @@ export function CyberWorkspace() {
             <ChevronRight className="w-4 h-4 text-s3m-cyan" />
           )}
           <ShieldAlert className="w-4 h-4 text-s3m-cyan" />
-          <span className="text-[11px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+          <span className="text-lg text-s3m-text-tertiary uppercase tracking-wider font-semibold">
             SOC SUMMARY
           </span>
           <div className="ml-auto flex items-center gap-4">
             <div className="flex items-center gap-1.5">
-              <span className="text-[9px] text-s3m-text-tertiary uppercase">Active:</span>
-              <span className="text-[11px] font-mono font-semibold text-s3m-red">{socSummaryMetrics.totalIncidents}</span>
+              <span className="text-lg text-s3m-text-tertiary uppercase">Active:</span>
+              <span className="text-lg font-mono font-semibold text-s3m-red">{socSummaryMetrics.totalIncidents}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-[9px] text-s3m-text-tertiary uppercase">Avg Dwell:</span>
-              <span className="text-[11px] font-mono font-semibold text-s3m-yellow">{socSummaryMetrics.avgDwellTime}</span>
+              <span className="text-lg text-s3m-text-tertiary uppercase">Avg Dwell:</span>
+              <span className="text-lg font-mono font-semibold text-s3m-yellow">{socSummaryMetrics.avgDwellTime}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-[9px] text-s3m-text-tertiary uppercase">FP Rate:</span>
-              <span className="text-[11px] font-mono font-semibold text-s3m-green">{socSummaryMetrics.falsePositiveRate}%</span>
+              <span className="text-lg text-s3m-text-tertiary uppercase">FP Rate:</span>
+              <span className="text-lg font-mono font-semibold text-s3m-green">{socSummaryMetrics.falsePositiveRate}%</span>
             </div>
           </div>
         </button>
@@ -222,11 +222,11 @@ export function CyberWorkspace() {
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-[10px] font-semibold text-s3m-text-primary">
+                    <span className="font-mono text-lg font-semibold text-s3m-text-primary">
                       {incident.id}
                     </span>
                     <span
-                      className="text-[8px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded"
+                      className="text-lg uppercase tracking-wider font-semibold px-2 py-0.5 rounded"
                       style={{
                         color: getSeverityColor(incident.severity),
                         background: `${getSeverityColor(incident.severity)}20`,
@@ -238,31 +238,31 @@ export function CyberWorkspace() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Activity className="w-3 h-3" style={{ color: incident.status === 'active' ? '#EF4444' : '#EAB308' }} />
-                    <span className="text-[9px] text-s3m-text-tertiary uppercase">{incident.status}</span>
+                    <span className="text-lg text-s3m-text-tertiary uppercase">{incident.status}</span>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 mb-2">
                   <div>
-                    <span className="text-[9px] text-s3m-text-tertiary uppercase">Type:</span>
-                    <span className="text-[10px] text-s3m-text-primary ml-1.5">{incident.type}</span>
+                    <span className="text-lg text-s3m-text-tertiary uppercase">Type:</span>
+                    <span className="text-lg text-s3m-text-primary ml-1.5">{incident.type}</span>
                   </div>
                   <div>
-                    <span className="text-[9px] text-s3m-text-tertiary uppercase">Target:</span>
-                    <span className="text-[10px] text-s3m-text-primary ml-1.5">{incident.target}</span>
+                    <span className="text-lg text-s3m-text-tertiary uppercase">Target:</span>
+                    <span className="text-lg text-s3m-text-primary ml-1.5">{incident.target}</span>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="bg-s3m-card rounded p-1.5">
-                    <div className="text-[8px] text-s3m-text-tertiary uppercase mb-0.5">Dwell Time</div>
-                    <div className="font-mono text-[11px] font-semibold text-s3m-yellow">{incident.dwellTime}</div>
+                    <div className="text-lg text-s3m-text-tertiary uppercase mb-0.5">Dwell Time</div>
+                    <div className="font-mono text-lg font-semibold text-s3m-yellow">{incident.dwellTime}</div>
                   </div>
                   <div className="bg-s3m-card rounded p-1.5">
-                    <div className="text-[8px] text-s3m-text-tertiary uppercase mb-0.5">Blast Radius</div>
-                    <div className="font-mono text-[10px] font-semibold text-s3m-text-primary">{incident.blastRadius}</div>
+                    <div className="text-lg text-s3m-text-tertiary uppercase mb-0.5">Blast Radius</div>
+                    <div className="font-mono text-lg font-semibold text-s3m-text-primary">{incident.blastRadius}</div>
                   </div>
                   <div className="bg-s3m-card rounded p-1.5">
-                    <div className="text-[8px] text-s3m-text-tertiary uppercase mb-0.5">FP Rate</div>
-                    <div className="font-mono text-[11px] font-semibold text-s3m-green">{incident.fpRate}%</div>
+                    <div className="text-lg text-s3m-text-tertiary uppercase mb-0.5">FP Rate</div>
+                    <div className="font-mono text-lg font-semibold text-s3m-green">{incident.fpRate}%</div>
                   </div>
                 </div>
               </div>
@@ -283,7 +283,7 @@ export function CyberWorkspace() {
             <ChevronRight className="w-4 h-4 text-s3m-cyan" />
           )}
           <Lock className="w-4 h-4 text-s3m-cyan" />
-          <span className="text-[11px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+          <span className="text-lg text-s3m-text-tertiary uppercase tracking-wider font-semibold">
             MODEL SECURITY
           </span>
         </button>
@@ -296,19 +296,19 @@ export function CyberWorkspace() {
                 className="bg-s3m-elevated border border-s3m-border-default rounded-lg p-3"
               >
                 <div className="mb-3">
-                  <div className="text-[11px] text-s3m-text-primary font-semibold mb-1">
+                  <div className="text-lg text-s3m-text-primary font-semibold mb-1">
                     {model.modelName}
                   </div>
-                  <div className="text-[9px] text-s3m-text-tertiary">
+                  <div className="text-lg text-s3m-text-tertiary">
                     Version {model.version}
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between bg-s3m-card rounded p-1.5">
-                    <span className="text-[9px] text-s3m-text-tertiary uppercase">Integrity</span>
+                    <span className="text-lg text-s3m-text-tertiary uppercase">Integrity</span>
                     <span
-                      className="text-[9px] font-semibold"
+                      className="text-lg font-semibold"
                       style={{ color: getIntegrityColor(model.integrity) }}
                     >
                       {model.integrity}
@@ -316,15 +316,15 @@ export function CyberWorkspace() {
                   </div>
 
                   <div className="flex items-center justify-between bg-s3m-card rounded p-1.5">
-                    <span className="text-[9px] text-s3m-text-tertiary uppercase">Attestation</span>
-                    <span className="text-[9px] text-s3m-text-primary">{model.lastAttestation}</span>
+                    <span className="text-lg text-s3m-text-tertiary uppercase">Attestation</span>
+                    <span className="text-lg text-s3m-text-primary">{model.lastAttestation}</span>
                   </div>
 
                   <div className="bg-s3m-card rounded p-1.5">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[9px] text-s3m-text-tertiary uppercase">Drift Score</span>
+                      <span className="text-lg text-s3m-text-tertiary uppercase">Drift Score</span>
                       <span
-                        className="text-[10px] font-mono font-semibold"
+                        className="text-lg font-mono font-semibold"
                         style={{ color: model.driftScore > 10 ? '#EF4444' : model.driftScore > 5 ? '#EAB308' : '#22C55E' }}
                       >
                         {model.driftScore}%
@@ -337,9 +337,9 @@ export function CyberWorkspace() {
                   </div>
 
                   <div className="flex items-center justify-between bg-s3m-card rounded p-1.5">
-                    <span className="text-[9px] text-s3m-text-tertiary uppercase">Anomalies</span>
+                    <span className="text-lg text-s3m-text-tertiary uppercase">Anomalies</span>
                     <span
-                      className="text-[10px] font-mono font-semibold"
+                      className="text-lg font-mono font-semibold"
                       style={{ color: model.anomalyCount > 0 ? '#EF4444' : '#22C55E' }}
                     >
                       {model.anomalyCount}
@@ -348,19 +348,19 @@ export function CyberWorkspace() {
 
                   {model.suspiciousPrompts.length > 0 && (
                     <div className="bg-s3m-card rounded p-1.5 space-y-1">
-                      <div className="text-[8px] text-s3m-text-tertiary uppercase mb-1">Suspicious Activity</div>
+                      <div className="text-lg text-s3m-text-tertiary uppercase mb-1">Suspicious Activity</div>
                       {model.suspiciousPrompts.map((prompt, idx) => (
                         <div key={idx} className="border-l-2" style={{ borderLeftColor: getSeverityColor(prompt.risk), paddingLeft: '6px' }}>
                           <div className="flex items-center justify-between">
-                            <span className="text-[8px] font-mono text-s3m-text-tertiary">{prompt.time}</span>
+                            <span className="text-lg font-mono text-s3m-text-tertiary">{prompt.time}</span>
                             <span
-                              className="text-[7px] uppercase font-semibold"
+                              className="text-[8px] uppercase font-semibold"
                               style={{ color: getSeverityColor(prompt.risk) }}
                             >
                               {prompt.risk}
                             </span>
                           </div>
-                          <div className="text-[9px] text-s3m-text-primary">{prompt.prompt}</div>
+                          <div className="text-lg text-s3m-text-primary">{prompt.prompt}</div>
                         </div>
                       ))}
                     </div>
@@ -384,14 +384,14 @@ export function CyberWorkspace() {
             <ChevronRight className="w-4 h-4 text-s3m-cyan" />
           )}
           <Shield className="w-4 h-4 text-s3m-cyan" />
-          <span className="text-[11px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+          <span className="text-lg text-s3m-text-tertiary uppercase tracking-wider font-semibold">
             TRUST FABRIC
           </span>
           <div className="ml-auto flex items-center gap-3">
             {trustScores.map((ts) => (
               <div key={ts.category} className="flex items-center gap-1.5">
-                <span className="text-[8px] text-s3m-text-tertiary uppercase">{ts.category.split(' ')[0]}:</span>
-                <span className="text-[11px] font-mono font-semibold" style={{ color: ts.color }}>{ts.score}</span>
+                <span className="text-lg text-s3m-text-tertiary uppercase">{ts.category.split(' ')[0]}:</span>
+                <span className="text-lg font-mono font-semibold" style={{ color: ts.color }}>{ts.score}</span>
               </div>
             ))}
           </div>
@@ -405,10 +405,10 @@ export function CyberWorkspace() {
                 className="bg-s3m-elevated border border-s3m-border-default rounded-lg p-3"
               >
                 <div className="flex items-center justify-between mb-3">
-                  <div className="text-[11px] text-s3m-text-primary font-semibold">
+                  <div className="text-lg text-s3m-text-primary font-semibold">
                     {trustCat.category}
                   </div>
-                  <div className="text-[14px] font-mono font-bold" style={{ color: trustCat.color }}>
+                  <div className="text-lg font-mono font-bold" style={{ color: trustCat.color }}>
                     {trustCat.score}
                   </div>
                 </div>
@@ -421,9 +421,9 @@ export function CyberWorkspace() {
                     >
                       <div className="flex items-center gap-2">
                         <StatusIndicator status={factor.status} label="" size="sm" />
-                        <span className="text-[9px] text-s3m-text-primary">{factor.factor}</span>
+                        <span className="text-lg text-s3m-text-primary">{factor.factor}</span>
                       </div>
-                      <span className="text-[10px] font-mono font-semibold text-s3m-text-secondary">
+                      <span className="text-lg font-mono font-semibold text-s3m-text-secondary">
                         {factor.score}
                       </span>
                     </div>
@@ -447,11 +447,11 @@ export function CyberWorkspace() {
             <ChevronRight className="w-4 h-4 text-s3m-cyan" />
           )}
           <Zap className="w-4 h-4 text-s3m-cyan" />
-          <span className="text-[11px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+          <span className="text-lg text-s3m-text-tertiary uppercase tracking-wider font-semibold">
             RESILIENCE ACTIONS
           </span>
           <div className="ml-auto">
-            <span className="text-[9px] text-s3m-text-tertiary uppercase">
+            <span className="text-lg text-s3m-text-tertiary uppercase">
               {resilienceActions.reduce((sum, cat) => sum + cat.actions.length, 0)} Actions Available
             </span>
           </div>
@@ -461,7 +461,7 @@ export function CyberWorkspace() {
           <div className="space-y-3">
             {resilienceActions.map((category) => (
               <div key={category.category}>
-                <div className="text-[10px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2 flex items-center gap-2">
+                <div className="text-lg text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2 flex items-center gap-2">
                   <GitBranch className="w-3 h-3" />
                   {category.category}
                 </div>
@@ -472,11 +472,11 @@ export function CyberWorkspace() {
                       className="bg-s3m-elevated border border-s3m-border-default rounded-lg p-2.5 hover:border-s3m-cyan/40 transition-all cursor-pointer"
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <div className="text-[10px] text-s3m-text-primary font-semibold">
+                        <div className="text-lg text-s3m-text-primary font-semibold">
                           {action.name}
                         </div>
                         <span
-                          className="text-[8px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded"
+                          className="text-lg uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded"
                           style={{
                             color: getUrgencyColor(action.urgency),
                             background: `${getUrgencyColor(action.urgency)}20`,
@@ -487,16 +487,16 @@ export function CyberWorkspace() {
                         </span>
                       </div>
                       <div className="space-y-1 mb-2">
-                        <div className="text-[9px]">
+                        <div className="text-lg">
                           <span className="text-s3m-text-tertiary">Target:</span>
                           <span className="text-s3m-text-primary ml-1">{action.target}</span>
                         </div>
-                        <div className="text-[9px]">
+                        <div className="text-lg">
                           <span className="text-s3m-text-tertiary">Reason:</span>
                           <span className="text-s3m-text-primary ml-1">{action.reason}</span>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between text-[8px]">
+                      <div className="flex items-center justify-between text-lg">
                         <div>
                           <span className="text-s3m-text-tertiary">Impact:</span>
                           <span className="text-s3m-text-primary ml-1">{action.impact}</span>
@@ -527,7 +527,7 @@ export function CyberWorkspace() {
             <ChevronRight className="w-4 h-4 text-s3m-cyan" />
           )}
           <AlertTriangle className="w-4 h-4 text-s3m-cyan" />
-          <span className="text-[11px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+          <span className="text-lg text-s3m-text-tertiary uppercase tracking-wider font-semibold">
             CYBER-ATTACK OPTIONS
           </span>
         </button>
@@ -547,11 +547,11 @@ export function CyberWorkspace() {
                   className="bg-s3m-elevated border border-s3m-border-default rounded-lg p-3 hover:border-s3m-cyan/40 transition-all cursor-pointer"
                 >
                   <div className="flex items-start justify-between mb-2">
-                    <div className="text-[11px] text-s3m-text-primary font-semibold">
+                    <div className="text-lg text-s3m-text-primary font-semibold">
                       {option.type}
                     </div>
                     <span
-                      className="text-[9px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded"
+                      className="text-lg uppercase tracking-wider font-semibold px-2 py-0.5 rounded"
                       style={{
                         color: impactColors[option.impact],
                         background: `${impactColors[option.impact]}20`,
@@ -561,10 +561,10 @@ export function CyberWorkspace() {
                       {option.impact}
                     </span>
                   </div>
-                  <div className="text-[10px] text-s3m-text-tertiary mb-1">
+                  <div className="text-lg text-s3m-text-tertiary mb-1">
                     Target: {option.target}
                   </div>
-                  <div className="text-[10px] text-s3m-cyan">
+                  <div className="text-lg text-s3m-cyan">
                     Status: {option.status}
                   </div>
                 </div>

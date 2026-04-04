@@ -174,7 +174,7 @@ export function COPWorkspace() {
           <button
             key={env.id}
             onClick={() => setActiveEnvironment(env.id as any)}
-            className={`px-4 py-2 rounded-lg text-[11px] font-semibold uppercase tracking-wider transition-all duration-300`}
+            className={`px-4 py-2 rounded-lg text-[15px] font-semibold uppercase tracking-wider transition-all duration-300`}
             style={activeEnvironment === env.id ? {
               background: `${env.color}20`,
               border: `1px solid ${env.color}60`,
@@ -202,7 +202,7 @@ export function COPWorkspace() {
           }}
         >
           <Layers className="w-4 h-4 text-cyber-cyan" />
-          <span className="text-[10px] text-cyber-cyan uppercase tracking-wider font-semibold">
+          <span className="text-[11px] text-cyber-cyan uppercase tracking-wider font-semibold">
             MISSION LAYER
           </span>
           {showMissionLayer ? <ChevronDown className="w-3 h-3 text-cyber-cyan" /> : <ChevronRight className="w-3 h-3 text-cyber-cyan" />}
@@ -213,7 +213,7 @@ export function COPWorkspace() {
           border: '1px solid rgba(0, 240, 255, 0.3)'
         }}>
           <div className="w-2 h-2 rounded-full bg-cyber-cyan glow-cyan animate-pulse" />
-          <span className="text-[11px] text-cyber-cyan uppercase tracking-wider font-semibold">
+          <span className="text-[15px] text-cyber-cyan uppercase tracking-wider font-semibold">
             LIVE FEED: {activeEnvironment}
           </span>
         </div>
@@ -227,7 +227,7 @@ export function COPWorkspace() {
             {missionLayers.map((layer) => (
               <button
                 key={layer.id}
-                className="px-3 py-2 rounded text-[10px] uppercase tracking-wider font-semibold transition-all"
+                className="px-3 py-2 rounded text-[11px] uppercase tracking-wider font-semibold transition-all"
                 style={{
                   background: layer.enabled ? `${layer.color}20` : 'rgba(28, 37, 51, 0.3)',
                   border: `1px solid ${layer.enabled ? `${layer.color}60` : 'rgba(107, 124, 149, 0.3)'}`,
@@ -261,12 +261,12 @@ export function COPWorkspace() {
           <div className="h-6 w-px bg-s3m-border-default" />
 
           <div className="flex items-center gap-2">
-            <span className="text-[9px] uppercase tracking-wider text-s3m-text-tertiary">REPLAY:</span>
+            <span className="text-[15px] uppercase tracking-wider text-s3m-text-tertiary">REPLAY:</span>
             {(['5m', '30m', '6h'] as const).map((speed) => (
               <button
                 key={speed}
                 onClick={() => setPlaybackSpeed(speed)}
-                className="px-2 py-1 rounded text-[9px] uppercase tracking-wider font-semibold transition-all"
+                className="px-2 py-1 rounded text-[15px] uppercase tracking-wider font-semibold transition-all"
                 style={{
                   background: playbackSpeed === speed ? 'rgba(0, 240, 255, 0.2)' : 'rgba(28, 37, 51, 0.3)',
                   border: `1px solid ${playbackSpeed === speed ? 'rgba(0, 240, 255, 0.5)' : 'rgba(107, 124, 149, 0.3)'}`,
@@ -281,8 +281,8 @@ export function COPWorkspace() {
           <div className="h-6 w-px bg-s3m-border-default" />
 
           <div className="flex-1 flex items-center gap-2">
-            <span className="text-[9px] uppercase tracking-wider text-s3m-text-tertiary">MARKERS:</span>
-            <div className="flex gap-2 text-[9px]">
+            <span className="text-[15px] uppercase tracking-wider text-s3m-text-tertiary">MARKERS:</span>
+            <div className="flex gap-2 text-[15px]">
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 rounded-full bg-cyber-green" />
                 <span className="text-s3m-text-tertiary">Decisions: 3</span>
@@ -314,7 +314,7 @@ export function COPWorkspace() {
             border: '1px solid rgba(0, 240, 255, 0.2)'
           }}>
             <Maximize2 className="w-3 h-3 text-cyber-cyan" />
-            <span className="text-[9px] text-cyber-cyan uppercase tracking-wider">DOUBLE CLICK TO {isMapExpanded ? 'COLLAPSE' : 'EXPAND'}</span>
+            <span className="text-[15px] text-cyber-cyan uppercase tracking-wider">DOUBLE CLICK TO {isMapExpanded ? 'COLLAPSE' : 'EXPAND'}</span>
           </div>
 
           {/* Grid pattern */}
@@ -392,7 +392,7 @@ export function COPWorkspace() {
                   style={{ filter: 'drop-shadow(0 0 4px rgba(255, 51, 102, 0.8))' }}
                 />
               </svg>
-              <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[9px] font-mono text-cyber-red whitespace-nowrap glow-red">
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[15px] font-mono text-cyber-red whitespace-nowrap glow-red">
                 T-218
               </div>
             </div>
@@ -453,7 +453,7 @@ export function COPWorkspace() {
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2">
                         <span
-                          className="font-mono text-[12px] font-semibold"
+                          className="font-mono text-[13px] font-semibold"
                           style={{
                             color: typeColors[track.type],
                             textShadow: `0 0 8px ${typeColors[track.type]}80`
@@ -462,7 +462,7 @@ export function COPWorkspace() {
                           {track.id}
                         </span>
                         <span
-                          className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded"
+                          className="text-[15px] uppercase tracking-wider px-1.5 py-0.5 rounded"
                           style={{
                             color: typeColors[track.type],
                             backgroundColor: `${typeColors[track.type]}20`,
@@ -486,7 +486,7 @@ export function COPWorkspace() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-[10px]">
+                    <div className="grid grid-cols-2 gap-2 text-[11px]">
                       <div>
                         <span className="text-cyber-text-tertiary">Speed:</span>{' '}
                         <span className="font-mono text-cyber-text-secondary">{track.speed}</span>
@@ -504,7 +504,7 @@ export function COPWorkspace() {
                   <div className="mt-2 bg-s3m-elevated border border-cyber-cyan/30 rounded-lg p-3 space-y-3">
                     {/* Identity Probability */}
                     <div>
-                      <div className="text-[9px] uppercase tracking-wider text-s3m-text-tertiary mb-2">
+                      <div className="text-[15px] uppercase tracking-wider text-s3m-text-tertiary mb-2">
                         IDENTITY PROBABILITY
                       </div>
                       <div className="space-y-1.5">
@@ -518,7 +518,7 @@ export function COPWorkspace() {
                               }}
                             />
                           </div>
-                          <span className="text-[9px] font-mono text-cyber-red w-12 text-right">{track.hostileProbability}% H</span>
+                          <span className="text-[15px] font-mono text-cyber-red w-12 text-right">{track.hostileProbability}% H</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="flex-1 h-2 bg-s3m-card rounded-full overflow-hidden">
@@ -530,7 +530,7 @@ export function COPWorkspace() {
                               }}
                             />
                           </div>
-                          <span className="text-[9px] font-mono text-cyber-green w-12 text-right">{track.friendlyProbability}% F</span>
+                          <span className="text-[15px] font-mono text-cyber-green w-12 text-right">{track.friendlyProbability}% F</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="flex-1 h-2 bg-s3m-card rounded-full overflow-hidden">
@@ -542,7 +542,7 @@ export function COPWorkspace() {
                               }}
                             />
                           </div>
-                          <span className="text-[9px] font-mono text-s3m-warning w-12 text-right">{track.unknownProbability}% U</span>
+                          <span className="text-[15px] font-mono text-s3m-warning w-12 text-right">{track.unknownProbability}% U</span>
                         </div>
                       </div>
                     </div>
@@ -550,11 +550,11 @@ export function COPWorkspace() {
                     {/* Source & Status */}
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <div className="text-[9px] uppercase tracking-wider text-s3m-text-tertiary mb-1">
+                        <div className="text-[15px] uppercase tracking-wider text-s3m-text-tertiary mb-1">
                           SOURCE RELIABILITY
                         </div>
                         <div
-                          className="text-[10px] uppercase tracking-wider font-semibold px-2 py-1 rounded inline-block"
+                          className="text-[11px] uppercase tracking-wider font-semibold px-2 py-1 rounded inline-block"
                           style={{
                             color: getReliabilityColor(track.sourceReliability),
                             backgroundColor: `${getReliabilityColor(track.sourceReliability)}20`
@@ -564,10 +564,10 @@ export function COPWorkspace() {
                         </div>
                       </div>
                       <div>
-                        <div className="text-[9px] uppercase tracking-wider text-s3m-text-tertiary mb-1">
+                        <div className="text-[15px] uppercase tracking-wider text-s3m-text-tertiary mb-1">
                           LAST UPDATE
                         </div>
-                        <div className="text-[10px] font-mono text-s3m-text-secondary">
+                        <div className="text-[11px] font-mono text-s3m-text-secondary">
                           {track.lastUpdate}
                         </div>
                       </div>
@@ -575,7 +575,7 @@ export function COPWorkspace() {
 
                     {/* Cross-Domain Correlation */}
                     <div>
-                      <div className="text-[9px] uppercase tracking-wider text-s3m-text-tertiary mb-2">
+                      <div className="text-[15px] uppercase tracking-wider text-s3m-text-tertiary mb-2">
                         CROSS-DOMAIN CORRELATION
                       </div>
                       <div className="flex flex-wrap gap-1.5">
@@ -587,7 +587,7 @@ export function COPWorkspace() {
                               className="flex items-center gap-1.5 px-2 py-1 rounded bg-cyber-cyan/20 border border-cyber-cyan/40"
                             >
                               <SensorIcon className="w-3 h-3 text-cyber-cyan" />
-                              <span className="text-[9px] text-cyber-cyan uppercase tracking-wider">{sensor}</span>
+                              <span className="text-[15px] text-cyber-cyan uppercase tracking-wider">{sensor}</span>
                             </div>
                           );
                         })}
@@ -596,22 +596,22 @@ export function COPWorkspace() {
 
                     {/* Track History */}
                     <div>
-                      <div className="text-[9px] uppercase tracking-wider text-s3m-text-tertiary mb-2">
+                      <div className="text-[15px] uppercase tracking-wider text-s3m-text-tertiary mb-2">
                         TRACK ANALYSIS
                       </div>
                       <div className="grid grid-cols-3 gap-2">
                         <div className="bg-s3m-card rounded p-2">
-                          <div className="text-[8px] text-s3m-text-tertiary mb-0.5">SPLITS</div>
-                          <div className="text-[11px] font-mono text-s3m-text-primary">{track.trackHistory.splits}</div>
+                          <div className="text-[11px] text-s3m-text-tertiary mb-0.5">SPLITS</div>
+                          <div className="text-[15px] font-mono text-s3m-text-primary">{track.trackHistory.splits}</div>
                         </div>
                         <div className="bg-s3m-card rounded p-2">
-                          <div className="text-[8px] text-s3m-text-tertiary mb-0.5">MERGES</div>
-                          <div className="text-[11px] font-mono text-s3m-text-primary">{track.trackHistory.merges}</div>
+                          <div className="text-[11px] text-s3m-text-tertiary mb-0.5">MERGES</div>
+                          <div className="text-[15px] font-mono text-s3m-text-primary">{track.trackHistory.merges}</div>
                         </div>
                         <div className="bg-s3m-card rounded p-2">
-                          <div className="text-[8px] text-s3m-text-tertiary mb-0.5">DECEPTION</div>
+                          <div className="text-[11px] text-s3m-text-tertiary mb-0.5">DECEPTION</div>
                           <div
-                            className="text-[9px] uppercase tracking-wider font-semibold"
+                            className="text-[15px] uppercase tracking-wider font-semibold"
                             style={{ color: getDeceptionColor(track.trackHistory.deception) }}
                           >
                             {track.trackHistory.deception}
@@ -622,11 +622,11 @@ export function COPWorkspace() {
 
                     {/* Recommended Action */}
                     <div className="bg-cyber-cyan/10 border border-cyber-cyan/30 rounded p-2">
-                      <div className="text-[9px] uppercase tracking-wider text-cyber-cyan mb-1 flex items-center gap-1">
+                      <div className="text-[15px] uppercase tracking-wider text-cyber-cyan mb-1 flex items-center gap-1">
                         <AlertTriangle className="w-3 h-3" />
                         RECOMMENDED ACTION
                       </div>
-                      <div className="text-[10px] text-s3m-text-primary leading-relaxed">
+                      <div className="text-[11px] text-s3m-text-primary leading-relaxed">
                         {track.recommendedAction}
                       </div>
                     </div>
@@ -645,7 +645,7 @@ export function COPWorkspace() {
         }}>
           <div className="flex items-center gap-3 mb-3">
             <Zap className="w-4 h-4 text-cyber-cyan" style={{ filter: 'drop-shadow(0 0 4px rgba(0, 240, 255, 0.8))' }} />
-            <span className="text-[12px] text-cyber-cyan font-display font-semibold tracking-[0.12em] uppercase">
+            <span className="text-[13px] text-cyber-cyan font-display font-semibold tracking-[0.12em] uppercase">
               AUTOMATED COMMAND OPTIONS
             </span>
           </div>
@@ -674,7 +674,7 @@ export function COPWorkspace() {
                       color: action.color,
                       filter: `drop-shadow(0 0 6px ${action.color}80)`
                     }} />
-                    <span className="text-[10px] font-semibold uppercase tracking-wider" style={{
+                    <span className="text-[11px] font-semibold uppercase tracking-wider" style={{
                       color: action.color,
                       textShadow: `0 0 8px ${action.color}60`
                     }}>

@@ -179,12 +179,12 @@ export function SustainmentWorkspace() {
                   ) : (
                     <ChevronRight className="w-4 h-4 text-s3m-blue" />
                   )}
-                  <span className="text-[11px] font-semibold text-s3m-text-primary">{unit.unit}</span>
+                  <span className="text-base font-semibold text-s3m-text-primary">{unit.unit}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider">READINESS</span>
+                  <span className="text-base text-s3m-text-tertiary uppercase tracking-wider">READINESS</span>
                   <span
-                    className="font-mono text-[12px] font-bold"
+                    className="font-mono text-sm font-bold"
                     style={{
                       color: unit.readiness >= 75 ? '#22C55E' : unit.readiness >= 50 ? '#EAB308' : '#EF4444'
                     }}
@@ -199,34 +199,34 @@ export function SustainmentWorkspace() {
                   {unit.platforms.map((platform) => (
                     <div key={platform.name} className="bg-s3m-elevated rounded p-3 border border-s3m-border-default">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] font-semibold text-s3m-text-primary">{platform.name}</span>
-                        <span className="text-[9px] text-s3m-text-tertiary">
+                        <span className="text-xs font-semibold text-s3m-text-primary">{platform.name}</span>
+                        <span className="text-base text-s3m-text-tertiary">
                           Total: {platform.count}
                         </span>
                       </div>
 
                       <div className="grid grid-cols-3 gap-2 mb-2">
                         <div className="bg-s3m-card rounded p-1.5">
-                          <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Ready</div>
-                          <div className="font-mono text-[11px] font-semibold text-s3m-operational">{platform.ready}</div>
+                          <div className="text-xs text-s3m-text-tertiary mb-0.5">Ready</div>
+                          <div className="font-mono text-base font-semibold text-s3m-operational">{platform.ready}</div>
                         </div>
                         <div className="bg-s3m-card rounded p-1.5">
-                          <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Degraded</div>
-                          <div className="font-mono text-[11px] font-semibold text-s3m-caution">{platform.degraded}</div>
+                          <div className="text-xs text-s3m-text-tertiary mb-0.5">Degraded</div>
+                          <div className="font-mono text-base font-semibold text-s3m-caution">{platform.degraded}</div>
                         </div>
                         <div className="bg-s3m-card rounded p-1.5">
-                          <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Down</div>
-                          <div className="font-mono text-[11px] font-semibold text-s3m-critical">{platform.down}</div>
+                          <div className="text-xs text-s3m-text-tertiary mb-0.5">Down</div>
+                          <div className="font-mono text-base font-semibold text-s3m-critical">{platform.down}</div>
                         </div>
                       </div>
 
                       <div className="flex items-center justify-between bg-s3m-card rounded p-2">
                         <div className="flex items-center gap-1.5">
                           <Clock className="w-3 h-3" style={{ color: platform.color }} />
-                          <span className="text-[9px] text-s3m-text-tertiary">Mission Capable Hours</span>
+                          <span className="text-base text-s3m-text-tertiary">Mission Capable Hours</span>
                         </div>
                         <span
-                          className="font-mono text-[10px] font-semibold"
+                          className="font-mono text-xs font-semibold"
                           style={{ color: platform.color }}
                         >
                           {platform.missionCapableHrs}h
@@ -239,16 +239,16 @@ export function SustainmentWorkspace() {
                     <div className="bg-s3m-critical/10 border border-s3m-critical/40 rounded p-2">
                       <div className="flex items-center gap-2 mb-2">
                         <ShieldAlert className="w-3.5 h-3.5 text-s3m-critical" />
-                        <span className="text-[9px] text-s3m-critical uppercase tracking-wider font-semibold">
+                        <span className="text-base text-s3m-critical uppercase tracking-wider font-semibold">
                           CANNIBALIZATION ALERTS
                         </span>
                       </div>
                       {unit.cannibalizationAlerts.map((alert, i) => (
-                        <div key={i} className="text-[10px] text-s3m-text-secondary leading-relaxed mb-1">
+                        <div key={i} className="text-xs text-s3m-text-secondary leading-relaxed mb-1">
                           <span className="text-s3m-text-primary font-semibold">{alert.part}</span> from{' '}
                           <span className="font-mono">{alert.from}</span> → <span className="font-mono">{alert.to}</span>
                           <span
-                            className="ml-2 text-[8px] uppercase px-1.5 py-0.5 rounded"
+                            className="ml-2 text-xs uppercase px-1.5 py-0.5 rounded"
                             style={{
                               color: alert.urgency === 'CRITICAL' ? '#EF4444' : alert.urgency === 'HIGH' ? '#EAB308' : '#38BDF8',
                               backgroundColor: alert.urgency === 'CRITICAL' ? '#EF444420' : alert.urgency === 'HIGH' ? '#EAB30820' : '#38BDF820'
@@ -289,7 +289,7 @@ export function SustainmentWorkspace() {
                         <ChevronRight className="w-3.5 h-3.5" style={{ color: category.color }} />
                       )}
                       <Icon className="w-3.5 h-3.5" style={{ color: category.color }} />
-                      <span className="text-[11px] font-semibold text-s3m-text-primary">{category.name}</span>
+                      <span className="text-base font-semibold text-s3m-text-primary">{category.name}</span>
                     </div>
                   </button>
 
@@ -298,9 +298,9 @@ export function SustainmentWorkspace() {
                       {category.items.map((item, i) => (
                         <div key={i} className="bg-s3m-card rounded p-2">
                           <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-[10px] font-semibold text-s3m-text-primary">{item.type}</span>
+                            <span className="text-xs font-semibold text-s3m-text-primary">{item.type}</span>
                             <span
-                              className="text-[8px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded"
+                              className="text-xs uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded"
                               style={{
                                 color: item.leadTimeRisk === 'CRITICAL' ? '#EF4444' : item.leadTimeRisk === 'HIGH' ? '#EAB308' : item.leadTimeRisk === 'MEDIUM' ? '#38BDF8' : '#22C55E',
                                 backgroundColor: item.leadTimeRisk === 'CRITICAL' ? '#EF444420' : item.leadTimeRisk === 'HIGH' ? '#EAB30820' : item.leadTimeRisk === 'MEDIUM' ? '#38BDF820' : '#22C55E20'
@@ -312,23 +312,23 @@ export function SustainmentWorkspace() {
 
                           <div className="grid grid-cols-2 gap-1.5 mb-2">
                             <div>
-                              <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Stock / Target</div>
-                              <div className="font-mono text-[9px] text-s3m-text-secondary">
+                              <div className="text-xs text-s3m-text-tertiary mb-0.5">Stock / Target</div>
+                              <div className="font-mono text-base text-s3m-text-secondary">
                                 {item.stock.toLocaleString()} / {item.target.toLocaleString()}
                               </div>
                             </div>
                             <div>
-                              <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Lead Time</div>
-                              <div className="font-mono text-[9px] text-s3m-text-secondary">{item.leadTime}</div>
+                              <div className="text-xs text-s3m-text-tertiary mb-0.5">Lead Time</div>
+                              <div className="font-mono text-base text-s3m-text-secondary">{item.leadTime}</div>
                             </div>
                           </div>
 
                           <div className="flex items-center justify-between bg-s3m-elevated rounded p-1.5">
-                            <span className="text-[8px] text-s3m-text-tertiary">{item.vendor}</span>
+                            <span className="text-xs text-s3m-text-tertiary">{item.vendor}</span>
                             <div className="flex items-center gap-1.5">
-                              <span className="text-[8px] text-s3m-text-tertiary">Reliability</span>
+                              <span className="text-xs text-s3m-text-tertiary">Reliability</span>
                               <span
-                                className="font-mono text-[9px] font-semibold"
+                                className="font-mono text-base font-semibold"
                                 style={{
                                   color: item.vendorReliability >= 90 ? '#22C55E' : item.vendorReliability >= 80 ? '#EAB308' : '#EF4444'
                                 }}
@@ -343,11 +343,11 @@ export function SustainmentWorkspace() {
                       <div className="bg-s3m-blue/10 border-l-2 border-s3m-blue rounded p-2">
                         <div className="flex items-center gap-1.5 mb-1">
                           <Truck className="w-3 h-3 text-s3m-blue" />
-                          <span className="text-[8px] text-s3m-blue uppercase tracking-wider font-semibold">
+                          <span className="text-xs text-s3m-blue uppercase tracking-wider font-semibold">
                             THEATER DISTRIBUTION
                           </span>
                         </div>
-                        <div className="text-[9px] text-s3m-text-secondary">{category.theaterLatency}</div>
+                        <div className="text-base text-s3m-text-secondary">{category.theaterLatency}</div>
                       </div>
                     </div>
                   )}
@@ -363,10 +363,10 @@ export function SustainmentWorkspace() {
             {missionDependencies.map((dep, i) => (
               <div key={i} className="bg-s3m-elevated rounded p-3 border border-s3m-border-default">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-semibold text-s3m-text-primary">{dep.component}</span>
+                  <span className="text-xs font-semibold text-s3m-text-primary">{dep.component}</span>
                   <div className="flex items-center gap-1.5">
                     <AlertTriangle className="w-3 h-3 text-s3m-caution" />
-                    <span className="font-mono text-[9px] text-s3m-caution font-semibold">
+                    <span className="font-mono text-base text-s3m-caution font-semibold">
                       {dep.daysToThreshold}d to threshold
                     </span>
                   </div>
@@ -374,17 +374,17 @@ export function SustainmentWorkspace() {
 
                 <div className="grid grid-cols-2 gap-2 mb-2">
                   <div className="bg-s3m-card rounded p-1.5">
-                    <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Current Stock</div>
-                    <div className="font-mono text-[10px] font-semibold text-s3m-text-primary">{dep.currentStock}</div>
+                    <div className="text-xs text-s3m-text-tertiary mb-0.5">Current Stock</div>
+                    <div className="font-mono text-xs font-semibold text-s3m-text-primary">{dep.currentStock}</div>
                   </div>
                   <div className="bg-s3m-card rounded p-1.5">
-                    <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Failure Threshold</div>
-                    <div className="font-mono text-[10px] font-semibold text-s3m-critical">{dep.threshold}</div>
+                    <div className="text-xs text-s3m-text-tertiary mb-0.5">Failure Threshold</div>
+                    <div className="font-mono text-xs font-semibold text-s3m-critical">{dep.threshold}</div>
                   </div>
                 </div>
 
                 <div className="mb-2">
-                  <div className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-1.5">
+                  <div className="text-base text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-1.5">
                     AFFECTED MISSIONS
                   </div>
                   <div className="space-y-1">
@@ -392,9 +392,9 @@ export function SustainmentWorkspace() {
                       <div key={j} className="bg-s3m-card rounded p-2 flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-0.5">
-                            <span className="text-[9px] font-semibold text-s3m-text-primary">{mission.name}</span>
+                            <span className="text-base font-semibold text-s3m-text-primary">{mission.name}</span>
                             <span
-                              className="text-[7px] uppercase tracking-wider font-semibold px-1 py-0.5 rounded"
+                              className="text-xs uppercase tracking-wider font-semibold px-1 py-0.5 rounded"
                               style={{
                                 color: mission.priority === 'CRITICAL' ? '#EF4444' : mission.priority === 'HIGH' ? '#EAB308' : '#38BDF8',
                                 backgroundColor: mission.priority === 'CRITICAL' ? '#EF444420' : mission.priority === 'HIGH' ? '#EAB30820' : '#38BDF820'
@@ -403,12 +403,12 @@ export function SustainmentWorkspace() {
                               {mission.priority}
                             </span>
                           </div>
-                          <div className="text-[8px] text-s3m-text-tertiary">{mission.unitsDependant}</div>
+                          <div className="text-xs text-s3m-text-tertiary">{mission.unitsDependant}</div>
                         </div>
                         <div className="text-right">
-                          <div className="text-[8px] text-s3m-text-tertiary">Impact</div>
+                          <div className="text-xs text-s3m-text-tertiary">Impact</div>
                           <div
-                            className="font-mono text-[10px] font-semibold"
+                            className="font-mono text-xs font-semibold"
                             style={{
                               color: mission.failureImpact >= 80 ? '#EF4444' : mission.failureImpact >= 60 ? '#EAB308' : '#22C55E'
                             }}
@@ -422,10 +422,10 @@ export function SustainmentWorkspace() {
                 </div>
 
                 <div className="bg-s3m-purple/10 border-l-2 border-s3m-purple rounded p-2">
-                  <div className="text-[8px] text-s3m-purple uppercase tracking-wider font-semibold mb-1">
+                  <div className="text-xs text-s3m-purple uppercase tracking-wider font-semibold mb-1">
                     ALLOCATION RECOMMENDATION
                   </div>
-                  <div className="text-[9px] text-s3m-text-secondary leading-relaxed">{dep.allocation}</div>
+                  <div className="text-base text-s3m-text-secondary leading-relaxed">{dep.allocation}</div>
                 </div>
               </div>
             ))}
@@ -446,7 +446,7 @@ export function SustainmentWorkspace() {
               <ChevronRight className="w-4 h-4 text-s3m-purple" />
             )}
             <Wrench className="w-4 h-4 text-s3m-purple" />
-            <span className="text-[10px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+            <span className="text-xs text-s3m-text-tertiary uppercase tracking-wider font-semibold">
               INTELLIGENT MAINTENANCE RECOMMENDATIONS
             </span>
           </button>
@@ -456,16 +456,16 @@ export function SustainmentWorkspace() {
               {/* Predictive and Opportunistic Maintenance */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <div className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
+                  <div className="text-base text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
                     PREDICTIVE MAINTENANCE
                   </div>
                   <div className="space-y-2">
                     {maintenanceSchedule.filter(m => m.type === 'predictive').map((item, i) => (
                       <div key={i} className="bg-s3m-elevated rounded p-2 border-l-2 border-s3m-critical">
                         <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[10px] font-semibold text-s3m-text-primary">{item.platform}</span>
+                          <span className="text-xs font-semibold text-s3m-text-primary">{item.platform}</span>
                           <span
-                            className="font-mono text-[9px] font-semibold"
+                            className="font-mono text-base font-semibold"
                             style={{
                               color: item.failureProbability >= 70 ? '#EF4444' : item.failureProbability >= 50 ? '#EAB308' : '#22C55E'
                             }}
@@ -473,17 +473,17 @@ export function SustainmentWorkspace() {
                             {item.failureProbability}% fail risk
                           </span>
                         </div>
-                        <div className="text-[9px] text-s3m-text-secondary mb-1.5">{item.issue}</div>
+                        <div className="text-base text-s3m-text-secondary mb-1.5">{item.issue}</div>
                         <div className="bg-s3m-card rounded p-1.5 mb-1.5">
-                          <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Recommended Action</div>
-                          <div className="text-[9px] text-s3m-text-primary">{item.recommendedAction}</div>
+                          <div className="text-xs text-s3m-text-tertiary mb-0.5">Recommended Action</div>
+                          <div className="text-base text-s3m-text-primary">{item.recommendedAction}</div>
                         </div>
                         <div className="flex items-center justify-between">
-                          <div className="text-[8px] text-s3m-text-tertiary">{item.window}</div>
+                          <div className="text-xs text-s3m-text-tertiary">{item.window}</div>
                           <div className="flex items-center gap-1">
-                            <span className="text-[8px] text-s3m-text-tertiary">Confidence</span>
+                            <span className="text-xs text-s3m-text-tertiary">Confidence</span>
                             <span
-                              className="font-mono text-[9px] font-semibold"
+                              className="font-mono text-base font-semibold"
                               style={{
                                 color: item.confidence >= 85 ? '#22C55E' : item.confidence >= 70 ? '#EAB308' : '#EF4444'
                               }}
@@ -498,26 +498,26 @@ export function SustainmentWorkspace() {
                 </div>
 
                 <div>
-                  <div className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
+                  <div className="text-base text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
                     OPPORTUNISTIC MAINTENANCE
                   </div>
                   <div className="space-y-2">
                     {maintenanceSchedule.filter(m => m.type === 'opportunistic').map((item, i) => (
                       <div key={i} className="bg-s3m-elevated rounded p-2 border-l-2 border-s3m-operational">
                         <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[10px] font-semibold text-s3m-text-primary">{item.platform}</span>
-                          <span className="text-[8px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded bg-s3m-operational/20 text-s3m-operational">
+                          <span className="text-xs font-semibold text-s3m-text-primary">{item.platform}</span>
+                          <span className="text-xs uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded bg-s3m-operational/20 text-s3m-operational">
                             EFFICIENCY
                           </span>
                         </div>
-                        <div className="text-[9px] text-s3m-text-secondary mb-1.5">{item.issue}</div>
+                        <div className="text-base text-s3m-text-secondary mb-1.5">{item.issue}</div>
                         <div className="bg-s3m-card rounded p-1.5 mb-1.5">
-                          <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Recommended Action</div>
-                          <div className="text-[9px] text-s3m-text-primary">{item.recommendedAction}</div>
+                          <div className="text-xs text-s3m-text-tertiary mb-0.5">Recommended Action</div>
+                          <div className="text-base text-s3m-text-primary">{item.recommendedAction}</div>
                         </div>
                         <div className="flex items-center justify-between">
-                          <div className="text-[8px] text-s3m-text-tertiary">{item.window}</div>
-                          <div className="text-[9px] font-semibold text-s3m-operational">{item.savings}</div>
+                          <div className="text-xs text-s3m-text-tertiary">{item.window}</div>
+                          <div className="text-base font-semibold text-s3m-operational">{item.savings}</div>
                         </div>
                       </div>
                     ))}
@@ -530,7 +530,7 @@ export function SustainmentWorkspace() {
                 <div className="bg-s3m-elevated rounded p-3 border border-s3m-border-default">
                   <div className="flex items-center gap-2 mb-3">
                     <Users className="w-3.5 h-3.5 text-s3m-cyan" />
-                    <span className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+                    <span className="text-base text-s3m-text-tertiary uppercase tracking-wider font-semibold">
                       TECHNICIAN WORKLOAD
                     </span>
                   </div>
@@ -539,24 +539,24 @@ export function SustainmentWorkspace() {
                       <div key={i} className="bg-s3m-card rounded p-2">
                         <div className="flex items-center justify-between mb-1.5">
                           <div>
-                            <div className="text-[10px] font-semibold text-s3m-text-primary flex items-center gap-1.5">
+                            <div className="text-xs font-semibold text-s3m-text-primary flex items-center gap-1.5">
                               {team.name}
                               {team.bottleneck && (
                                 <AlertTriangle className="w-3 h-3 text-s3m-critical" />
                               )}
                             </div>
-                            <div className="text-[8px] text-s3m-text-tertiary">{team.specialty}</div>
+                            <div className="text-xs text-s3m-text-tertiary">{team.specialty}</div>
                           </div>
                           <div className="text-right">
                             <div
-                              className="font-mono text-[11px] font-semibold"
+                              className="font-mono text-base font-semibold"
                               style={{
                                 color: team.workload >= 85 ? '#EF4444' : team.workload >= 70 ? '#EAB308' : '#22C55E'
                               }}
                             >
                               {team.workload}%
                             </div>
-                            <div className="text-[8px] text-s3m-text-tertiary">{team.taskCount} tasks</div>
+                            <div className="text-xs text-s3m-text-tertiary">{team.taskCount} tasks</div>
                           </div>
                         </div>
                         <div className="h-1.5 bg-s3m-elevated rounded-full overflow-hidden">
@@ -576,7 +576,7 @@ export function SustainmentWorkspace() {
                 <div className="bg-s3m-elevated rounded p-3 border border-s3m-border-default">
                   <div className="flex items-center gap-2 mb-3">
                     <TrendingDown className="w-3.5 h-3.5 text-s3m-yellow" />
-                    <span className="text-[9px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+                    <span className="text-base text-s3m-text-tertiary uppercase tracking-wider font-semibold">
                       DEPOT BOTTLENECKS
                     </span>
                   </div>
@@ -584,9 +584,9 @@ export function SustainmentWorkspace() {
                     {depotBottlenecks.map((depot, i) => (
                       <div key={i} className="bg-s3m-card rounded p-2">
                         <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[10px] font-semibold text-s3m-text-primary">{depot.depot}</span>
+                          <span className="text-xs font-semibold text-s3m-text-primary">{depot.depot}</span>
                           <span
-                            className="text-[8px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded"
+                            className="text-xs uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded"
                             style={{
                               color: depot.status === 'CRITICAL' ? '#EF4444' : depot.status === 'CAUTION' ? '#EAB308' : '#22C55E',
                               backgroundColor: depot.status === 'CRITICAL' ? '#EF444420' : depot.status === 'CAUTION' ? '#EAB30820' : '#22C55E20'
@@ -597,9 +597,9 @@ export function SustainmentWorkspace() {
                         </div>
                         <div className="grid grid-cols-3 gap-1.5 mb-1.5">
                           <div>
-                            <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Utilization</div>
+                            <div className="text-xs text-s3m-text-tertiary mb-0.5">Utilization</div>
                             <div
-                              className="font-mono text-[9px] font-semibold"
+                              className="font-mono text-base font-semibold"
                               style={{
                                 color: depot.utilizationRate >= 90 ? '#EF4444' : depot.utilizationRate >= 75 ? '#EAB308' : '#22C55E'
                               }}
@@ -608,12 +608,12 @@ export function SustainmentWorkspace() {
                             </div>
                           </div>
                           <div>
-                            <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Queue</div>
-                            <div className="font-mono text-[9px] text-s3m-text-secondary">{depot.queueDepth}</div>
+                            <div className="text-xs text-s3m-text-tertiary mb-0.5">Queue</div>
+                            <div className="font-mono text-base text-s3m-text-secondary">{depot.queueDepth}</div>
                           </div>
                           <div>
-                            <div className="text-[8px] text-s3m-text-tertiary mb-0.5">Avg Wait</div>
-                            <div className="font-mono text-[9px] text-s3m-text-secondary">{depot.avgWaitTime}</div>
+                            <div className="text-xs text-s3m-text-tertiary mb-0.5">Avg Wait</div>
+                            <div className="font-mono text-base text-s3m-text-secondary">{depot.avgWaitTime}</div>
                           </div>
                         </div>
                         <div className="h-1 bg-s3m-elevated rounded-full overflow-hidden">

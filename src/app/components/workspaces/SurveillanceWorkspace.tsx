@@ -225,11 +225,11 @@ export function SurveillanceWorkspace() {
                     />
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[11px] text-cyber-text-primary font-semibold font-mono">
+                        <span className="text-[17px] text-cyber-text-primary font-semibold font-mono">
                           {person.name}
                         </span>
                         <span
-                          className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded"
+                          className="text-[17px] uppercase tracking-wider px-1.5 py-0.5 rounded"
                           style={{
                             color: statusColors[person.status].color,
                             background: `${statusColors[person.status].color}20`,
@@ -239,7 +239,7 @@ export function SurveillanceWorkspace() {
                           {person.status}
                         </span>
                       </div>
-                      <div className="text-[9px] text-cyber-text-tertiary mt-0.5 font-mono">
+                      <div className="text-[17px] text-cyber-text-tertiary mt-0.5 font-mono">
                         {person.id}
                       </div>
                     </div>
@@ -247,7 +247,7 @@ export function SurveillanceWorkspace() {
                   <ConfidenceBadge value={person.threat} size="sm" />
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-[10px] mb-2">
+                <div className="grid grid-cols-2 gap-2 text-[17px] mb-2">
                   <div className="flex items-center gap-1">
                     <MapPin className="w-3 h-3 text-cyber-cyan" />
                     <span className="text-cyber-text-tertiary">Location:</span>
@@ -259,7 +259,7 @@ export function SurveillanceWorkspace() {
                   </div>
                 </div>
 
-                <div className="text-[10px] text-cyber-text-secondary leading-relaxed">
+                <div className="text-[17px] text-cyber-text-secondary leading-relaxed">
                   {person.activity}
                 </div>
               </div>
@@ -285,11 +285,11 @@ export function SurveillanceWorkspace() {
                           filter: `drop-shadow(0 0 4px ${typeColors[target.type].glow})`
                         }}
                       />
-                      <span className="text-[11px] text-cyber-text-primary font-semibold">
+                      <span className="text-[17px] text-cyber-text-primary font-semibold">
                         {target.name}
                       </span>
                       <span
-                        className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded"
+                        className="text-[17px] uppercase tracking-wider px-1.5 py-0.5 rounded"
                         style={{
                           color: typeColors[target.type].color,
                           background: `${typeColors[target.type].color}20`,
@@ -299,14 +299,14 @@ export function SurveillanceWorkspace() {
                         {target.type}
                       </span>
                     </div>
-                    <div className="text-[9px] text-cyber-text-tertiary font-mono">
+                    <div className="text-[17px] text-cyber-text-tertiary font-mono">
                       {target.id}
                     </div>
                   </div>
                   <ConfidenceBadge value={target.confidence} size="sm" />
                 </div>
 
-                <div className="space-y-1 text-[10px] mb-2">
+                <div className="space-y-1 text-[17px] mb-2">
                   <div className="flex items-center gap-1">
                     <MapPin className="w-3 h-3 text-cyber-cyan" />
                     <span className="text-cyber-text-tertiary">Location:</span>
@@ -318,7 +318,7 @@ export function SurveillanceWorkspace() {
                   </div>
                 </div>
 
-                <div className="text-[10px] text-cyber-text-secondary leading-relaxed">
+                <div className="text-[17px] text-cyber-text-secondary leading-relaxed">
                   {target.notes}
                 </div>
               </div>
@@ -333,13 +333,13 @@ export function SurveillanceWorkspace() {
 
         <div className="mb-4 flex items-center gap-2">
           <Target className="w-4 h-4 text-cyber-cyan" />
-          <span className="text-[10px] uppercase tracking-[0.08em] text-s3m-text-secondary font-semibold">
+          <span className="text-[17px] uppercase tracking-[0.08em] text-s3m-text-secondary font-semibold">
             LIVE TARGET FEED
           </span>
           <div className="flex-1" />
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-cyber-green animate-pulse" />
-            <span className="font-mono text-[10px] text-cyber-green">
+            <span className="font-mono text-[17px] text-cyber-green">
               {liveTargets.length} TRACKING
             </span>
           </div>
@@ -365,7 +365,7 @@ export function SurveillanceWorkspace() {
                         filter: `drop-shadow(0 0 4px ${threatColor}80)`
                       }}
                     />
-                    <span className="font-mono text-[9px] text-s3m-text-tertiary">
+                    <span className="font-mono text-[17px] text-s3m-text-tertiary">
                       {target.id}
                     </span>
                   </div>
@@ -373,11 +373,11 @@ export function SurveillanceWorkspace() {
                   {/* Target Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[12px] font-semibold text-s3m-text-primary">
+                      <span className="text-[17px] font-semibold text-s3m-text-primary">
                         {target.name}
                       </span>
                       <span
-                        className="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded"
+                        className="text-[17px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded"
                         style={{
                           color: threatColor,
                           backgroundColor: `${threatColor}20`
@@ -385,12 +385,12 @@ export function SurveillanceWorkspace() {
                       >
                         {target.threat}
                       </span>
-                      <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-cyber-cyan/20 text-cyber-cyan">
+                      <span className="text-[17px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-cyber-cyan/20 text-cyber-cyan">
                         {target.type}
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-4 gap-3 text-[10px] mb-2">
+                    <div className="grid grid-cols-4 gap-3 text-[17px] mb-2">
                       <div>
                         <span className="text-s3m-text-tertiary">Location:</span>{' '}
                         <span className="text-s3m-text-secondary font-mono">{target.location}</span>
@@ -411,14 +411,14 @@ export function SurveillanceWorkspace() {
 
                     {/* Action Suggestions */}
                     <div className="flex items-center gap-2">
-                      <span className="text-[9px] uppercase tracking-wider text-s3m-text-tertiary">
+                      <span className="text-[17px] uppercase tracking-wider text-s3m-text-tertiary">
                         SUGGESTED ACTIONS:
                       </span>
                       <div className="flex gap-1.5">
                         {target.suggestions.map((action, i) => (
                           <button
                             key={i}
-                            className="text-[9px] uppercase tracking-wider px-2 py-1 rounded bg-cyber-cyan/10 text-cyber-cyan hover:bg-cyber-cyan/20 border border-cyber-cyan/30 transition-colors"
+                            className="text-[17px] uppercase tracking-wider px-2 py-1 rounded bg-cyber-cyan/10 text-cyber-cyan hover:bg-cyber-cyan/20 border border-cyber-cyan/30 transition-colors"
                           >
                             {action}
                           </button>
@@ -445,7 +445,7 @@ export function SurveillanceWorkspace() {
             <ChevronRight className="w-4 h-4 text-s3m-cyan" />
           )}
           <Calendar className="w-4 h-4 text-s3m-cyan" />
-          <span className="text-[11px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+          <span className="text-[17px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
             COLLECTION MANAGER
           </span>
         </button>
@@ -454,7 +454,7 @@ export function SurveillanceWorkspace() {
           <div className="space-y-3">
             {/* Collection Tasks */}
             <div>
-              <div className="text-[10px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
+              <div className="text-[17px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
                 Active Collection Tasks
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -464,9 +464,9 @@ export function SurveillanceWorkspace() {
                     className="bg-s3m-elevated border border-s3m-border-default rounded-lg p-2"
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="font-mono text-[9px] text-s3m-text-tertiary">{task.id}</span>
+                      <span className="font-mono text-[17px] text-s3m-text-tertiary">{task.id}</span>
                       <span
-                        className="text-[8px] uppercase font-semibold px-1.5 py-0.5 rounded"
+                        className="text-[17px] uppercase font-semibold px-1.5 py-0.5 rounded"
                         style={{
                           color: getStatusColor(task.status),
                           background: `${getStatusColor(task.status)}20`,
@@ -476,12 +476,12 @@ export function SurveillanceWorkspace() {
                         {task.status}
                       </span>
                     </div>
-                    <div className="text-[10px] text-s3m-text-primary font-semibold mb-1">{task.target}</div>
-                    <div className="flex items-center justify-between text-[9px] mb-1">
+                    <div className="text-[17px] text-s3m-text-primary font-semibold mb-1">{task.target}</div>
+                    <div className="flex items-center justify-between text-[17px] mb-1">
                       <span className="text-s3m-text-tertiary">Area: <span className="text-s3m-text-primary">{task.area}</span></span>
                       <span className="text-s3m-text-tertiary">Sensor: <span className="text-s3m-cyan">{task.sensor}</span></span>
                     </div>
-                    <div className="flex items-center justify-between text-[8px]">
+                    <div className="flex items-center justify-between text-[17px]">
                       <span className="text-s3m-text-tertiary">Coverage: <span className="font-mono" style={{ color: task.coverage > 80 ? '#22C55E' : task.coverage > 60 ? '#EAB308' : '#EF4444' }}>{task.coverage}%</span></span>
                       <span className="text-s3m-text-tertiary">Updated: <span className="font-mono text-s3m-text-primary">{task.lastUpdate}</span></span>
                     </div>
@@ -493,7 +493,7 @@ export function SurveillanceWorkspace() {
             <div className="grid grid-cols-2 gap-3">
               {/* Collection Gaps */}
               <div>
-                <div className="text-[10px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
+                <div className="text-[17px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
                   Collection Gaps
                 </div>
                 <div className="space-y-2">
@@ -503,9 +503,9 @@ export function SurveillanceWorkspace() {
                       className="bg-s3m-elevated border border-s3m-border-default rounded-lg p-2"
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] text-s3m-text-primary font-semibold">{gap.area}</span>
+                        <span className="text-[17px] text-s3m-text-primary font-semibold">{gap.area}</span>
                         <span
-                          className="text-[8px] uppercase font-semibold px-1.5 py-0.5 rounded"
+                          className="text-[17px] uppercase font-semibold px-1.5 py-0.5 rounded"
                           style={{
                             color: getSeverityColor(gap.severity),
                             background: `${getSeverityColor(gap.severity)}20`,
@@ -515,8 +515,8 @@ export function SurveillanceWorkspace() {
                           {gap.severity}
                         </span>
                       </div>
-                      <div className="text-[9px] text-s3m-text-tertiary mb-1">Target: {gap.target}</div>
-                      <div className="flex items-center justify-between text-[8px]">
+                      <div className="text-[17px] text-s3m-text-tertiary mb-1">Target: {gap.target}</div>
+                      <div className="flex items-center justify-between text-[17px]">
                         <span className="text-s3m-text-tertiary">Time: <span className="font-mono text-s3m-text-primary">{gap.time}</span></span>
                         <span className="text-s3m-text-tertiary">Duration: <span className="text-s3m-red">{gap.duration}</span></span>
                       </div>
@@ -527,7 +527,7 @@ export function SurveillanceWorkspace() {
 
               {/* Recommended Retasking */}
               <div>
-                <div className="text-[10px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
+                <div className="text-[17px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
                   Recommended Retasking
                 </div>
                 <div className="space-y-2">
@@ -537,9 +537,9 @@ export function SurveillanceWorkspace() {
                       className="bg-s3m-elevated border border-s3m-border-default rounded-lg p-2 hover:border-s3m-cyan/40 transition-all cursor-pointer"
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] text-s3m-cyan font-semibold">{rec.sensor}</span>
+                        <span className="text-[17px] text-s3m-cyan font-semibold">{rec.sensor}</span>
                         <span
-                          className="text-[8px] uppercase font-semibold px-1.5 py-0.5 rounded"
+                          className="text-[17px] uppercase font-semibold px-1.5 py-0.5 rounded"
                           style={{
                             color: getSeverityColor(rec.priority),
                             background: `${getSeverityColor(rec.priority)}20`,
@@ -549,13 +549,13 @@ export function SurveillanceWorkspace() {
                           {rec.priority}
                         </span>
                       </div>
-                      <div className="text-[9px] text-s3m-text-tertiary mb-1">
+                      <div className="text-[17px] text-s3m-text-tertiary mb-1">
                         From: <span className="text-s3m-text-primary">{rec.from}</span>
                       </div>
-                      <div className="text-[9px] text-s3m-text-tertiary mb-1">
+                      <div className="text-[17px] text-s3m-text-tertiary mb-1">
                         To: <span className="text-s3m-text-primary">{rec.to}</span>
                       </div>
-                      <div className="text-[8px] text-s3m-green">{rec.impact}</div>
+                      <div className="text-[17px] text-s3m-green">{rec.impact}</div>
                     </div>
                   ))}
                 </div>
@@ -577,7 +577,7 @@ export function SurveillanceWorkspace() {
             <ChevronRight className="w-4 h-4 text-s3m-cyan" />
           )}
           <TrendingUp className="w-4 h-4 text-s3m-cyan" />
-          <span className="text-[11px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+          <span className="text-[17px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
             SOURCE RELIABILITY
           </span>
         </button>
@@ -591,8 +591,8 @@ export function SurveillanceWorkspace() {
               >
                 <div className="flex items-center justify-between mb-2">
                   <div>
-                    <div className="text-[11px] text-s3m-text-primary font-semibold">{source.source}</div>
-                    <div className="text-[8px] text-s3m-text-tertiary">{source.type}</div>
+                    <div className="text-[17px] text-s3m-text-primary font-semibold">{source.source}</div>
+                    <div className="text-[17px] text-s3m-text-tertiary">{source.type}</div>
                   </div>
                   <div
                     className="w-2 h-2 rounded-full"
@@ -601,25 +601,25 @@ export function SurveillanceWorkspace() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between bg-s3m-card rounded p-1 text-[8px]">
+                  <div className="flex items-center justify-between bg-s3m-card rounded p-1 text-[17px]">
                     <span className="text-s3m-text-tertiary uppercase">Uptime</span>
                     <span className="font-mono" style={{ color: source.uptime > 95 ? '#22C55E' : source.uptime > 85 ? '#EAB308' : '#EF4444' }}>
                       {source.uptime}%
                     </span>
                   </div>
-                  <div className="flex items-center justify-between bg-s3m-card rounded p-1 text-[8px]">
+                  <div className="flex items-center justify-between bg-s3m-card rounded p-1 text-[17px]">
                     <span className="text-s3m-text-tertiary uppercase">Bias</span>
                     <span className="font-semibold" style={{ color: getBiasColor(source.bias) }}>
                       {source.bias}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between bg-s3m-card rounded p-1 text-[8px]">
+                  <div className="flex items-center justify-between bg-s3m-card rounded p-1 text-[17px]">
                     <span className="text-s3m-text-tertiary uppercase">False Alarms</span>
                     <span className="font-mono" style={{ color: source.falseAlarmRate < 5 ? '#22C55E' : source.falseAlarmRate < 10 ? '#EAB308' : '#EF4444' }}>
                       {source.falseAlarmRate}%
                     </span>
                   </div>
-                  <div className="flex items-center justify-between bg-s3m-card rounded p-1 text-[8px]">
+                  <div className="flex items-center justify-between bg-s3m-card rounded p-1 text-[17px]">
                     <span className="text-s3m-text-tertiary uppercase">Timeliness</span>
                     <span className="font-mono text-s3m-cyan">{source.timeliness}</span>
                   </div>
@@ -642,7 +642,7 @@ export function SurveillanceWorkspace() {
             <ChevronRight className="w-4 h-4 text-s3m-cyan" />
           )}
           <BookmarkCheck className="w-4 h-4 text-s3m-cyan" />
-          <span className="text-[11px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+          <span className="text-[17px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
             ENTITY WATCHLISTS
           </span>
         </button>
@@ -653,13 +653,13 @@ export function SurveillanceWorkspace() {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <User className="w-3 h-3 text-s3m-cyan" />
-                <span className="text-[10px] text-s3m-text-tertiary uppercase font-semibold">Persons</span>
+                <span className="text-[17px] text-s3m-text-tertiary uppercase font-semibold">Persons</span>
               </div>
               <div className="space-y-2">
                 {entityWatchlists.persons.map((person) => (
                   <div key={person.id} className="bg-s3m-elevated border border-s3m-border-default rounded p-2">
-                    <div className="text-[9px] text-s3m-text-primary font-semibold mb-1">{person.name}</div>
-                    <div className="flex items-center justify-between text-[8px]">
+                    <div className="text-[17px] text-s3m-text-primary font-semibold mb-1">{person.name}</div>
+                    <div className="flex items-center justify-between text-[17px]">
                       <span className="text-s3m-text-tertiary">{person.id}</span>
                       <span className="text-s3m-red">{person.alerts} alerts</span>
                     </div>
@@ -672,14 +672,14 @@ export function SurveillanceWorkspace() {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Building className="w-3 h-3 text-s3m-cyan" />
-                <span className="text-[10px] text-s3m-text-tertiary uppercase font-semibold">Organizations</span>
+                <span className="text-[17px] text-s3m-text-tertiary uppercase font-semibold">Organizations</span>
               </div>
               <div className="space-y-2">
                 {entityWatchlists.organizations.map((org) => (
                   <div key={org.id} className="bg-s3m-elevated border border-s3m-border-default rounded p-2">
-                    <div className="text-[9px] text-s3m-text-primary font-semibold mb-1">{org.name}</div>
-                    <div className="text-[8px] text-s3m-text-tertiary mb-1">{org.activity}</div>
-                    <div className="flex items-center justify-between text-[8px]">
+                    <div className="text-[17px] text-s3m-text-primary font-semibold mb-1">{org.name}</div>
+                    <div className="text-[17px] text-s3m-text-tertiary mb-1">{org.activity}</div>
+                    <div className="flex items-center justify-between text-[17px]">
                       <span className="text-s3m-text-tertiary">{org.id}</span>
                       <span className="text-s3m-red">{org.alerts} alerts</span>
                     </div>
@@ -692,14 +692,14 @@ export function SurveillanceWorkspace() {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Ship className="w-3 h-3 text-s3m-cyan" />
-                <span className="text-[10px] text-s3m-text-tertiary uppercase font-semibold">Vessels</span>
+                <span className="text-[17px] text-s3m-text-tertiary uppercase font-semibold">Vessels</span>
               </div>
               <div className="space-y-2">
                 {entityWatchlists.vessels.map((vessel) => (
                   <div key={vessel.id} className="bg-s3m-elevated border border-s3m-border-default rounded p-2">
-                    <div className="text-[9px] text-s3m-text-primary font-semibold mb-1">{vessel.name}</div>
-                    <div className="text-[8px] text-s3m-text-tertiary mb-1">{vessel.location}</div>
-                    <div className="flex items-center justify-between text-[8px]">
+                    <div className="text-[17px] text-s3m-text-primary font-semibold mb-1">{vessel.name}</div>
+                    <div className="text-[17px] text-s3m-text-tertiary mb-1">{vessel.location}</div>
+                    <div className="flex items-center justify-between text-[17px]">
                       <span className="text-s3m-text-tertiary">{vessel.id}</span>
                       <span className="text-s3m-red">{vessel.alerts} alerts</span>
                     </div>
@@ -712,14 +712,14 @@ export function SurveillanceWorkspace() {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Car className="w-3 h-3 text-s3m-cyan" />
-                <span className="text-[10px] text-s3m-text-tertiary uppercase font-semibold">Vehicles</span>
+                <span className="text-[17px] text-s3m-text-tertiary uppercase font-semibold">Vehicles</span>
               </div>
               <div className="space-y-2">
                 {entityWatchlists.vehicles.map((vehicle) => (
                   <div key={vehicle.id} className="bg-s3m-elevated border border-s3m-border-default rounded p-2">
-                    <div className="text-[9px] text-s3m-text-primary font-semibold mb-1">{vehicle.name}</div>
-                    <div className="text-[8px] text-s3m-text-tertiary mb-1">{vehicle.location}</div>
-                    <div className="flex items-center justify-between text-[8px]">
+                    <div className="text-[17px] text-s3m-text-primary font-semibold mb-1">{vehicle.name}</div>
+                    <div className="text-[17px] text-s3m-text-tertiary mb-1">{vehicle.location}</div>
+                    <div className="flex items-center justify-between text-[17px]">
                       <span className="text-s3m-text-tertiary">{vehicle.id}</span>
                       <span className="text-s3m-red">{vehicle.alerts} alerts</span>
                     </div>
@@ -732,14 +732,14 @@ export function SurveillanceWorkspace() {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <MapPin className="w-3 h-3 text-s3m-cyan" />
-                <span className="text-[10px] text-s3m-text-tertiary uppercase font-semibold">Sites</span>
+                <span className="text-[17px] text-s3m-text-tertiary uppercase font-semibold">Sites</span>
               </div>
               <div className="space-y-2">
                 {entityWatchlists.sites.map((site) => (
                   <div key={site.id} className="bg-s3m-elevated border border-s3m-border-default rounded p-2">
-                    <div className="text-[9px] text-s3m-text-primary font-semibold mb-1">{site.name}</div>
-                    <div className="text-[8px] text-s3m-text-tertiary mb-1">{site.location}</div>
-                    <div className="flex items-center justify-between text-[8px]">
+                    <div className="text-[17px] text-s3m-text-primary font-semibold mb-1">{site.name}</div>
+                    <div className="text-[17px] text-s3m-text-tertiary mb-1">{site.location}</div>
+                    <div className="flex items-center justify-between text-[17px]">
                       <span className="text-s3m-text-tertiary">{site.id}</span>
                       <span className="text-s3m-red">{site.alerts} alerts</span>
                     </div>
@@ -763,7 +763,7 @@ export function SurveillanceWorkspace() {
             <ChevronRight className="w-4 h-4 text-s3m-cyan" />
           )}
           <Layers className="w-4 h-4 text-s3m-cyan" />
-          <span className="text-[11px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
+          <span className="text-[17px] text-s3m-text-tertiary uppercase tracking-wider font-semibold">
             OSINT/ISR FUSION
           </span>
         </button>
@@ -772,7 +772,7 @@ export function SurveillanceWorkspace() {
           <div className="space-y-3">
             {/* Fusion Alerts */}
             <div>
-              <div className="text-[10px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
+              <div className="text-[17px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
                 Multi-Source Alerts
               </div>
               <div className="space-y-2">
@@ -784,9 +784,9 @@ export function SurveillanceWorkspace() {
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-mono text-[9px] text-s3m-text-tertiary">{alert.id}</span>
+                          <span className="font-mono text-[17px] text-s3m-text-tertiary">{alert.id}</span>
                           <span
-                            className="text-[8px] uppercase font-semibold px-1.5 py-0.5 rounded"
+                            className="text-[17px] uppercase font-semibold px-1.5 py-0.5 rounded"
                             style={{
                               color: getSeverityColor(alert.severity),
                               background: `${getSeverityColor(alert.severity)}20`,
@@ -795,18 +795,18 @@ export function SurveillanceWorkspace() {
                           >
                             {alert.severity}
                           </span>
-                          <span className="text-[8px] uppercase text-s3m-cyan px-1.5 py-0.5 rounded bg-s3m-cyan/10">
+                          <span className="text-[17px] uppercase text-s3m-cyan px-1.5 py-0.5 rounded bg-s3m-cyan/10">
                             {alert.type}
                           </span>
                         </div>
-                        <div className="text-[10px] text-s3m-text-primary font-semibold mb-1">{alert.entity}</div>
+                        <div className="text-[17px] text-s3m-text-primary font-semibold mb-1">{alert.entity}</div>
                       </div>
                       <ConfidenceBadge value={alert.confidence} size="sm" />
                     </div>
 
-                    <div className="text-[10px] text-s3m-text-secondary mb-2">{alert.summary}</div>
+                    <div className="text-[17px] text-s3m-text-secondary mb-2">{alert.summary}</div>
 
-                    <div className="flex items-center justify-between text-[8px]">
+                    <div className="flex items-center justify-between text-[17px]">
                       <div className="flex items-center gap-1">
                         <span className="text-s3m-text-tertiary">Sources:</span>
                         {alert.sources.map((src, idx) => (
@@ -822,7 +822,7 @@ export function SurveillanceWorkspace() {
 
             {/* Auto-Generated Briefs */}
             <div>
-              <div className="text-[10px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
+              <div className="text-[17px] text-s3m-text-tertiary uppercase tracking-wider font-semibold mb-2">
                 Auto-Generated Briefs
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -832,15 +832,15 @@ export function SurveillanceWorkspace() {
                     className="bg-s3m-elevated border border-s3m-border-default rounded-lg p-3"
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <div className="text-[11px] text-s3m-text-primary font-semibold">{brief.title}</div>
+                      <div className="text-[17px] text-s3m-text-primary font-semibold">{brief.title}</div>
                       <ConfidenceBadge value={brief.confidence} size="sm" />
                     </div>
 
                     <div className="mb-2">
-                      <div className="text-[8px] text-s3m-text-tertiary uppercase mb-1">Key Points</div>
+                      <div className="text-[17px] text-s3m-text-tertiary uppercase mb-1">Key Points</div>
                       <div className="space-y-1">
                         {brief.keyPoints.map((point, pidx) => (
-                          <div key={pidx} className="flex gap-2 text-[9px] text-s3m-text-secondary">
+                          <div key={pidx} className="flex gap-2 text-[17px] text-s3m-text-secondary">
                             <span className="text-s3m-cyan">→</span>
                             <span>{point}</span>
                           </div>
@@ -849,10 +849,10 @@ export function SurveillanceWorkspace() {
                     </div>
 
                     <div className="bg-s3m-card rounded p-2">
-                      <div className="text-[8px] text-s3m-text-tertiary uppercase mb-1">Recommendation</div>
-                      <div className="text-[9px] text-s3m-text-primary mb-1">{brief.recommendation}</div>
+                      <div className="text-[17px] text-s3m-text-tertiary uppercase mb-1">Recommendation</div>
+                      <div className="text-[17px] text-s3m-text-primary mb-1">{brief.recommendation}</div>
                       <span
-                        className="text-[8px] uppercase font-semibold px-1.5 py-0.5 rounded"
+                        className="text-[17px] uppercase font-semibold px-1.5 py-0.5 rounded"
                         style={{
                           color: getSeverityColor(brief.priority),
                           background: `${getSeverityColor(brief.priority)}20`,
