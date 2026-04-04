@@ -1,67 +1,42 @@
 import type {
-  DecisionUpdate,
-  IncomingMessagePayload,
-  RiskMetrics,
-  ThreatTrack,
-  TimelineEvent,
+  BackendSocketEvent,
+  BackendSocketEventType,
+  DecisionUpdatedEvent,
+  BackendSnapshotEvent,
+  BackendErrorEvent,
+  BackendHeartbeatEvent
 } from './types';
 
-type StoreCallback<T> = (payload: T) => void;
-
-const safeDispatch = <T>(label: string, callback: StoreCallback<T> | undefined, payload: T): void => {
-  if (!callback) {
-    return;
-  }
-
-  try {
-    callback(payload);
-  } catch (error) {
-    console.error(`[WebSocketHandlers] Failed to dispatch ${label}`, error);
-  }
-};
-
-export const handleDecisionUpdate =
-  (onDecisionUpdate?: StoreCallback<DecisionUpdate>) =>
-  (decision: DecisionUpdate): void => {
-    safeDispatch('decision update', onDecisionUpdate, decision);
-  };
-
-export const handleThreatUpdate =
-  (onThreatUpdate?: StoreCallback<ThreatTrack>) =>
-  (track: ThreatTrack): void => {
-    safeDispatch('threat update', onThreatUpdate, track);
-  };
-
-export const handleRiskUpdate =
-  (onRiskUpdate?: StoreCallback<RiskMetrics>) =>
-  (metrics: RiskMetrics): void => {
-    safeDispatch('risk update', onRiskUpdate, metrics);
-  };
-
-export const handleTimelineEvent =
-  (onTimelineEvent?: StoreCallback<TimelineEvent>) =>
-  (event: TimelineEvent): void => {
-    safeDispatch('timeline event', onTimelineEvent, event);
-  };
-
-export const handleMessageArrival =
-  (onMessageArrival?: StoreCallback<IncomingMessagePayload>) =>
-  (message: IncomingMessagePayload): void => {
-    safeDispatch('message arrival', onMessageArrival, message);
-  };
-
-export interface StoreUpdateCallbacks {
-  onDecisionUpdate?: StoreCallback<DecisionUpdate>;
-  onThreatUpdate?: StoreCallback<ThreatTrack>;
-  onRiskUpdate?: StoreCallback<RiskMetrics>;
-  onTimelineEvent?: StoreCallback<TimelineEvent>;
-  onMessageArrival?: StoreCallback<IncomingMessagePayload>;
+export interface BackendSocketHandlers {
+  onSnapshot?: (event: BackendSnapshotEvent) => void;
+  onDecisionUpdated?: (event: DecisionUpdatedEvent) => void;
+  onHeartbeat?: (event: BackendHeartbeatEvent) => void;
+  onError?: (event: BackendErrorEvent) => void;
 }
 
-export const createStoreUpdateHandlers = (callbacks: StoreUpdateCallbacks) => ({
-  decisions: handleDecisionUpdate(callbacks.onDecisionUpdate),
-  threats: handleThreatUpdate(callbacks.onThreatUpdate),
-  risk: handleRiskUpdate(callbacks.onRiskUpdate),
-  events: handleTimelineEvent(callbacks.onTimelineEvent),
-  messages: handleMessageArrival(callbacks.onMessageArrival),
-});
+export const isBackendSocketEventType = (value: string): value is BackendSocketEventType =>
+  value === 'backend.snapshot' ||
+  value === 'decision.updated' ||
+  value === 'backend.heartbeat' ||
+  value === 'backend.error';
+
+export const createBackendSocketHandler =
+  (handlers: BackendSocketHandlers) =>
+  (event: BackendSocketEvent): void => {
+    switch (event.type) {
+      case 'backend.snapshot':
+        handlers.onSnapshot?.(event);
+        return;
+      case 'decision.updated':
+        handlers.onDecisionUpdated?.(event);
+        return;
+      case 'backend.heartbeat':
+        handlers.onHeartbeat?.(event);
+        return;
+      case 'backend.error':
+        handlers.onError?.(event);
+        return;
+      default:
+        return;
+    }
+  };

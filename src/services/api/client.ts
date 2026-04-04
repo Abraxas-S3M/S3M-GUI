@@ -1,144 +1,128 @@
-export type APIErrorCode = 'HTTP' | 'NETWORK' | 'TIMEOUT'
+import { API_CONFIG, API_ENDPOINTS, buildApiUrl } from './config';
+import { getBackendAdapter } from '../mock/backends';
+import type {
+  ApiResponse,
+  BackendSnapshot,
+  CommsData,
+  Decision,
+  DecisionStatus,
+  OperationalContextData,
+  ReadinessData,
+  RiskData,
+  SurveillanceData,
+  TracksData
+} from './types';
 
-export interface APIClientOptions {
-  baseUrl: string
-  defaultHeaders?: HeadersInit
-  timeoutMs?: number
-  fetchImpl?: typeof fetch
-}
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
-export interface APIRequestOptions extends Omit<RequestInit, 'body'> {
-  body?: unknown
-}
+export class BackendApiClient {
+  private readonly mockAdapter = getBackendAdapter();
 
-export interface APIResponse<T> {
-  data: T
-  status: number
-  headers: Record<string, string>
-}
-
-export class APIClientError extends Error {
-  readonly code: APIErrorCode
-  readonly status?: number
-  readonly details?: unknown
-
-  constructor(message: string, code: APIErrorCode, status?: number, details?: unknown) {
-    super(message)
-    this.name = 'APIClientError'
-    this.code = code
-    this.status = status
-    this.details = details
-  }
-}
-
-const DEFAULT_TIMEOUT_MS = 5_000
-
-export class APIClient {
-  private readonly baseUrl: string
-  private readonly defaultHeaders: HeadersInit
-  private readonly timeoutMs: number
-  private readonly fetchImpl: typeof fetch
-
-  constructor(options: APIClientOptions) {
-    this.baseUrl = options.baseUrl.replace(/\/$/, '')
-    this.defaultHeaders = options.defaultHeaders ?? {}
-    this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS
-    this.fetchImpl = options.fetchImpl ?? fetch
-  }
-
-  async get<T>(path: string, options?: Omit<APIRequestOptions, 'method'>): Promise<APIResponse<T>> {
-    return this.request<T>(path, { ...options, method: 'GET' })
-  }
-
-  async post<T>(path: string, body?: unknown, options?: Omit<APIRequestOptions, 'method' | 'body'>): Promise<APIResponse<T>> {
-    return this.request<T>(path, { ...options, method: 'POST', body })
-  }
-
-  async request<T>(path: string, options: APIRequestOptions = {}): Promise<APIResponse<T>> {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort('Request timed out'), this.timeoutMs)
-    const url = `${this.baseUrl}${path.startsWith('/') ? path : `/${path}`}`
-    const headers = new Headers(this.defaultHeaders)
-
-    if (options.headers) {
-      for (const [key, value] of new Headers(options.headers).entries()) {
-        headers.set(key, value)
-      }
+  private unwrapResponse<T>(payload: ApiResponse<T> | T): T {
+    if (payload && typeof payload === 'object' && 'data' in payload) {
+      return (payload as ApiResponse<T>).data;
     }
 
-    const hasBody = typeof options.body !== 'undefined'
-    const body = hasBody ? JSON.stringify(options.body) : undefined
-    if (hasBody && !headers.has('content-type')) {
-      headers.set('content-type', 'application/json')
-    }
+    return payload as T;
+  }
+
+  private async request<T>(method: HttpMethod, endpoint: string, body?: unknown): Promise<T> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), API_CONFIG.timeoutMs);
 
     try {
-      const response = await this.fetchImpl(url, {
-        ...options,
-        headers,
-        body,
-        signal: controller.signal,
-      })
+      const response = await fetch(buildApiUrl(endpoint), {
+        method,
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: body === undefined ? undefined : JSON.stringify(body),
+        signal: controller.signal
+      });
 
-      const parsed = await parseResponse(response)
       if (!response.ok) {
-        throw new APIClientError(
-          `Request failed with status ${response.status}`,
-          'HTTP',
-          response.status,
-          parsed,
-        )
+        throw new Error(`Backend request failed (${response.status})`);
       }
 
-      return {
-        data: parsed as T,
-        status: response.status,
-        headers: headersToObject(response.headers),
-      }
-    } catch (error) {
-      if (error instanceof APIClientError) {
-        throw error
-      }
-
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new APIClientError(
-          `Request timed out after ${this.timeoutMs}ms`,
-          'TIMEOUT',
-        )
-      }
-
-      throw new APIClientError(
-        error instanceof Error ? error.message : 'Network request failed',
-        'NETWORK',
-      )
+      const payload = (await response.json()) as ApiResponse<T> | T;
+      return this.unwrapResponse(payload);
     } finally {
-      clearTimeout(timeout)
+      clearTimeout(timeout);
     }
   }
-}
 
-async function parseResponse(response: Response): Promise<unknown> {
-  const contentType = response.headers.get('content-type') ?? ''
-  if (contentType.includes('application/json')) {
-    return response.json()
+  async getSnapshot(): Promise<BackendSnapshot> {
+    if (API_CONFIG.useMockBackend) {
+      return this.mockAdapter.getSnapshot();
+    }
+
+    return this.request<BackendSnapshot>('GET', API_ENDPOINTS.snapshot);
   }
 
-  const text = await response.text()
-  if (!text) {
-    return null
+  async getDecisions(): Promise<Decision[]> {
+    if (API_CONFIG.useMockBackend) {
+      return this.mockAdapter.getDecisions();
+    }
+
+    return this.request<Decision[]>('GET', API_ENDPOINTS.decisions);
   }
 
-  try {
-    return JSON.parse(text)
-  } catch {
-    return text
+  async updateDecisionStatus(id: string, status: DecisionStatus): Promise<Decision> {
+    if (API_CONFIG.useMockBackend) {
+      return this.mockAdapter.updateDecisionStatus(id, status);
+    }
+
+    return this.request<Decision>('PATCH', `${API_ENDPOINTS.decisions}/${id}`, { status });
+  }
+
+  async getRisk(): Promise<RiskData> {
+    if (API_CONFIG.useMockBackend) {
+      return this.mockAdapter.getRisk();
+    }
+
+    return this.request<RiskData>('GET', API_ENDPOINTS.risk);
+  }
+
+  async getReadiness(): Promise<ReadinessData> {
+    if (API_CONFIG.useMockBackend) {
+      return this.mockAdapter.getReadiness();
+    }
+
+    return this.request<ReadinessData>('GET', API_ENDPOINTS.readiness);
+  }
+
+  async getSurveillance(): Promise<SurveillanceData> {
+    if (API_CONFIG.useMockBackend) {
+      return this.mockAdapter.getSurveillance();
+    }
+
+    return this.request<SurveillanceData>('GET', API_ENDPOINTS.surveillance);
+  }
+
+  async getComms(): Promise<CommsData> {
+    if (API_CONFIG.useMockBackend) {
+      return this.mockAdapter.getComms();
+    }
+
+    return this.request<CommsData>('GET', API_ENDPOINTS.comms);
+  }
+
+  async getTracks(): Promise<TracksData> {
+    if (API_CONFIG.useMockBackend) {
+      return this.mockAdapter.getTracks();
+    }
+
+    return this.request<TracksData>('GET', API_ENDPOINTS.tracks);
+  }
+
+  async getOperationalContext(): Promise<OperationalContextData> {
+    if (API_CONFIG.useMockBackend) {
+      return this.mockAdapter.getOperationalContext();
+    }
+
+    return this.request<OperationalContextData>('GET', API_ENDPOINTS.operationalContext);
   }
 }
 
-function headersToObject(headers: Headers): Record<string, string> {
-  const output: Record<string, string> = {}
-  headers.forEach((value, key) => {
-    output[key] = value
-  })
-  return output
-}
+export const backendApiClient = new BackendApiClient();

@@ -1,5 +1,24 @@
+export type BackendSyncStatus = 'idle' | 'syncing' | 'ready' | 'error';
+
+export interface ApiError {
+  code: string;
+  message: string;
+  details?: unknown;
+}
+
+export interface ApiMeta {
+  requestId?: string;
+  timestamp?: string;
+}
+
+export interface ApiResponse<T> {
+  data: T;
+  meta?: ApiMeta;
+  error?: ApiError;
+}
+
 export type DecisionStatus = 'pending' | 'approved' | 'rejected';
-export type DecisionSeverity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+export type SeverityLevel = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
 
 export interface Decision {
   id: string;
@@ -8,166 +27,111 @@ export interface Decision {
   confidence: number;
   description: string;
   status: DecisionStatus;
-  severity: DecisionSeverity;
-  updatedAt?: string;
-  reviewerComment?: string;
+  severity: SeverityLevel;
 }
 
-export interface Threat {
-  id: string;
-  label: string;
-  level: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
-  domain: 'kinetic' | 'cyber' | 'intel' | 'logistics';
-  summary: string;
-  updatedAt: string;
-}
+export type RiskSeverity = 'operational' | 'caution' | 'critical';
 
-export interface Directive {
-  id: string;
-  title: string;
-  authority: string;
-  status: 'active' | 'draft' | 'expired';
-  details: string;
-  updatedAt: string;
-}
-
-export interface OperationalContextData {
-  threats: Threat[];
-  decisions: Decision[];
-  directives: Directive[];
-  updatedAt: string;
-}
-
-export interface DecisionAuditEntry {
-  id: string;
-  decisionId: string;
-  action: 'approved' | 'rejected' | 'updated' | 'received';
-  comment?: string;
-  actor: string;
-  source: 'backend' | 'mock' | 'ui' | 'websocket';
-  timestamp: string;
-}
-
-export interface DomainRisk {
-  domain: string;
-  score: number;
-  trend: 'up' | 'down' | 'steady';
-}
-
-export interface RiskForecastPoint {
-  timestamp: string;
-  score: number;
-}
-
-export interface RiskDriver {
+export interface RiskDomainSummary {
   name: string;
-  impact: number;
-  direction: 'positive' | 'negative';
+  value: number;
+  change: number;
+  color: string;
+  severity: RiskSeverity;
 }
 
 export interface RiskData {
-  composite: number;
-  domains: DomainRisk[];
-  forecast: RiskForecastPoint[];
-  drivers: RiskDriver[];
-  updatedAt: string;
+  domains: RiskDomainSummary[];
 }
 
-export type TrackDomain = 'kinetic' | 'cyber' | 'intel';
-
-export interface ThreatTrack {
-  id: string;
-  domain: TrackDomain;
-  confidence: number;
-  severity: number;
-  correlatedTrackIds: string[];
-  summary: string;
-  lastSeen: string;
+export interface ReadinessForecastSlice {
+  overallReadiness: number;
+  trend: number;
 }
 
 export interface ReadinessData {
-  personnel: {
-    available: number;
-    deployed: number;
-    onLeave: number;
-  };
-  equipment: {
-    ready: number;
-    maintenance: number;
-    unavailable: number;
-  };
-  unitStatus: Array<{
-    unitId: string;
-    readiness: number;
-    status: 'ready' | 'degraded' | 'critical';
-  }>;
-  updatedAt: string;
-}
-
-export interface SurveillanceAsset {
-  id: string;
-  type: string;
-  status: 'active' | 'standby' | 'offline';
-  location: string;
-}
-
-export interface SurveillanceTask {
-  id: string;
-  priority: 'high' | 'medium' | 'low';
-  description: string;
-  assignedAssetId?: string;
-  status: 'queued' | 'in_progress' | 'done';
+  deployable: number;
+  nonDeployable: number;
+  total: number;
+  forecast: Record<'7day' | '30day' | '90day', ReadinessForecastSlice>;
 }
 
 export interface SurveillanceTarget {
   id: string;
-  designation: string;
+  name: string;
+  type: string;
+  location: string;
+  threat: SeverityLevel;
   confidence: number;
-  lastSeen: string;
 }
 
 export interface SurveillanceData {
-  assets: SurveillanceAsset[];
-  taskingQueue: SurveillanceTask[];
-  targetBoard: SurveillanceTarget[];
-  updatedAt: string;
+  targets: SurveillanceTarget[];
 }
 
-export interface CommsMessage {
-  id: string;
-  from: string;
-  to: string;
-  subject: string;
-  body: string;
-  read: boolean;
-  priority: 'flash' | 'priority' | 'routine';
-  timestamp: string;
+export interface CommsChannel {
+  channel: string;
+  confidence: number;
 }
 
 export interface CommsData {
-  inbox: CommsMessage[];
-  relayQueue: Array<{
-    id: string;
-    messageId: string;
-    status: 'queued' | 'sent' | 'failed';
-    updatedAt: string;
-  }>;
-  updatedAt: string;
+  channels: CommsChannel[];
 }
 
-export interface BackendEnvelope<T> {
-  data: T;
-  meta?: {
-    source?: 'backend';
-    updatedAt?: string;
-  };
+export interface TrackHistory {
+  splits: number;
+  merges: number;
+  deception: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH';
 }
 
-export type BackendDomain =
-  | 'operationalContext'
-  | 'decisions'
-  | 'risk'
-  | 'tracks'
-  | 'readiness'
-  | 'surveillance'
-  | 'comms';
+export interface Track {
+  id: string;
+  type: 'HOSTILE' | 'UNKNOWN' | 'FRIENDLY';
+  conf: number;
+  status: RiskSeverity;
+  speed: string;
+  alt: string;
+  identityConf: number;
+  hostileProbability: number;
+  friendlyProbability: number;
+  unknownProbability: number;
+  sourceReliability: 'HIGH' | 'MEDIUM' | 'LOW';
+  lastUpdate: string;
+  recommendedAction: string;
+  sensors: string[];
+  trackHistory: TrackHistory;
+}
+
+export interface TracksData {
+  tracks: Track[];
+}
+
+export interface OperationalMetric {
+  label: string;
+  value: string;
+  color: string;
+  sublabel: string;
+}
+
+export interface OperationalPriority {
+  id: string;
+  title: string;
+  severity: SeverityLevel;
+  source?: string;
+  risk?: string;
+}
+
+export interface OperationalContextData {
+  metrics: OperationalMetric[];
+  priorities: OperationalPriority[];
+}
+
+export interface BackendSnapshot {
+  decisions: Decision[];
+  risk: RiskData;
+  readiness: ReadinessData;
+  surveillance: SurveillanceData;
+  comms: CommsData;
+  tracks: TracksData;
+  operationalContext: OperationalContextData;
+}

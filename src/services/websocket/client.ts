@@ -1,135 +1,110 @@
-export interface WebSocketClientOptions {
-  reconnectIntervalMs?: number
-  maxReconnectAttempts?: number
-  webSocketFactory?: (url: string) => WebSocket
-  isOnline?: () => boolean
-}
+import { API_CONFIG } from '../api/config';
+import { isBackendSocketEventType } from './handlers';
+import type { BackendSocketEvent, BackendSocketEventType, BackendSocketListener } from './types';
 
-export type MessageHandler<T = unknown> = (message: T) => void
+export class BackendWebSocketClient {
+  private socket: WebSocket | null = null;
+  private listeners = new Set<BackendSocketListener>();
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private reconnectAttempt = 0;
+  private manuallyDisconnected = false;
 
-const OPEN_STATE = 1
-
-export class WebSocketClient<T = unknown> {
-  private readonly url: string
-  private readonly reconnectIntervalMs: number
-  private readonly maxReconnectAttempts: number
-  private readonly webSocketFactory: (url: string) => WebSocket
-  private readonly isOnline: () => boolean
-  private socket: WebSocket | null = null
-  private reconnectAttempts = 0
-  private reconnectTimer: ReturnType<typeof setTimeout> | null = null
-  private manuallyDisconnected = false
-  private offlineMode = false
-  private messageHandlers = new Set<MessageHandler<T>>()
-
-  constructor(url: string, options: WebSocketClientOptions = {}) {
-    this.url = url
-    this.reconnectIntervalMs = options.reconnectIntervalMs ?? 1_000
-    this.maxReconnectAttempts = options.maxReconnectAttempts ?? 3
-    this.webSocketFactory = options.webSocketFactory ?? ((socketUrl) => new WebSocket(socketUrl))
-    this.isOnline = options.isOnline ?? (() => navigator.onLine)
-  }
-
-  connect(): boolean {
-    if (!this.isOnline()) {
-      this.offlineMode = true
-      return false
+  connect(url = API_CONFIG.wsUrl): void {
+    if (typeof WebSocket === 'undefined') {
+      return;
     }
 
-    this.offlineMode = false
-    this.manuallyDisconnected = false
-    this.socket = this.webSocketFactory(this.url)
-    this.attachSocketListeners(this.socket)
-    return true
+    if (this.socket && this.socket.readyState <= WebSocket.OPEN) {
+      return;
+    }
+
+    this.manuallyDisconnected = false;
+    this.socket = new WebSocket(url);
+
+    this.socket.onopen = () => {
+      this.reconnectAttempt = 0;
+    };
+
+    this.socket.onmessage = (event) => {
+      this.handleIncomingMessage(event.data);
+    };
+
+    this.socket.onclose = () => {
+      this.socket = null;
+      this.scheduleReconnect(url);
+    };
+
+    this.socket.onerror = () => {
+      this.socket?.close();
+    };
   }
 
   disconnect(): void {
-    this.manuallyDisconnected = true
-    this.clearReconnectTimer()
-    if (this.socket) {
-      this.socket.close()
+    this.manuallyDisconnected = true;
+    this.clearReconnectTimer();
+    this.socket?.close();
+    this.socket = null;
+  }
+
+  subscribe(listener: BackendSocketListener): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  send<TPayload>(type: BackendSocketEventType, payload: TPayload): void {
+    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+      return;
     }
-    this.socket = null
+
+    this.socket.send(
+      JSON.stringify({
+        type,
+        payload,
+        timestamp: new Date().toISOString()
+      })
+    );
   }
 
-  send(payload: T): void {
-    if (!this.socket || this.socket.readyState !== OPEN_STATE) {
-      throw new Error('WebSocket is not connected')
+  private handleIncomingMessage(rawMessage: unknown): void {
+    if (typeof rawMessage !== 'string') {
+      return;
     }
-    this.socket.send(JSON.stringify(payload))
-  }
 
-  onMessage(handler: MessageHandler<T>): () => void {
-    this.messageHandlers.add(handler)
-    return () => {
-      this.messageHandlers.delete(handler)
-    }
-  }
-
-  isOfflineMode(): boolean {
-    return this.offlineMode
-  }
-
-  getReconnectAttempts(): number {
-    return this.reconnectAttempts
-  }
-
-  private attachSocketListeners(socket: WebSocket): void {
-    socket.addEventListener('open', () => {
-      this.reconnectAttempts = 0
-    })
-
-    socket.addEventListener('message', (event) => {
-      const payload = safeJsonParse<T>((event as MessageEvent).data)
-      if (payload === null) {
-        return
+    try {
+      const parsed = JSON.parse(rawMessage) as Partial<BackendSocketEvent> & { type?: string };
+      if (!parsed.type || !isBackendSocketEventType(parsed.type)) {
+        return;
       }
-      for (const handler of this.messageHandlers) {
-        handler(payload)
-      }
-    })
 
-    socket.addEventListener('close', () => {
-      this.socket = null
-      if (!this.manuallyDisconnected) {
-        this.scheduleReconnect()
-      }
-    })
+      const event = parsed as BackendSocketEvent;
+      this.listeners.forEach((listener) => listener(event));
+    } catch {
+      // Ignore malformed payloads to keep socket resilient.
+    }
   }
 
-  private scheduleReconnect(): void {
-    if (!this.isOnline()) {
-      this.offlineMode = true
-      return
+  private scheduleReconnect(url: string): void {
+    if (this.manuallyDisconnected) {
+      return;
     }
 
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      return
-    }
+    this.clearReconnectTimer();
+    const delay = Math.min(1_000 * 2 ** this.reconnectAttempt, 15_000);
+    this.reconnectAttempt += 1;
 
-    this.reconnectAttempts += 1
-    this.clearReconnectTimer()
     this.reconnectTimer = setTimeout(() => {
-      this.connect()
-    }, this.reconnectIntervalMs)
+      this.connect(url);
+    }, delay);
   }
 
   private clearReconnectTimer(): void {
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer)
-      this.reconnectTimer = null
+    if (!this.reconnectTimer) {
+      return;
     }
+
+    clearTimeout(this.reconnectTimer);
+    this.reconnectTimer = null;
   }
 }
 
-function safeJsonParse<T>(data: unknown): T | null {
-  if (typeof data !== 'string') {
-    return null
-  }
-
-  try {
-    return JSON.parse(data) as T
-  } catch {
-    return null
-  }
-}
+export const backendWebSocketClient = new BackendWebSocketClient();

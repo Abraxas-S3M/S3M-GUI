@@ -1,25 +1,12 @@
 import { create } from 'zustand';
-import {
-  mockCommsData,
-  mockDecisions,
-  mockOperationalContext,
-  mockReadinessData,
-  mockRiskData,
-  mockSurveillanceData,
-  mockTracks
-} from '../services/api/mockData';
-import type {
-  BackendDomain,
-  CommsData,
-  CommsMessage,
-  Decision,
-  DecisionAuditEntry,
-  OperationalContextData,
-  ReadinessData,
-  RiskData,
-  SurveillanceData,
-  ThreatTrack
-} from '../services/api/types';
+import { backendApiClient } from '../services/api/client';
+import { mockBackendData } from '../services/mock/data';
+import type { BackendSyncStatus, Decision } from '../services/api/types';
+
+const getCurrentZuluTime = (): string => new Date().toISOString().substr(11, 8) + 'Z';
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : 'Backend synchronization failed';
+const cloneSeedDecisions = (): Decision[] => mockBackendData.decisions.map((decision) => ({ ...decision }));
 
 export type WorkspaceType =
   | 'command'
@@ -184,33 +171,14 @@ interface AppState {
   setMode: (mode: string) => void;
 
   decisions: Decision[];
-  operationalContext: OperationalContextData;
-  riskData: RiskData;
-  tracks: ThreatTrack[];
-  readiness: ReadinessData;
-  surveillance: SurveillanceData;
-  comms: CommsData;
-  decisionAuditTrail: DecisionAuditEntry[];
-  backendSource: Record<BackendDomain, boolean>;
+  setDecisions: (decisions: Decision[]) => void;
 
-  setBackendSource: (domain: BackendDomain, isFromBackend: boolean) => void;
-  setOperationalContext: (payload: OperationalContextData, source?: 'backend' | 'mock') => void;
-  setDecisions: (payload: Decision[], source?: 'backend' | 'mock') => void;
-  upsertDecision: (payload: Decision, source?: 'backend' | 'mock' | 'websocket') => void;
-  updateDecisionStatus: (
-    id: string,
-    status: 'approved' | 'rejected',
-    comment?: string,
-    source?: 'backend' | 'mock' | 'ui' | 'websocket'
-  ) => void;
-  addDecisionAudit: (entry: DecisionAuditEntry) => void;
-  setRiskData: (payload: RiskData, source?: 'backend' | 'mock') => void;
-  setTracks: (payload: ThreatTrack[], source?: 'backend' | 'mock' | 'websocket') => void;
-  setReadiness: (payload: ReadinessData, source?: 'backend' | 'mock') => void;
-  setSurveillance: (payload: SurveillanceData, source?: 'backend' | 'mock') => void;
-  setComms: (payload: CommsData, source?: 'backend' | 'mock') => void;
-  upsertCommsMessage: (message: CommsMessage, source?: 'backend' | 'mock' | 'websocket') => void;
-  markCommsMessageRead: (id: string, source?: 'backend' | 'mock' | 'websocket') => void;
+  backendSyncStatus: BackendSyncStatus;
+  backendSyncError: string | null;
+  lastBackendSyncAt: string | null;
+  syncDecisionsFromBackend: () => Promise<void>;
+
+  updateDecisionStatus: (id: string, status: 'approved' | 'rejected') => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -227,8 +195,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   commandPaletteOpen: false,
   toggleCommandPalette: () => set((state) => ({ commandPaletteOpen: !state.commandPaletteOpen })),
 
-  currentTime: new Date().toISOString().substr(11, 8) + 'Z',
-  updateTime: () => set({ currentTime: new Date().toISOString().substr(11, 8) + 'Z' }),
+  currentTime: getCurrentZuluTime(),
+  updateTime: () => set({ currentTime: getCurrentZuluTime() }),
 
   language: 'EN',
   setLanguage: (lang) => set({ language: lang }),
@@ -239,136 +207,53 @@ export const useAppStore = create<AppState>((set, get) => ({
   mode: 'CMD',
   setMode: (mode) => set({ mode }),
 
-  decisions: mockDecisions,
-  operationalContext: mockOperationalContext,
-  riskData: mockRiskData,
-  tracks: mockTracks,
-  readiness: mockReadinessData,
-  surveillance: mockSurveillanceData,
-  comms: mockCommsData,
-  decisionAuditTrail: [],
-  backendSource: {
-    operationalContext: false,
-    decisions: false,
-    risk: false,
-    tracks: false,
-    readiness: false,
-    surveillance: false,
-    comms: false
+  decisions: cloneSeedDecisions(),
+  setDecisions: (decisions) => set({ decisions }),
+
+  backendSyncStatus: 'idle',
+  backendSyncError: null,
+  lastBackendSyncAt: null,
+  syncDecisionsFromBackend: async () => {
+    set({ backendSyncStatus: 'syncing', backendSyncError: null });
+
+    try {
+      const decisions = await backendApiClient.getDecisions();
+      set({
+        decisions,
+        backendSyncStatus: 'ready',
+        backendSyncError: null,
+        lastBackendSyncAt: new Date().toISOString()
+      });
+    } catch (error) {
+      set({
+        backendSyncStatus: 'error',
+        backendSyncError: getErrorMessage(error)
+      });
+    }
   },
 
-  setBackendSource: (domain, isFromBackend) =>
-    set((state) => ({ backendSource: { ...state.backendSource, [domain]: isFromBackend } })),
-
-  setOperationalContext: (payload, source = 'backend') =>
+  updateDecisionStatus: (id, status) => {
     set((state) => ({
-      operationalContext: payload,
-      decisions: payload.decisions.length > 0 ? payload.decisions : state.decisions,
-      backendSource: {
-        ...state.backendSource,
-        operationalContext: source === 'backend',
-        decisions: payload.decisions.length > 0 ? source === 'backend' : state.backendSource.decisions
-      }
-    })),
+      decisions: state.decisions.map((decision) => (decision.id === id ? { ...decision, status } : decision))
+    }));
 
-  setDecisions: (payload, source = 'backend') =>
-    set((state) => ({
-      decisions: payload,
-      backendSource: { ...state.backendSource, decisions: source === 'backend' }
-    })),
-
-  upsertDecision: (payload, source = 'backend') =>
-    set((state) => {
-      const existing = state.decisions.find((decision) => decision.id === payload.id);
-      const nextDecisions = existing
-        ? state.decisions.map((decision) => (decision.id === payload.id ? { ...decision, ...payload } : decision))
-        : [...state.decisions, payload];
-      return {
-        decisions: nextDecisions,
-        backendSource: { ...state.backendSource, decisions: source === 'backend' || source === 'websocket' }
-      };
-    }),
-
-  updateDecisionStatus: (id, status, comment, source = 'ui') =>
-    set((state) => ({
-      decisions: state.decisions.map((decision) =>
-        decision.id === id
-          ? {
-              ...decision,
-              status,
-              reviewerComment: comment ?? decision.reviewerComment,
-              updatedAt: new Date().toISOString()
-            }
-          : decision
-      ),
-      decisionAuditTrail: [
-        {
-          id: `AUD-${Date.now()}-${Math.random().toString(16).slice(2, 7)}`,
-          decisionId: id,
-          action: status,
-          comment,
-          actor: source === 'ui' ? 'operator' : 'system',
-          source,
-          timestamp: new Date().toISOString()
-        },
-        ...state.decisionAuditTrail
-      ]
-    })),
-
-  addDecisionAudit: (entry) =>
-    set((state) => ({
-      decisionAuditTrail: [entry, ...state.decisionAuditTrail]
-    })),
-
-  setRiskData: (payload, source = 'backend') =>
-    set((state) => ({
-      riskData: payload,
-      backendSource: { ...state.backendSource, risk: source === 'backend' }
-    })),
-
-  setTracks: (payload, source = 'backend') =>
-    set((state) => ({
-      tracks: payload,
-      backendSource: { ...state.backendSource, tracks: source === 'backend' || source === 'websocket' }
-    })),
-
-  setReadiness: (payload, source = 'backend') =>
-    set((state) => ({
-      readiness: payload,
-      backendSource: { ...state.backendSource, readiness: source === 'backend' }
-    })),
-
-  setSurveillance: (payload, source = 'backend') =>
-    set((state) => ({
-      surveillance: payload,
-      backendSource: { ...state.backendSource, surveillance: source === 'backend' }
-    })),
-
-  setComms: (payload, source = 'backend') =>
-    set((state) => ({
-      comms: payload,
-      backendSource: { ...state.backendSource, comms: source === 'backend' }
-    })),
-
-  upsertCommsMessage: (message, source = 'backend') =>
-    set((state) => {
-      const existing = state.comms.inbox.find((entry) => entry.id === message.id);
-      const nextInbox = existing
-        ? state.comms.inbox.map((entry) => (entry.id === message.id ? { ...entry, ...message } : entry))
-        : [message, ...state.comms.inbox];
-      return {
-        comms: { ...state.comms, inbox: nextInbox, updatedAt: new Date().toISOString() },
-        backendSource: { ...state.backendSource, comms: source === 'backend' || source === 'websocket' }
-      };
-    }),
-
-  markCommsMessageRead: (id, source = 'backend') =>
-    set((state) => ({
-      comms: {
-        ...state.comms,
-        inbox: state.comms.inbox.map((entry) => (entry.id === id ? { ...entry, read: true } : entry)),
-        updatedAt: new Date().toISOString()
-      },
-      backendSource: { ...state.backendSource, comms: source === 'backend' || source === 'websocket' }
-    }))
+    void backendApiClient
+      .updateDecisionStatus(id, status)
+      .then((updatedDecision) => {
+        set((state) => ({
+          decisions: state.decisions.map((decision) =>
+            decision.id === updatedDecision.id ? updatedDecision : decision
+          ),
+          backendSyncStatus: 'ready',
+          backendSyncError: null,
+          lastBackendSyncAt: new Date().toISOString()
+        }));
+      })
+      .catch((error) => {
+        set({
+          backendSyncStatus: 'error',
+          backendSyncError: getErrorMessage(error)
+        });
+      });
+  }
 }));

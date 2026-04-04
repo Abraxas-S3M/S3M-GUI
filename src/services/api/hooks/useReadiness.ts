@@ -1,37 +1,43 @@
-import { useMemo } from 'react';
-import { useAppStore } from '../../../app/store';
-import { APIClient } from '../APIClient';
-import { mockReadinessData } from '../mockData';
+import { useCallback, useEffect, useState } from 'react';
+import { backendApiClient } from '../client';
 import type { ReadinessData } from '../types';
-import { useBackendResource } from './shared';
 
-interface UseReadinessOptions {
-  enableAutoRefresh?: boolean;
-  refreshMs?: number;
+const toErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : 'Failed to load readiness data';
+
+export interface UseReadinessResult {
+  readiness: ReadinessData | null;
+  loading: boolean;
+  error: string | null;
+  refresh: () => Promise<void>;
 }
 
-export function useReadiness(options: UseReadinessOptions = {}) {
-  const { enableAutoRefresh = true, refreshMs = 120_000 } = options;
-  const setReadiness = useAppStore((state) => state.setReadiness);
+export const useReadiness = (): UseReadinessResult => {
+  const [readiness, setReadiness] = useState<ReadinessData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const state = useBackendResource<ReadinessData>({
-    hookName: 'useReadiness',
-    fetcher: APIClient.getReadiness,
-    fallbackData: mockReadinessData,
-    refreshMs: enableAutoRefresh ? refreshMs : undefined,
-    onStoreSync: (payload, source) => {
-      setReadiness(payload, source === 'mock' ? 'mock' : 'backend');
+  const refresh = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const nextReadiness = await backendApiClient.getReadiness();
+      setReadiness(nextReadiness);
+    } catch (requestError) {
+      setError(toErrorMessage(requestError));
+    } finally {
+      setLoading(false);
     }
-  });
+  }, []);
 
-  return useMemo(
-    () => ({
-      data: state.data,
-      loading: state.loading,
-      error: state.error,
-      isFromBackend: state.isFromBackend,
-      refetch: state.refetch
-    }),
-    [state]
-  );
-}
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  return {
+    readiness,
+    loading,
+    error,
+    refresh
+  };
+};

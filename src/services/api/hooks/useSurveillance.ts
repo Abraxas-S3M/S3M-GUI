@@ -1,42 +1,43 @@
-import { useCallback, useMemo } from 'react';
-import { useAppStore } from '../../../app/store';
-import { APIClient } from '../APIClient';
-import { mockSurveillanceData } from '../mockData';
+import { useCallback, useEffect, useState } from 'react';
+import { backendApiClient } from '../client';
 import type { SurveillanceData } from '../types';
-import { useBackendResource } from './shared';
 
-interface UseSurveillanceOptions {
-  enablePeriodicRefresh?: boolean;
-  periodicMs?: number;
+const toErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : 'Failed to load surveillance data';
+
+export interface UseSurveillanceResult {
+  surveillance: SurveillanceData | null;
+  loading: boolean;
+  error: string | null;
+  refresh: () => Promise<void>;
 }
 
-export function useSurveillance(options: UseSurveillanceOptions = {}) {
-  const { enablePeriodicRefresh = true, periodicMs = 90_000 } = options;
-  const setSurveillance = useAppStore((state) => state.setSurveillance);
+export const useSurveillance = (): UseSurveillanceResult => {
+  const [surveillance, setSurveillance] = useState<SurveillanceData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const state = useBackendResource<SurveillanceData>({
-    hookName: 'useSurveillance',
-    fetcher: APIClient.getSurveillance,
-    fallbackData: mockSurveillanceData,
-    refreshMs: enablePeriodicRefresh ? periodicMs : undefined,
-    onStoreSync: (payload, source) => {
-      setSurveillance(payload, source === 'mock' ? 'mock' : 'backend');
+  const refresh = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const nextSurveillance = await backendApiClient.getSurveillance();
+      setSurveillance(nextSurveillance);
+    } catch (requestError) {
+      setError(toErrorMessage(requestError));
+    } finally {
+      setLoading(false);
     }
-  });
+  }, []);
 
-  const requestRefresh = useCallback(async () => {
-    await state.refetch();
-  }, [state]);
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
-  return useMemo(
-    () => ({
-      data: state.data,
-      loading: state.loading,
-      error: state.error,
-      isFromBackend: state.isFromBackend,
-      refetch: state.refetch,
-      requestRefresh
-    }),
-    [requestRefresh, state]
-  );
-}
+  return {
+    surveillance,
+    loading,
+    error,
+    refresh
+  };
+};

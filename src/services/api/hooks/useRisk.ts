@@ -1,70 +1,43 @@
-import { useMemo } from 'react';
-import { useAppStore } from '../../../app/store';
-import { APIClient } from '../APIClient';
-import { mockRiskData } from '../mockData';
+import { useCallback, useEffect, useState } from 'react';
+import { backendApiClient } from '../client';
 import type { RiskData } from '../types';
-import { useBackendResource } from './shared';
 
-const RISK_TOPICS = ['risk.updated', 'risk.driver.updated'];
+const toErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : 'Failed to load risk data';
 
-function mergeRiskPayload(payload: unknown, current: RiskData): RiskData | null {
-  if (!payload || typeof payload !== 'object') {
-    return null;
-  }
+export interface UseRiskResult {
+  risk: RiskData | null;
+  loading: boolean;
+  error: string | null;
+  refresh: () => Promise<void>;
+}
 
-  const candidate = payload as Partial<RiskData>;
-  const hasRiskData =
-    typeof candidate.composite === 'number' ||
-    Array.isArray(candidate.domains) ||
-    Array.isArray(candidate.forecast) ||
-    Array.isArray(candidate.drivers);
+export const useRisk = (): UseRiskResult => {
+  const [risk, setRisk] = useState<RiskData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!hasRiskData) {
-    return null;
-  }
+  const refresh = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const nextRisk = await backendApiClient.getRisk();
+      setRisk(nextRisk);
+    } catch (requestError) {
+      setError(toErrorMessage(requestError));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   return {
-    composite: candidate.composite ?? current.composite,
-    domains: candidate.domains ?? current.domains,
-    forecast: candidate.forecast ?? current.forecast,
-    drivers: candidate.drivers ?? current.drivers,
-    updatedAt: candidate.updatedAt ?? new Date().toISOString()
+    risk,
+    loading,
+    error,
+    refresh
   };
-}
-
-interface UseRiskOptions {
-  enableAutoRefresh?: boolean;
-  refreshMs?: number;
-}
-
-export function useRisk(options: UseRiskOptions = {}) {
-  const { enableAutoRefresh = true, refreshMs = 60_000 } = options;
-  const setRiskData = useAppStore((state) => state.setRiskData);
-
-  const state = useBackendResource<RiskData>({
-    hookName: 'useRisk',
-    fetcher: APIClient.getRisk,
-    fallbackData: mockRiskData,
-    refreshMs: enableAutoRefresh ? refreshMs : undefined,
-    wsTopics: RISK_TOPICS,
-    mapWsPayload: mergeRiskPayload,
-    onStoreSync: (payload, source) => {
-      setRiskData(payload, source === 'mock' ? 'mock' : 'backend');
-    }
-  });
-
-  return useMemo(
-    () => ({
-      data: state.data,
-      composite: state.data.composite,
-      domains: state.data.domains,
-      forecast: state.data.forecast,
-      drivers: state.data.drivers,
-      loading: state.loading,
-      error: state.error,
-      isFromBackend: state.isFromBackend,
-      refetch: state.refetch
-    }),
-    [state]
-  );
-}
+};
