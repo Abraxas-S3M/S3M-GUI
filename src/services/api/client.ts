@@ -236,15 +236,15 @@ export class APIClient implements APIService {
     return this.request<DecisionData>(DECISION_ENDPOINTS.list, 'GET');
   }
 
-  async approveDecision(id: string, comment?: string): Promise<DecisionData> {
+  async approveDecision(id: string, comment: string): Promise<DecisionData> {
     return this.request<DecisionData>(DECISION_ENDPOINTS.approve(id), 'POST', {
-      comment: comment ?? '',
+      comment,
     });
   }
 
-  async rejectDecision(id: string, comment?: string): Promise<DecisionData> {
+  async rejectDecision(id: string, comment: string): Promise<DecisionData> {
     return this.request<DecisionData>(DECISION_ENDPOINTS.reject(id), 'POST', {
-      comment: comment ?? '',
+      comment,
     });
   }
 

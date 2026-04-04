@@ -205,7 +205,7 @@ export class MockBackend implements APIService {
     });
   }
 
-  async approveDecision(id: string, _comment?: string): Promise<DecisionData> {
+  async approveDecision(id: string, _comment: string): Promise<DecisionData> {
     this.decisions = this.decisions.map((decision) =>
       decision.id === id ? { ...decision, status: 'approved' } : decision,
     );
@@ -220,7 +220,7 @@ export class MockBackend implements APIService {
     );
   }
 
-  async rejectDecision(id: string, _comment?: string): Promise<DecisionData> {
+  async rejectDecision(id: string, _comment: string): Promise<DecisionData> {
     this.decisions = this.decisions.map((decision) =>
       decision.id === id ? { ...decision, status: 'rejected' } : decision,
     );

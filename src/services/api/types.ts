@@ -223,8 +223,8 @@ export interface SendMessagePayload {
 export interface APIService {
   getOperationalContext(): Promise<OperationalContextData>;
   getDecisions(): Promise<DecisionData>;
-  approveDecision(id: string, comment?: string): Promise<DecisionData>;
-  rejectDecision(id: string, comment?: string): Promise<DecisionData>;
+  approveDecision(id: string, comment: string): Promise<DecisionData>;
+  rejectDecision(id: string, comment: string): Promise<DecisionData>;
   getRiskMetrics(): Promise<RiskMetricsData>;
   getThreatTracks(): Promise<ThreatTrackData>;
   getReadinessSummary(): Promise<ReadinessData>;
