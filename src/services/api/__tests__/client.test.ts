@@ -107,11 +107,11 @@ describe('APIClient integration with mock backend', () => {
     })
 
     const request = client.get('/slow')
-    await vi.advanceTimersByTimeAsync(100)
-
-    await expect(request).rejects.toMatchObject({
+    const assertion = expect(request).rejects.toMatchObject({
       name: 'APIClientError',
       code: 'TIMEOUT',
     } satisfies Partial<APIClientError>)
+    await vi.advanceTimersByTimeAsync(100)
+    await assertion
   })
 })

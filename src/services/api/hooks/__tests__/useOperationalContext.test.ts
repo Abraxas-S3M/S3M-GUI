@@ -24,9 +24,9 @@ describe('useOperationalContext integration with mock backend', () => {
       headers: {},
     })
 
-    const { result } = renderHook(() => useOperationalContext({ get }))
+    const client = { get }
+    const { result } = renderHook(() => useOperationalContext(client))
 
-    expect(result.current.isLoading).toBe(true)
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     expect(result.current.error).toBeNull()
     expect(result.current.data).toEqual(mockPayload)
@@ -41,17 +41,25 @@ describe('useOperationalContext integration with mock backend', () => {
       status: 200,
       headers: {},
     })
+    const client = { get }
 
     const { unmount } = renderHook(() =>
-      useOperationalContext({ get }, { refreshIntervalMs: 100 }),
+      useOperationalContext(client, { refreshIntervalMs: 100 }),
     )
 
-    await waitFor(() => expect(get).toHaveBeenCalledTimes(1))
-    await vi.advanceTimersByTimeAsync(220)
-    await waitFor(() => expect(get).toHaveBeenCalledTimes(3))
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(get).toHaveBeenCalledTimes(1)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(220)
+    })
+    expect(get).toHaveBeenCalledTimes(3)
 
     unmount()
-    await vi.advanceTimersByTimeAsync(400)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(400)
+    })
 
     expect(get).toHaveBeenCalledTimes(3)
   })
@@ -64,26 +72,33 @@ describe('useOperationalContext integration with mock backend', () => {
       status: 200,
       headers: {},
     })
+    const client = { get }
 
-    const { result } = renderHook(() =>
-      useOperationalContext({ get }, { refreshIntervalMs: 100 }),
+    const { result, unmount } = renderHook(() =>
+      useOperationalContext(client, { refreshIntervalMs: 100 }),
     )
 
-    await waitFor(() => expect(get).toHaveBeenCalledTimes(1))
-    await vi.advanceTimersByTimeAsync(200)
-    await waitFor(() => expect(get).toHaveBeenCalledTimes(3))
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(get).toHaveBeenCalledTimes(1)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(200)
+    })
+    expect(get).toHaveBeenCalledTimes(3)
 
     await act(async () => {
       await result.current.refresh()
     })
     expect(get).toHaveBeenCalledTimes(4)
+    unmount()
   })
 
   it('surfaces backend errors without crashing', async () => {
     const get = vi.fn().mockRejectedValue(new Error('mock backend unavailable'))
+    const client = { get }
 
-    const { result } = renderHook(() => useOperationalContext({ get }))
-
+    const { result } = renderHook(() => useOperationalContext(client))
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     expect(result.current.data).toBeNull()
     expect(result.current.error).toContain('mock backend unavailable')

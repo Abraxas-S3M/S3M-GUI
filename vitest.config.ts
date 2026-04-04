@@ -12,6 +12,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
     include: ['src/services/**/__tests__/**/*.test.ts'],
+    pool: 'threads',
+    maxWorkers: 1,
     reporters: ['default', 'junit'],
     outputFile: {
       junit: 'reports/integration/junit.xml',

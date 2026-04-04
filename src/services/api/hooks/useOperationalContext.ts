@@ -29,6 +29,7 @@ export function useOperationalContext(
   })
   const isMounted = useRef(true)
   const refreshIntervalMs = options.refreshIntervalMs ?? 0
+  const getOperationalContext = client.get
 
   const fetchContext = useCallback(async () => {
     setState((previous) => ({
@@ -38,7 +39,7 @@ export function useOperationalContext(
     }))
 
     try {
-      const response = await client.get<OperationalContext>('/operational-context')
+      const response = await getOperationalContext<OperationalContext>('/operational-context')
       if (!isMounted.current) {
         return
       }
@@ -60,7 +61,7 @@ export function useOperationalContext(
         error: message,
       }))
     }
-  }, [client])
+  }, [getOperationalContext])
 
   useEffect(() => {
     void fetchContext()
