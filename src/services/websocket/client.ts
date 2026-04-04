@@ -1,521 +1,135 @@
-import type {
-  IncomingWebSocketMessage,
-  OutgoingWebSocketMessage,
-  PingMessage,
-  SubscriptionChannel,
-} from './types';
-import { WS_CHANNELS, isSubscriptionChannel } from './types';
-
-type SocketReadyState = 0 | 1 | 2 | 3;
-
-interface WebSocketLike {
-  readyState: SocketReadyState;
-  send(data: string): void;
-  close(code?: number, reason?: string): void;
-  addEventListener<K extends keyof WebSocketEventMap>(
-    type: K,
-    listener: (event: WebSocketEventMap[K]) => void,
-  ): void;
-  removeEventListener<K extends keyof WebSocketEventMap>(
-    type: K,
-    listener: (event: WebSocketEventMap[K]) => void,
-  ): void;
+export interface WebSocketClientOptions {
+  reconnectIntervalMs?: number
+  maxReconnectAttempts?: number
+  webSocketFactory?: (url: string) => WebSocket
+  isOnline?: () => boolean
 }
 
-type ChannelMessageHandler = (payload: unknown, message: IncomingWebSocketMessage) => void;
-type MessageListener = (message: IncomingWebSocketMessage) => void;
+export type MessageHandler<T = unknown> = (message: T) => void
 
-const CONNECTING: SocketReadyState = 0;
-const OPEN: SocketReadyState = 1;
-const CLOSED: SocketReadyState = 3;
+const OPEN_STATE = 1
 
-const asEnvRecord = (): Record<string, unknown> => {
-  if (typeof import.meta !== 'undefined' && import.meta.env) {
-    return import.meta.env as unknown as Record<string, unknown>;
+export class WebSocketClient<T = unknown> {
+  private readonly url: string
+  private readonly reconnectIntervalMs: number
+  private readonly maxReconnectAttempts: number
+  private readonly webSocketFactory: (url: string) => WebSocket
+  private readonly isOnline: () => boolean
+  private socket: WebSocket | null = null
+  private reconnectAttempts = 0
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  private manuallyDisconnected = false
+  private offlineMode = false
+  private messageHandlers = new Set<MessageHandler<T>>()
+
+  constructor(url: string, options: WebSocketClientOptions = {}) {
+    this.url = url
+    this.reconnectIntervalMs = options.reconnectIntervalMs ?? 1_000
+    this.maxReconnectAttempts = options.maxReconnectAttempts ?? 3
+    this.webSocketFactory = options.webSocketFactory ?? ((socketUrl) => new WebSocket(socketUrl))
+    this.isOnline = options.isOnline ?? (() => navigator.onLine)
   }
 
-  return {};
-};
-
-class MockWebSocket implements WebSocketLike {
-  readyState: SocketReadyState = CONNECTING;
-
-  private readonly eventTarget = new EventTarget();
-  private closeTimer: ReturnType<typeof setTimeout> | null = null;
-
-  constructor() {
-    window.setTimeout(() => {
-      this.readyState = OPEN;
-      this.dispatch('open', new Event('open'));
-    }, 25);
-  }
-
-  addEventListener<K extends keyof WebSocketEventMap>(
-    type: K,
-    listener: (event: WebSocketEventMap[K]) => void,
-  ): void {
-    this.eventTarget.addEventListener(type, listener as EventListener);
-  }
-
-  removeEventListener<K extends keyof WebSocketEventMap>(
-    type: K,
-    listener: (event: WebSocketEventMap[K]) => void,
-  ): void {
-    this.eventTarget.removeEventListener(type, listener as EventListener);
-  }
-
-  send(data: string): void {
-    let parsed: Record<string, unknown> | null = null;
-
-    try {
-      parsed = JSON.parse(data) as Record<string, unknown>;
-    } catch {
-      return;
+  connect(): boolean {
+    if (!this.isOnline()) {
+      this.offlineMode = true
+      return false
     }
 
-    if (!parsed) {
-      return;
-    }
-
-    const type = parsed.type;
-    if (type === 'ping') {
-      const nonce = (parsed.data as { nonce?: string } | undefined)?.nonce;
-      this.emitServerMessage({
-        type: 'pong',
-        channel: 'system',
-        data: { nonce },
-        timestamp: new Date().toISOString(),
-      });
-      return;
-    }
-
-    if (type === 'subscribe') {
-      const channel = parsed.channel;
-      if (isSubscriptionChannel(channel)) {
-        this.emitMockChannelUpdate(channel);
-      }
-    }
-  }
-
-  close(): void {
-    if (this.readyState === CLOSED) {
-      return;
-    }
-
-    this.readyState = CLOSED;
-    if (this.closeTimer) {
-      clearTimeout(this.closeTimer);
-      this.closeTimer = null;
-    }
-
-    this.dispatch('close', new CloseEvent('close', { code: 1000, reason: 'Mock close' }));
-  }
-
-  private emitMockChannelUpdate(channel: SubscriptionChannel): void {
-    const timestamp = new Date().toISOString();
-    const mockByChannel: Record<SubscriptionChannel, IncomingWebSocketMessage> = {
-      decisions: {
-        type: 'decision_updated',
-        channel: 'decisions',
-        timestamp,
-        data: {
-          id: 'MOCK-DECISION-001',
-          title: 'Mock decision update',
-          status: 'pending',
-          risk: 34,
-        },
-      },
-      threats: {
-        type: 'threat_updated',
-        channel: 'threats',
-        timestamp,
-        data: {
-          track_id: 'MOCK-TRACK-001',
-          location: { lat: 24.7136, lon: 46.6753, alt: 12000 },
-          iff_status: 'UNKNOWN',
-          speed: 430,
-          heading: 195,
-        },
-      },
-      risk: {
-        type: 'risk_updated',
-        channel: 'risk',
-        timestamp,
-        data: {
-          score: 62,
-          level: 'medium',
-          trend: 'up',
-        },
-      },
-      events: {
-        type: 'timeline_event',
-        channel: 'events',
-        timestamp,
-        data: {
-          id: 'MOCK-EVENT-001',
-          title: 'Mock timeline event',
-          description: 'Synthetic event generated by mock websocket.',
-          severity: 'INFO',
-        },
-      },
-      messages: {
-        type: 'message_arrival',
-        channel: 'messages',
-        timestamp,
-        data: {
-          id: 'MOCK-MSG-001',
-          from: 'S3M-SYS',
-          content: 'Mock websocket connected.',
-          priority: 'normal',
-        },
-      },
-    };
-
-    this.closeTimer = window.setTimeout(() => {
-      this.emitServerMessage(mockByChannel[channel]);
-    }, 50);
-  }
-
-  private emitServerMessage(message: IncomingWebSocketMessage): void {
-    this.dispatch('message', new MessageEvent('message', { data: JSON.stringify(message) }));
-  }
-
-  private dispatch<K extends keyof WebSocketEventMap>(type: K, event: WebSocketEventMap[K]): void {
-    this.eventTarget.dispatchEvent(event);
-  }
-}
-
-export class WebSocketClient {
-  private socket: WebSocketLike | null = null;
-  private url: string | null = null;
-  private token: string | null = null;
-  private manuallyDisconnected = false;
-  private reconnectAttempts = 0;
-  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-  private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
-  private pongTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
-  private outboundQueue: Array<OutgoingWebSocketMessage | string> = [];
-  private readonly subscriptions = new Set<SubscriptionChannel>();
-  private readonly channelHandlers: Partial<Record<SubscriptionChannel, ChannelMessageHandler>> = {};
-  private readonly messageListeners = new Set<MessageListener>();
-
-  private readonly reconnectBaseDelayMs = 1_000;
-  private readonly reconnectMaxDelayMs = 30_000;
-  private readonly heartbeatIntervalMs = 15_000;
-  private readonly pongTimeoutMs = 10_000;
-
-  private readonly onOpen = (): void => {
-    this.reconnectAttempts = 0;
-    this.send({
-      type: 'auth',
-      token: this.token ?? '',
-      timestamp: new Date().toISOString(),
-    });
-
-    this.resubscribeAllChannels();
-    this.flushQueue();
-    this.startHeartbeat();
-  };
-
-  private readonly onMessage = (event: MessageEvent<string>): void => {
-    const parsedMessage = this.parseIncomingMessage(event.data);
-    if (!parsedMessage) {
-      return;
-    }
-
-    if (parsedMessage.type === 'pong') {
-      this.clearPongTimeout();
-    }
-
-    if (parsedMessage.type === 'error') {
-      console.error('[WebSocketClient] Server error message', parsedMessage.data);
-    }
-
-    this.dispatchMessage(parsedMessage);
-  };
-
-  private readonly onClose = (): void => {
-    this.stopHeartbeat();
-    if (this.manuallyDisconnected) {
-      return;
-    }
-
-    this.scheduleReconnect();
-  };
-
-  private readonly onError = (event: Event): void => {
-    console.error('[WebSocketClient] Socket error', event);
-  };
-
-  connect(url: string, token: string): void {
-    this.url = url;
-    this.token = token;
-    this.manuallyDisconnected = false;
-
-    const state = this.socket?.readyState;
-    if (state === OPEN || state === CONNECTING) {
-      return;
-    }
-
-    this.openSocket();
+    this.offlineMode = false
+    this.manuallyDisconnected = false
+    this.socket = this.webSocketFactory(this.url)
+    this.attachSocketListeners(this.socket)
+    return true
   }
 
   disconnect(): void {
-    this.manuallyDisconnected = true;
-    this.clearReconnectTimer();
-    this.stopHeartbeat();
-
-    if (!this.socket) {
-      return;
+    this.manuallyDisconnected = true
+    this.clearReconnectTimer()
+    if (this.socket) {
+      this.socket.close()
     }
-
-    this.detachSocketListeners(this.socket);
-    this.socket.close();
-    this.socket = null;
+    this.socket = null
   }
 
-  subscribe(channel: SubscriptionChannel): void {
-    this.subscriptions.add(channel);
-    this.send({
-      type: 'subscribe',
-      channel,
-      timestamp: new Date().toISOString(),
-    });
-  }
-
-  unsubscribe(channel: SubscriptionChannel): void {
-    this.subscriptions.delete(channel);
-    this.send({
-      type: 'unsubscribe',
-      channel,
-      timestamp: new Date().toISOString(),
-    });
-  }
-
-  send(message: OutgoingWebSocketMessage | string): void {
-    const serialized = typeof message === 'string' ? message : JSON.stringify(message);
-
-    if (!this.socket || this.socket.readyState !== OPEN) {
-      this.outboundQueue.push(message);
-      return;
+  send(payload: T): void {
+    if (!this.socket || this.socket.readyState !== OPEN_STATE) {
+      throw new Error('WebSocket is not connected')
     }
+    this.socket.send(JSON.stringify(payload))
+  }
 
-    try {
-      this.socket.send(serialized);
-    } catch (error) {
-      console.error('[WebSocketClient] Failed to send message, queueing for retry', error);
-      this.outboundQueue.push(message);
+  onMessage(handler: MessageHandler<T>): () => void {
+    this.messageHandlers.add(handler)
+    return () => {
+      this.messageHandlers.delete(handler)
     }
   }
 
-  onMessageReceived(listener: MessageListener): () => void {
-    this.messageListeners.add(listener);
-    return () => this.messageListeners.delete(listener);
+  isOfflineMode(): boolean {
+    return this.offlineMode
   }
 
-  setChannelHandler(channel: SubscriptionChannel, handler?: ChannelMessageHandler): void {
-    if (!handler) {
-      delete this.channelHandlers[channel];
-      return;
-    }
-
-    this.channelHandlers[channel] = handler;
+  getReconnectAttempts(): number {
+    return this.reconnectAttempts
   }
 
-  setChannelHandlers(handlers: Partial<Record<SubscriptionChannel, ChannelMessageHandler>>): void {
-    WS_CHANNELS.forEach((channel) => {
-      const handler = handlers[channel];
-      if (handler) {
-        this.channelHandlers[channel] = handler;
+  private attachSocketListeners(socket: WebSocket): void {
+    socket.addEventListener('open', () => {
+      this.reconnectAttempts = 0
+    })
+
+    socket.addEventListener('message', (event) => {
+      const payload = safeJsonParse<T>((event as MessageEvent).data)
+      if (payload === null) {
+        return
       }
-    });
-  }
+      for (const handler of this.messageHandlers) {
+        handler(payload)
+      }
+    })
 
-  private openSocket(): void {
-    if (!this.url) {
-      console.error('[WebSocketClient] Connection URL is missing');
-      return;
-    }
-
-    this.clearReconnectTimer();
-    this.stopHeartbeat();
-
-    const useMockSocket = this.shouldUseMockSocket(this.url);
-    this.socket = useMockSocket ? new MockWebSocket() : new WebSocket(this.url);
-    this.attachSocketListeners(this.socket);
-  }
-
-  private shouldUseMockSocket(url: string): boolean {
-    const env = asEnvRecord();
-    const forceMock = env.VITE_USE_MOCK_WEBSOCKET === 'true';
-    const isDev = env.DEV === true || env.MODE === 'development';
-    const isMockUrl = url.startsWith('mock://') || url === 'mock';
-
-    return forceMock || isMockUrl || (!('WebSocket' in window) && isDev);
-  }
-
-  private attachSocketListeners(socket: WebSocketLike): void {
-    socket.addEventListener('open', this.onOpen);
-    socket.addEventListener('message', this.onMessage as (event: MessageEvent) => void);
-    socket.addEventListener('close', this.onClose);
-    socket.addEventListener('error', this.onError);
-  }
-
-  private detachSocketListeners(socket: WebSocketLike): void {
-    socket.removeEventListener('open', this.onOpen);
-    socket.removeEventListener('message', this.onMessage as (event: MessageEvent) => void);
-    socket.removeEventListener('close', this.onClose);
-    socket.removeEventListener('error', this.onError);
-  }
-
-  private flushQueue(): void {
-    if (!this.socket || this.socket.readyState !== OPEN || this.outboundQueue.length === 0) {
-      return;
-    }
-
-    const queued = [...this.outboundQueue];
-    this.outboundQueue = [];
-
-    queued.forEach((message) => this.send(message));
+    socket.addEventListener('close', () => {
+      this.socket = null
+      if (!this.manuallyDisconnected) {
+        this.scheduleReconnect()
+      }
+    })
   }
 
   private scheduleReconnect(): void {
-    if (!this.url || !this.token || this.reconnectTimer) {
-      return;
+    if (!this.isOnline()) {
+      this.offlineMode = true
+      return
     }
 
-    const exponentialDelay = this.reconnectBaseDelayMs * 2 ** this.reconnectAttempts;
-    const delay = Math.min(exponentialDelay, this.reconnectMaxDelayMs);
-    const jitter = Math.floor(Math.random() * 500);
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      return
+    }
 
-    this.reconnectTimer = window.setTimeout(() => {
-      this.reconnectTimer = null;
-      this.reconnectAttempts += 1;
-      this.openSocket();
-    }, delay + jitter);
+    this.reconnectAttempts += 1
+    this.clearReconnectTimer()
+    this.reconnectTimer = setTimeout(() => {
+      this.connect()
+    }, this.reconnectIntervalMs)
   }
 
   private clearReconnectTimer(): void {
-    if (!this.reconnectTimer) {
-      return;
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = null
     }
+  }
+}
 
-    clearTimeout(this.reconnectTimer);
-    this.reconnectTimer = null;
+function safeJsonParse<T>(data: unknown): T | null {
+  if (typeof data !== 'string') {
+    return null
   }
 
-  private startHeartbeat(): void {
-    this.stopHeartbeat();
-
-    this.heartbeatTimer = window.setInterval(() => {
-      const ping: PingMessage = {
-        type: 'ping',
-        channel: 'system',
-        data: { nonce: crypto.randomUUID() },
-        timestamp: new Date().toISOString(),
-      };
-
-      this.send(ping);
-      this.startPongTimeout();
-    }, this.heartbeatIntervalMs);
-  }
-
-  private startPongTimeout(): void {
-    this.clearPongTimeout();
-    this.pongTimeoutTimer = window.setTimeout(() => {
-      console.warn('[WebSocketClient] Pong timeout exceeded, reconnecting');
-      this.socket?.close();
-    }, this.pongTimeoutMs);
-  }
-
-  private clearPongTimeout(): void {
-    if (!this.pongTimeoutTimer) {
-      return;
-    }
-
-    clearTimeout(this.pongTimeoutTimer);
-    this.pongTimeoutTimer = null;
-  }
-
-  private stopHeartbeat(): void {
-    if (this.heartbeatTimer) {
-      clearInterval(this.heartbeatTimer);
-      this.heartbeatTimer = null;
-    }
-
-    this.clearPongTimeout();
-  }
-
-  private resubscribeAllChannels(): void {
-    this.subscriptions.forEach((channel) => {
-      this.send({
-        type: 'subscribe',
-        channel,
-        timestamp: new Date().toISOString(),
-      });
-    });
-  }
-
-  private parseIncomingMessage(serializedMessage: string): IncomingWebSocketMessage | null {
-    let payload: unknown;
-    try {
-      payload = JSON.parse(serializedMessage);
-    } catch (error) {
-      console.error('[WebSocketClient] Invalid JSON payload', error);
-      return null;
-    }
-
-    if (!this.isIncomingWebSocketMessage(payload)) {
-      console.error('[WebSocketClient] Unexpected incoming payload shape', payload);
-      return null;
-    }
-
-    return payload;
-  }
-
-  private isIncomingWebSocketMessage(payload: unknown): payload is IncomingWebSocketMessage {
-    if (!payload || typeof payload !== 'object') {
-      return false;
-    }
-
-    const message = payload as Record<string, unknown>;
-    const hasType = typeof message.type === 'string';
-    const hasTimestamp = typeof message.timestamp === 'string';
-    const hasData = 'data' in message;
-
-    if (!hasType || !hasTimestamp || !hasData) {
-      return false;
-    }
-
-    if (message.channel === 'system') {
-      return true;
-    }
-
-    return isSubscriptionChannel(message.channel);
-  }
-
-  private dispatchMessage(message: IncomingWebSocketMessage): void {
-    this.messageListeners.forEach((listener) => {
-      try {
-        listener(message);
-      } catch (error) {
-        console.error('[WebSocketClient] Message listener failed', error);
-      }
-    });
-
-    if (!isSubscriptionChannel(message.channel)) {
-      return;
-    }
-
-    const handler = this.channelHandlers[message.channel];
-    if (!handler) {
-      return;
-    }
-
-    try {
-      handler(message.data, message);
-    } catch (error) {
-      console.error(`[WebSocketClient] Handler failed for ${message.channel}`, error);
-    }
+  try {
+    return JSON.parse(data) as T
+  } catch {
+    return null
   }
 }
