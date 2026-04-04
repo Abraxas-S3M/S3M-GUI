@@ -1,88 +1,67 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useMemo } from 'react';
+import { useAppStore } from '../../../app/store';
+import { APIClient } from '../APIClient';
+import { mockOperationalContext } from '../mockData';
+import type { OperationalContextData } from '../types';
+import { useBackendResource } from './shared';
 
-import type { APIClient, APIClientError } from '../client'
+const OPERATIONAL_CONTEXT_TOPICS = [
+  'operational-context.updated',
+  'threat.updated',
+  'directive.updated',
+  'decision.updated'
+];
 
-export interface OperationalContext {
-  operationId: string
-  status: string
-  updatedAt: string
-}
-
-interface HookState {
-  data: OperationalContext | null
-  isLoading: boolean
-  error: string | null
-}
-
-interface HookOptions {
-  refreshIntervalMs?: number
-}
-
-export function useOperationalContext(
-  client: Pick<APIClient, 'get'>,
-  options: HookOptions = {},
-) {
-  const [state, setState] = useState<HookState>({
-    data: null,
-    isLoading: true,
-    error: null,
-  })
-  const isMounted = useRef(true)
-  const refreshIntervalMs = options.refreshIntervalMs ?? 0
-  const getOperationalContext = client.get
-
-  const fetchContext = useCallback(async () => {
-    setState((previous) => ({
-      ...previous,
-      isLoading: true,
-      error: null,
-    }))
-
-    try {
-      const response = await getOperationalContext<OperationalContext>('/operational-context')
-      if (!isMounted.current) {
-        return
-      }
-
-      setState({
-        data: response.data,
-        isLoading: false,
-        error: null,
-      })
-    } catch (error) {
-      if (!isMounted.current) {
-        return
-      }
-
-      const message = (error as APIClientError)?.message ?? 'Failed to fetch operational context'
-      setState((previous) => ({
-        ...previous,
-        isLoading: false,
-        error: message,
-      }))
-    }
-  }, [getOperationalContext])
-
-  useEffect(() => {
-    void fetchContext()
-    if (refreshIntervalMs <= 0) {
-      return () => {
-        isMounted.current = false
-      }
-    }
-
-    const interval = setInterval(() => {
-      void fetchContext()
-    }, refreshIntervalMs)
-
-    return () => {
-      isMounted.current = false
-      clearInterval(interval)
-    }
-  }, [fetchContext, refreshIntervalMs])
-
-  return {
-    ...state,
-    refresh: fetchContext,
+function mergeOperationalContextPayload(payload: unknown, current: OperationalContextData): OperationalContextData | null {
+  if (!payload || typeof payload !== 'object') {
+    return null;
   }
+
+  const candidate = payload as Partial<OperationalContextData>;
+  if (Array.isArray(candidate.threats) || Array.isArray(candidate.decisions) || Array.isArray(candidate.directives)) {
+    return {
+      threats: candidate.threats ?? current.threats,
+      decisions: candidate.decisions ?? current.decisions,
+      directives: candidate.directives ?? current.directives,
+      updatedAt: candidate.updatedAt ?? new Date().toISOString()
+    };
+  }
+
+  return null;
+}
+
+interface UseOperationalContextOptions {
+  enableAutoRefresh?: boolean;
+  refreshMs?: number;
+}
+
+export function useOperationalContext(options: UseOperationalContextOptions = {}) {
+  const { enableAutoRefresh = true, refreshMs = 30_000 } = options;
+  const setOperationalContext = useAppStore((state) => state.setOperationalContext);
+  const setDecisions = useAppStore((state) => state.setDecisions);
+
+  const state = useBackendResource<OperationalContextData>({
+    hookName: 'useOperationalContext',
+    fetcher: APIClient.getOperationalContext,
+    fallbackData: mockOperationalContext,
+    refreshMs: enableAutoRefresh ? refreshMs : undefined,
+    wsTopics: OPERATIONAL_CONTEXT_TOPICS,
+    mapWsPayload: mergeOperationalContextPayload,
+    onStoreSync: (payload, source) => {
+      const storeSource = source === 'mock' ? 'mock' : 'backend';
+      setOperationalContext(payload, storeSource);
+      setDecisions(payload.decisions, storeSource);
+    }
+  });
+
+  return useMemo(
+    () => ({
+      data: state.data,
+      loading: state.loading,
+      error: state.error,
+      refetch: state.refetch,
+      isFromBackend: state.isFromBackend
+    }),
+    [state]
+  );
 }

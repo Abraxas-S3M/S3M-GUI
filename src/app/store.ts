@@ -1,4 +1,25 @@
 import { create } from 'zustand';
+import {
+  mockCommsData,
+  mockDecisions,
+  mockOperationalContext,
+  mockReadinessData,
+  mockRiskData,
+  mockSurveillanceData,
+  mockTracks
+} from '../services/api/mockData';
+import type {
+  BackendDomain,
+  CommsData,
+  CommsMessage,
+  Decision,
+  DecisionAuditEntry,
+  OperationalContextData,
+  ReadinessData,
+  RiskData,
+  SurveillanceData,
+  ThreatTrack
+} from '../services/api/types';
 
 export type WorkspaceType =
   | 'command'
@@ -162,44 +183,34 @@ interface AppState {
   mode: string;
   setMode: (mode: string) => void;
 
-  decisions: Array<{
-    id: string;
-    title: string;
-    risk: number;
-    confidence: number;
-    description: string;
-    status: 'pending' | 'approved' | 'rejected';
-    severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
-  }>;
+  decisions: Decision[];
+  operationalContext: OperationalContextData;
+  riskData: RiskData;
+  tracks: ThreatTrack[];
+  readiness: ReadinessData;
+  surveillance: SurveillanceData;
+  comms: CommsData;
+  decisionAuditTrail: DecisionAuditEntry[];
+  backendSource: Record<BackendDomain, boolean>;
 
-  updateDecisionStatus: (id: string, status: 'approved' | 'rejected') => void;
-
-  backendConfig: {
-    apiBaseUrl: string;
-    useBackend: boolean;
-    useMockData: boolean;
-    wsConnected: boolean;
-    lastSync: Record<string, number>;
-  };
-
-  mockOperationalData: AppOperationalData;
-  operationalData: AppOperationalData;
-
-  setBackendUrl: (url: string) => void;
-  enableBackend: (enable: boolean) => void;
-  syncOperationalData: () => Promise<void>;
-  updateDecisions: (decisions: Decision[]) => void;
-  updateRiskMetrics: (risk: RiskMetrics) => void;
-  updateTracks: (tracks: ThreatTrack[]) => void;
-  updateReadinessStatus: (readinessStatus: ReadinessStatus) => void;
-  updateMessages: (messages: Message[]) => void;
-  updateTimelineEvents: (timelineEvents: TimelineEvent[]) => void;
-  updateSurveillanceAssets: (surveillanceAssets: ISRAsset[]) => void;
-  updateOperationalDirectives: (operationalDirectives: OperationalDirectives) => void;
-
-  dataSource: Record<string, DataSourceType>;
-  setDataSource: (dataType: string, source: DataSourceType) => void;
-  getOperationalData: <K extends OperationalDataKey>(dataType: K) => AppOperationalData[K];
+  setBackendSource: (domain: BackendDomain, isFromBackend: boolean) => void;
+  setOperationalContext: (payload: OperationalContextData, source?: 'backend' | 'mock') => void;
+  setDecisions: (payload: Decision[], source?: 'backend' | 'mock') => void;
+  upsertDecision: (payload: Decision, source?: 'backend' | 'mock' | 'websocket') => void;
+  updateDecisionStatus: (
+    id: string,
+    status: 'approved' | 'rejected',
+    comment?: string,
+    source?: 'backend' | 'mock' | 'ui' | 'websocket'
+  ) => void;
+  addDecisionAudit: (entry: DecisionAuditEntry) => void;
+  setRiskData: (payload: RiskData, source?: 'backend' | 'mock') => void;
+  setTracks: (payload: ThreatTrack[], source?: 'backend' | 'mock' | 'websocket') => void;
+  setReadiness: (payload: ReadinessData, source?: 'backend' | 'mock') => void;
+  setSurveillance: (payload: SurveillanceData, source?: 'backend' | 'mock') => void;
+  setComms: (payload: CommsData, source?: 'backend' | 'mock') => void;
+  upsertCommsMessage: (message: CommsMessage, source?: 'backend' | 'mock' | 'websocket') => void;
+  markCommsMessageRead: (id: string, source?: 'backend' | 'mock' | 'websocket') => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -228,280 +239,136 @@ export const useAppStore = create<AppState>((set, get) => ({
   mode: 'CMD',
   setMode: (mode) => set({ mode }),
 
-  decisions: [
-    {
-      id: 'R001',
-      title: 'ENGAGE UAV-02',
-      risk: 82,
-      confidence: 74,
-      description: 'Weapons release Track 218',
-      status: 'pending',
-      severity: 'CRITICAL'
-    },
-    {
-      id: 'R002',
-      title: 'REROUTE CVY-A',
-      risk: 45,
-      confidence: 91,
-      description: 'Reroute via Delta',
-      status: 'pending',
-      severity: 'MEDIUM'
-    },
-    {
-      id: 'R003',
-      title: 'ESCALATE SIG-01',
-      risk: 67,
-      confidence: 88,
-      description: 'Escalate SIGINT to INTSUM',
-      status: 'pending',
-      severity: 'HIGH'
-    }
-  ],
-
-  updateDecisionStatus: (id, status) => set((state) => ({
-    decisions: state.decisions.map(d =>
-      d.id === id ? { ...d, status } : d
-    )
-  })),
-
-  backendConfig: {
-    apiBaseUrl: '/api',
-    useBackend: false,
-    useMockData: true,
-    wsConnected: false,
-    lastSync: {}
+  decisions: mockDecisions,
+  operationalContext: mockOperationalContext,
+  riskData: mockRiskData,
+  tracks: mockTracks,
+  readiness: mockReadinessData,
+  surveillance: mockSurveillanceData,
+  comms: mockCommsData,
+  decisionAuditTrail: [],
+  backendSource: {
+    operationalContext: false,
+    decisions: false,
+    risk: false,
+    tracks: false,
+    readiness: false,
+    surveillance: false,
+    comms: false
   },
 
-  mockOperationalData,
-  operationalData: emptyOperationalData,
+  setBackendSource: (domain, isFromBackend) =>
+    set((state) => ({ backendSource: { ...state.backendSource, [domain]: isFromBackend } })),
 
-  setBackendUrl: (url) => set((state) => ({
-    backendConfig: {
-      ...state.backendConfig,
-      apiBaseUrl: url
-    }
-  })),
-
-  enableBackend: (enable) => set((state) => ({
-    backendConfig: {
-      ...state.backendConfig,
-      useBackend: enable,
-      wsConnected: enable ? state.backendConfig.wsConnected : false
-    },
-    dataSource: enable ? state.dataSource : { ...defaultDataSource }
-  })),
-
-  syncOperationalData: async () => {
-    const state = get();
-
-    if (!state.backendConfig.useBackend) {
-      return;
-    }
-
-    const sanitizedBaseUrl = state.backendConfig.apiBaseUrl.replace(/\/+$/, '');
-    const endpoint = `${sanitizedBaseUrl}/operational-data`;
-
-    try {
-      const response = await fetch(endpoint);
-      if (!response.ok) {
-        throw new Error(`Failed to sync operational data: ${response.status}`);
+  setOperationalContext: (payload, source = 'backend') =>
+    set((state) => ({
+      operationalContext: payload,
+      decisions: payload.decisions.length > 0 ? payload.decisions : state.decisions,
+      backendSource: {
+        ...state.backendSource,
+        operationalContext: source === 'backend',
+        decisions: payload.decisions.length > 0 ? source === 'backend' : state.backendSource.decisions
       }
+    })),
 
-      const payload = (await response.json()) as Partial<AppOperationalData>;
+  setDecisions: (payload, source = 'backend') =>
+    set((state) => ({
+      decisions: payload,
+      backendSource: { ...state.backendSource, decisions: source === 'backend' }
+    })),
 
-      set((currentState) => {
-        const nextOperationalData: AppOperationalData = { ...currentState.operationalData };
-        const nextDataSource: Record<string, DataSourceType> = { ...currentState.dataSource };
-        const nextLastSync: Record<string, number> = { ...currentState.backendConfig.lastSync };
-        const now = Date.now();
+  upsertDecision: (payload, source = 'backend') =>
+    set((state) => {
+      const existing = state.decisions.find((decision) => decision.id === payload.id);
+      const nextDecisions = existing
+        ? state.decisions.map((decision) => (decision.id === payload.id ? { ...decision, ...payload } : decision))
+        : [...state.decisions, payload];
+      return {
+        decisions: nextDecisions,
+        backendSource: { ...state.backendSource, decisions: source === 'backend' || source === 'websocket' }
+      };
+    }),
 
-        operationalDataKeys.forEach((key) => {
-          const value = payload[key];
-          if (value !== undefined) {
-            (nextOperationalData[key] as AppOperationalData[typeof key]) = value as AppOperationalData[typeof key];
-            nextDataSource[key] = 'backend';
-            nextLastSync[key] = now;
-          } else if (currentState.backendConfig.useMockData) {
-            nextDataSource[key] = 'mock';
-          }
-        });
-
-        return {
-          operationalData: nextOperationalData,
-          dataSource: nextDataSource,
-          backendConfig: {
-            ...currentState.backendConfig,
-            wsConnected: true,
-            lastSync: nextLastSync
-          }
-        };
-      });
-    } catch {
-      set((currentState) => ({
-        backendConfig: {
-          ...currentState.backendConfig,
-          wsConnected: false
+  updateDecisionStatus: (id, status, comment, source = 'ui') =>
+    set((state) => ({
+      decisions: state.decisions.map((decision) =>
+        decision.id === id
+          ? {
+              ...decision,
+              status,
+              reviewerComment: comment ?? decision.reviewerComment,
+              updatedAt: new Date().toISOString()
+            }
+          : decision
+      ),
+      decisionAuditTrail: [
+        {
+          id: `AUD-${Date.now()}-${Math.random().toString(16).slice(2, 7)}`,
+          decisionId: id,
+          action: status,
+          comment,
+          actor: source === 'ui' ? 'operator' : 'system',
+          source,
+          timestamp: new Date().toISOString()
         },
-        dataSource: currentState.backendConfig.useMockData ? { ...defaultDataSource } : currentState.dataSource
-      }));
-    }
-  },
+        ...state.decisionAuditTrail
+      ]
+    })),
 
-  updateDecisions: (decisions) => set((state) => ({
-    operationalData: {
-      ...state.operationalData,
-      decisions
-    },
-    dataSource: {
-      ...state.dataSource,
-      decisions: 'backend'
-    },
-    backendConfig: {
-      ...state.backendConfig,
-      lastSync: {
-        ...state.backendConfig.lastSync,
-        decisions: Date.now()
-      }
-    }
-  })),
+  addDecisionAudit: (entry) =>
+    set((state) => ({
+      decisionAuditTrail: [entry, ...state.decisionAuditTrail]
+    })),
 
-  updateRiskMetrics: (riskMetrics) => set((state) => ({
-    operationalData: {
-      ...state.operationalData,
-      riskMetrics
-    },
-    dataSource: {
-      ...state.dataSource,
-      riskMetrics: 'backend'
-    },
-    backendConfig: {
-      ...state.backendConfig,
-      lastSync: {
-        ...state.backendConfig.lastSync,
-        riskMetrics: Date.now()
-      }
-    }
-  })),
+  setRiskData: (payload, source = 'backend') =>
+    set((state) => ({
+      riskData: payload,
+      backendSource: { ...state.backendSource, risk: source === 'backend' }
+    })),
 
-  updateTracks: (tracks) => set((state) => ({
-    operationalData: {
-      ...state.operationalData,
-      tracks
-    },
-    dataSource: {
-      ...state.dataSource,
-      tracks: 'backend'
-    },
-    backendConfig: {
-      ...state.backendConfig,
-      lastSync: {
-        ...state.backendConfig.lastSync,
-        tracks: Date.now()
-      }
-    }
-  })),
+  setTracks: (payload, source = 'backend') =>
+    set((state) => ({
+      tracks: payload,
+      backendSource: { ...state.backendSource, tracks: source === 'backend' || source === 'websocket' }
+    })),
 
-  updateReadinessStatus: (readinessStatus) => set((state) => ({
-    operationalData: {
-      ...state.operationalData,
-      readinessStatus
-    },
-    dataSource: {
-      ...state.dataSource,
-      readinessStatus: 'backend'
-    },
-    backendConfig: {
-      ...state.backendConfig,
-      lastSync: {
-        ...state.backendConfig.lastSync,
-        readinessStatus: Date.now()
-      }
-    }
-  })),
+  setReadiness: (payload, source = 'backend') =>
+    set((state) => ({
+      readiness: payload,
+      backendSource: { ...state.backendSource, readiness: source === 'backend' }
+    })),
 
-  updateMessages: (messages) => set((state) => ({
-    operationalData: {
-      ...state.operationalData,
-      messages
-    },
-    dataSource: {
-      ...state.dataSource,
-      messages: 'backend'
-    },
-    backendConfig: {
-      ...state.backendConfig,
-      lastSync: {
-        ...state.backendConfig.lastSync,
-        messages: Date.now()
-      }
-    }
-  })),
+  setSurveillance: (payload, source = 'backend') =>
+    set((state) => ({
+      surveillance: payload,
+      backendSource: { ...state.backendSource, surveillance: source === 'backend' }
+    })),
 
-  updateTimelineEvents: (timelineEvents) => set((state) => ({
-    operationalData: {
-      ...state.operationalData,
-      timelineEvents
-    },
-    dataSource: {
-      ...state.dataSource,
-      timelineEvents: 'backend'
-    },
-    backendConfig: {
-      ...state.backendConfig,
-      lastSync: {
-        ...state.backendConfig.lastSync,
-        timelineEvents: Date.now()
-      }
-    }
-  })),
+  setComms: (payload, source = 'backend') =>
+    set((state) => ({
+      comms: payload,
+      backendSource: { ...state.backendSource, comms: source === 'backend' }
+    })),
 
-  updateSurveillanceAssets: (surveillanceAssets) => set((state) => ({
-    operationalData: {
-      ...state.operationalData,
-      surveillanceAssets
-    },
-    dataSource: {
-      ...state.dataSource,
-      surveillanceAssets: 'backend'
-    },
-    backendConfig: {
-      ...state.backendConfig,
-      lastSync: {
-        ...state.backendConfig.lastSync,
-        surveillanceAssets: Date.now()
-      }
-    }
-  })),
+  upsertCommsMessage: (message, source = 'backend') =>
+    set((state) => {
+      const existing = state.comms.inbox.find((entry) => entry.id === message.id);
+      const nextInbox = existing
+        ? state.comms.inbox.map((entry) => (entry.id === message.id ? { ...entry, ...message } : entry))
+        : [message, ...state.comms.inbox];
+      return {
+        comms: { ...state.comms, inbox: nextInbox, updatedAt: new Date().toISOString() },
+        backendSource: { ...state.backendSource, comms: source === 'backend' || source === 'websocket' }
+      };
+    }),
 
-  updateOperationalDirectives: (operationalDirectives) => set((state) => ({
-    operationalData: {
-      ...state.operationalData,
-      operationalDirectives
-    },
-    dataSource: {
-      ...state.dataSource,
-      operationalDirectives: 'backend'
-    },
-    backendConfig: {
-      ...state.backendConfig,
-      lastSync: {
-        ...state.backendConfig.lastSync,
-        operationalDirectives: Date.now()
-      }
-    }
-  })),
-
-  dataSource: { ...defaultDataSource },
-  setDataSource: (dataType, source) => set((state) => ({
-    dataSource: {
-      ...state.dataSource,
-      [dataType]: source
-    }
-  })),
-
-  getOperationalData: (dataType) => {
-    const state = get();
-    const source = state.dataSource[dataType] ?? 'mock';
-    return source === 'backend' ? state.operationalData[dataType] : state.mockOperationalData[dataType];
-  }
+  markCommsMessageRead: (id, source = 'backend') =>
+    set((state) => ({
+      comms: {
+        ...state.comms,
+        inbox: state.comms.inbox.map((entry) => (entry.id === id ? { ...entry, read: true } : entry)),
+        updatedAt: new Date().toISOString()
+      },
+      backendSource: { ...state.backendSource, comms: source === 'backend' || source === 'websocket' }
+    }))
 }));
