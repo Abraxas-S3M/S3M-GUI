@@ -1,4 +1,12 @@
 import { create } from 'zustand';
+import { backendApiClient } from '../services/api/client';
+import { mockBackendData } from '../services/mock/data';
+import type { BackendSyncStatus, Decision } from '../services/api/types';
+
+const getCurrentZuluTime = (): string => new Date().toISOString().substr(11, 8) + 'Z';
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : 'Backend synchronization failed';
+const cloneSeedDecisions = (): Decision[] => mockBackendData.decisions.map((decision) => ({ ...decision }));
 
 export type WorkspaceType =
   | 'command'
@@ -39,15 +47,13 @@ interface AppState {
   mode: string;
   setMode: (mode: string) => void;
 
-  decisions: Array<{
-    id: string;
-    title: string;
-    risk: number;
-    confidence: number;
-    description: string;
-    status: 'pending' | 'approved' | 'rejected';
-    severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
-  }>;
+  decisions: Decision[];
+  setDecisions: (decisions: Decision[]) => void;
+
+  backendSyncStatus: BackendSyncStatus;
+  backendSyncError: string | null;
+  lastBackendSyncAt: string | null;
+  syncDecisionsFromBackend: () => Promise<void>;
 
   updateDecisionStatus: (id: string, status: 'approved' | 'rejected') => void;
 }
@@ -66,8 +72,8 @@ export const useAppStore = create<AppState>((set) => ({
   commandPaletteOpen: false,
   toggleCommandPalette: () => set((state) => ({ commandPaletteOpen: !state.commandPaletteOpen })),
 
-  currentTime: new Date().toISOString().substr(11, 8) + 'Z',
-  updateTime: () => set({ currentTime: new Date().toISOString().substr(11, 8) + 'Z' }),
+  currentTime: getCurrentZuluTime(),
+  updateTime: () => set({ currentTime: getCurrentZuluTime() }),
 
   language: 'EN',
   setLanguage: (lang) => set({ language: lang }),
@@ -78,39 +84,53 @@ export const useAppStore = create<AppState>((set) => ({
   mode: 'CMD',
   setMode: (mode) => set({ mode }),
 
-  decisions: [
-    {
-      id: 'R001',
-      title: 'ENGAGE UAV-02',
-      risk: 82,
-      confidence: 74,
-      description: 'Weapons release Track 218',
-      status: 'pending',
-      severity: 'CRITICAL'
-    },
-    {
-      id: 'R002',
-      title: 'REROUTE CVY-A',
-      risk: 45,
-      confidence: 91,
-      description: 'Reroute via Delta',
-      status: 'pending',
-      severity: 'MEDIUM'
-    },
-    {
-      id: 'R003',
-      title: 'ESCALATE SIG-01',
-      risk: 67,
-      confidence: 88,
-      description: 'Escalate SIGINT to INTSUM',
-      status: 'pending',
-      severity: 'HIGH'
-    }
-  ],
+  decisions: cloneSeedDecisions(),
+  setDecisions: (decisions) => set({ decisions }),
 
-  updateDecisionStatus: (id, status) => set((state) => ({
-    decisions: state.decisions.map(d =>
-      d.id === id ? { ...d, status } : d
-    )
-  }))
+  backendSyncStatus: 'idle',
+  backendSyncError: null,
+  lastBackendSyncAt: null,
+  syncDecisionsFromBackend: async () => {
+    set({ backendSyncStatus: 'syncing', backendSyncError: null });
+
+    try {
+      const decisions = await backendApiClient.getDecisions();
+      set({
+        decisions,
+        backendSyncStatus: 'ready',
+        backendSyncError: null,
+        lastBackendSyncAt: new Date().toISOString()
+      });
+    } catch (error) {
+      set({
+        backendSyncStatus: 'error',
+        backendSyncError: getErrorMessage(error)
+      });
+    }
+  },
+
+  updateDecisionStatus: (id, status) => {
+    set((state) => ({
+      decisions: state.decisions.map((decision) => (decision.id === id ? { ...decision, status } : decision))
+    }));
+
+    void backendApiClient
+      .updateDecisionStatus(id, status)
+      .then((updatedDecision) => {
+        set((state) => ({
+          decisions: state.decisions.map((decision) =>
+            decision.id === updatedDecision.id ? updatedDecision : decision
+          ),
+          backendSyncStatus: 'ready',
+          backendSyncError: null,
+          lastBackendSyncAt: new Date().toISOString()
+        }));
+      })
+      .catch((error) => {
+        set({
+          backendSyncStatus: 'error',
+          backendSyncError: getErrorMessage(error)
+        });
+      });
+  }
 }));
