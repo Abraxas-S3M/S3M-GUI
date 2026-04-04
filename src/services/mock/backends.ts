@@ -6,7 +6,11 @@ import { APIClient, type APIClientConfig } from '../api/client';
 import type {
   APIResponseBase,
   APIService,
+  BackendSnapshot,
   ClassificationLevel,
+  CommsData,
+  Decision,
+  DecisionStatus,
   DecisionData,
   DecisionQueueCounts,
   DecisionRecord,
@@ -16,11 +20,15 @@ import type {
   OperationalContextData,
   PendingItem,
   ReadinessData,
+  RiskData,
   RiskMetricsData,
   SendMessagePayload,
+  SurveillanceData,
   ThreatTrackData,
   TimelineEventData,
+  TracksData,
 } from '../api/types';
+import { mockBackendData } from './data';
 
 type ResponsePayload<T extends APIResponseBase> = Omit<T, keyof APIResponseBase>;
 
@@ -554,3 +562,81 @@ export const BACKEND_MODE = USE_MOCK_BACKEND ? 'mock' : 'real';
 
 export const createBackendClient = (config?: APIClientConfig): APIService =>
   USE_MOCK_BACKEND ? new MockBackend() : new APIClient(config);
+
+export interface BackendAdapter {
+  getSnapshot(): Promise<BackendSnapshot>;
+  getDecisions(): Promise<Decision[]>;
+  updateDecisionStatus(id: string, status: DecisionStatus): Promise<Decision>;
+  getRisk(): Promise<RiskData>;
+  getReadiness(): Promise<ReadinessData>;
+  getSurveillance(): Promise<SurveillanceData>;
+  getComms(): Promise<CommsData>;
+  getTracks(): Promise<TracksData>;
+  getOperationalContext(): Promise<OperationalContextData>;
+}
+
+const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+
+const simulateLatency = async (ms = 200): Promise<void> => {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+};
+
+class MockBackendAdapter implements BackendAdapter {
+  private state: BackendSnapshot = clone(mockBackendData);
+
+  async getSnapshot(): Promise<BackendSnapshot> {
+    await simulateLatency();
+    return clone(this.state);
+  }
+
+  async getDecisions(): Promise<Decision[]> {
+    await simulateLatency();
+    return clone(this.state.decisions);
+  }
+
+  async updateDecisionStatus(id: string, status: DecisionStatus): Promise<Decision> {
+    await simulateLatency();
+
+    const decision = this.state.decisions.find((item) => item.id === id);
+    if (!decision) {
+      throw new Error(`Decision "${id}" was not found in mock backend`);
+    }
+
+    decision.status = status;
+    return clone(decision);
+  }
+
+  async getRisk(): Promise<RiskData> {
+    await simulateLatency();
+    return clone(this.state.risk);
+  }
+
+  async getReadiness(): Promise<ReadinessData> {
+    await simulateLatency();
+    return clone(this.state.readiness);
+  }
+
+  async getSurveillance(): Promise<SurveillanceData> {
+    await simulateLatency();
+    return clone(this.state.surveillance);
+  }
+
+  async getComms(): Promise<CommsData> {
+    await simulateLatency();
+    return clone(this.state.comms);
+  }
+
+  async getTracks(): Promise<TracksData> {
+    await simulateLatency();
+    return clone(this.state.tracks);
+  }
+
+  async getOperationalContext(): Promise<OperationalContextData> {
+    await simulateLatency();
+    return clone(this.state.operationalContext);
+  }
+}
+
+const mockBackendAdapter = new MockBackendAdapter();
+
+export const getBackendAdapter = (): BackendAdapter => mockBackendAdapter;

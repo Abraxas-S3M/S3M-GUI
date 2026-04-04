@@ -127,3 +127,35 @@ export const COMMUNICATION_ENDPOINTS = {
 export const SURVEILLANCE_ENDPOINTS = {
   assets: `${WORKSPACE_ENDPOINTS.surveillance}/assets`,
 } as const;
+
+// Backward-compatible config exports consumed by existing hooks/websocket layer.
+export const API_CONFIG = {
+  baseUrl: API_BASE_URL,
+  wsUrl: readEnvString('VITE_WS_URL', 'ws://localhost:8080/ws'),
+  timeoutMs: API_TIMEOUT_MS,
+  useMockBackend: USE_MOCK_BACKEND,
+} as const;
+
+export const API_ENDPOINTS = {
+  decisions: '/decisions',
+  risk: '/risk',
+  readiness: '/readiness',
+  surveillance: '/surveillance',
+  comms: '/comms',
+  tracks: '/tracks',
+  operationalContext: '/operational-context',
+  snapshot: '/snapshot',
+} as const;
+
+export const DEFAULT_BACKEND_SYNC_INTERVAL_MS = readEnvNumber(
+  'VITE_SYNC_INTERVAL_MS',
+  30_000,
+);
+
+export const buildApiUrl = (endpoint: string): string => {
+  if (/^https?:\/\//.test(endpoint)) {
+    return endpoint;
+  }
+
+  return `${API_CONFIG.baseUrl}${endpoint}`;
+};
