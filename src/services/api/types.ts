@@ -1,12 +1,7 @@
 export type RequestLifecycleStatus = 'loading' | 'success' | 'error';
+export type BackendSyncStatus = 'idle' | 'syncing' | 'ready' | 'error';
 
-export type ClassificationLevel =
-  | 'UNCLASSIFIED'
-  | 'CONFIDENTIAL'
-  | 'SECRET'
-  | 'TOP_SECRET'
-  | 'TS_SCI';
-
+export type ClassificationLevel = 'UNCLASSIFIED' | 'CONFIDENTIAL' | 'SECRET' | 'TOP_SECRET' | 'TS_SCI';
 export type SeverityLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type OperationalStatus = 'operational' | 'caution' | 'critical';
 export type DataSource = 'mock' | 's3m-core';
@@ -38,18 +33,18 @@ export interface BackendSnapshot {
 }
 
 export interface APIErrorDetails {
-  code: string;
-  message: string;
-  retriable: boolean;
+  code?: string;
+  message?: string;
+  retriable?: boolean;
   details?: unknown;
 }
 
 export interface APIMetadata {
-  source: DataSource;
-  requestId: string;
-  transport: TransportType;
-  latencyMs: number;
-  retries: number;
+  source?: DataSource;
+  requestId?: string;
+  transport?: TransportType;
+  latencyMs?: number;
+  retries?: number;
   workspace?: string;
   [key: string]: unknown;
 }
@@ -61,19 +56,25 @@ export interface APIResponseBase {
   classification?: ClassificationLevel;
   metadata?: APIMetadata;
   error?: APIErrorDetails;
+  [key: string]: unknown;
 }
 
 export interface DecisionRecord extends Decision {
   submittedBy?: string;
   recommendedAction?: string;
+  updatedAt?: string;
+  [key: string]: unknown;
 }
 
+export type Decision = DecisionRecord;
+export type DecisionStatus = DecisionRecord['status'];
+
 export interface DecisionQueueCounts {
-  pending: number;
-  autoApproved: number;
-  humanApproved: number;
-  vetoed: number;
-  stale: number;
+  pending?: number;
+  autoApproved?: number;
+  humanApproved?: number;
+  vetoed?: number;
+  stale?: number;
 }
 
 export interface DecisionData extends APIResponseBase {
@@ -94,20 +95,32 @@ export interface OperationalThreat {
 
 export interface OperationalRiskItem {
   id: string;
-  title: string;
-  domain: string;
-  score: number;
-  trendDelta: number;
-  severity: SeverityLevel;
+  title?: string;
+  domain?: string;
+  score?: number;
+  trendDelta?: number;
+  severity?: SeverityLevel;
+  [key: string]: unknown;
 }
 
 export interface PendingItem {
   id: string;
-  title: string;
-  type: 'approval' | 'alert' | 'escalation';
-  urgency: 'ROUTINE' | 'PRIORITY' | 'IMMEDIATE';
-  authority: string;
-  age: string;
+  title?: string;
+  type?: 'approval' | 'alert' | 'escalation';
+  urgency?: 'ROUTINE' | 'PRIORITY' | 'IMMEDIATE';
+  authority?: string;
+  age?: string;
+  [key: string]: unknown;
+}
+
+export interface OperationalDirective {
+  id: string;
+  title?: string;
+  authority?: string;
+  status?: string;
+  details?: string;
+  updatedAt?: string;
+  [key: string]: unknown;
 }
 
 export interface OperationalContextData extends APIResponseBase {
@@ -121,17 +134,24 @@ export interface OperationalContextData extends APIResponseBase {
 }
 
 export interface RiskDomainBreakdown {
-  domain: string;
-  score: number;
-  change: number;
-  severity: OperationalStatus;
+  domain?: string;
+  name?: string;
+  score?: number;
+  value?: number;
+  change?: number;
+  trend?: 'up' | 'down' | 'steady';
+  severity?: OperationalStatus;
+  [key: string]: unknown;
 }
 
 export interface RiskDriver {
-  title: string;
-  domain: string;
-  impact: number;
-  description: string;
+  title?: string;
+  name?: string;
+  domain?: string;
+  impact?: number;
+  direction?: 'positive' | 'negative';
+  description?: string;
+  [key: string]: unknown;
 }
 
 export interface RiskProjection {
@@ -175,6 +195,8 @@ export interface ThreatTrackData extends APIResponseBase {
   [key: string]: unknown;
 }
 
+export type TracksData = ThreatTrack[];
+
 export interface UnitStatus {
   unit?: string;
   deployable?: number;
@@ -187,11 +209,12 @@ export interface UnitStatus {
 }
 
 export interface ManningStatus {
-  unit: string;
-  authorized: number;
-  assigned: number;
-  manningPercent: number;
-  criticalShortages: number;
+  unit?: string;
+  authorized?: number;
+  assigned?: number;
+  manningPercent?: number;
+  criticalShortages?: number;
+  [key: string]: unknown;
 }
 
 export interface EquipmentStatus {
@@ -213,11 +236,14 @@ export interface ReadinessData extends APIResponseBase {
 
 export interface ISRAsset {
   id: string;
-  name: string;
-  status: OperationalStatus;
-  platform: string;
-  coverage: number;
-  lastUpdate: string;
+  name?: string;
+  type?: string;
+  status?: OperationalStatus | string;
+  platform?: string;
+  location?: string;
+  coverage?: number;
+  lastUpdate?: string;
+  [key: string]: unknown;
 }
 
 export interface ISRAssetData extends APIResponseBase {
@@ -230,6 +256,8 @@ export interface ISRAssetData extends APIResponseBase {
   updatedAt?: string;
   [key: string]: unknown;
 }
+
+export type SurveillanceData = ISRAssetData;
 
 export interface MessageItem {
   id: string;
@@ -262,15 +290,32 @@ export type SurveillanceData = ISRAssetData;
 
 export interface TimelineEvent {
   id: string;
-  title: string;
-  category: 'decision' | 'threat' | 'comms' | 'logistics' | 'intel';
-  severity: SeverityLevel;
-  occurredAt: string;
-  details: string;
+  title?: string;
+  category?: 'decision' | 'threat' | 'comms' | 'logistics' | 'intel';
+  severity?: SeverityLevel;
+  occurredAt?: string;
+  details?: string;
+  [key: string]: unknown;
 }
 
 export interface TimelineEventData extends APIResponseBase {
-  events: TimelineEvent[];
+  events?: TimelineEvent[];
+}
+
+export interface BackendSnapshot {
+  decisions?: Decision[];
+  operationalContext?: OperationalContextData;
+  threatTracks?: ThreatTrackData;
+  tracks?: { tracks?: TracksData } | TracksData;
+  riskMetrics?: RiskMetricsData;
+  risk?: RiskMetricsData | Record<string, unknown>;
+  readiness?: ReadinessData | Record<string, unknown>;
+  surveillanceAssets?: ISRAssetData;
+  surveillance?: ISRAssetData | Record<string, unknown>;
+  messages?: MessageData;
+  comms?: MessageData | Record<string, unknown>;
+  timelineEvents?: TimelineEventData;
+  [key: string]: unknown;
 }
 
 export interface SendMessagePayload {
@@ -278,7 +323,10 @@ export interface SendMessagePayload {
   subject: string;
   body: string;
   priority?: 'routine' | 'priority' | 'immediate' | 'emergency';
+  [key: string]: unknown;
 }
+
+export type RiskData = RiskMetricsData;
 
 export interface APIService {
   getOperationalContext(): Promise<OperationalContextData>;

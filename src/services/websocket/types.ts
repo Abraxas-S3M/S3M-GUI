@@ -4,7 +4,11 @@ export type BackendSocketEventType =
   | 'backend.snapshot'
   | 'decision.updated'
   | 'backend.heartbeat'
-  | 'backend.error';
+  | 'backend.error'
+  | 'training.checkpoint'
+  | 'training.eval_complete'
+  | 'scenario.ingested'
+  | 'capability.changed';
 
 export interface SocketEnvelope<TType extends BackendSocketEventType, TPayload> {
   type: TType;
@@ -26,10 +30,19 @@ export type BackendHeartbeatEvent = SocketEnvelope<'backend.heartbeat', { status
 
 export type BackendErrorEvent = SocketEnvelope<'backend.error', { message: string; code?: string }>;
 
+export type TrainingCheckpointEvent = SocketEnvelope<'training.checkpoint', Record<string, unknown>>;
+export type TrainingEvalCompleteEvent = SocketEnvelope<'training.eval_complete', Record<string, unknown>>;
+export type ScenarioIngestedEvent = SocketEnvelope<'scenario.ingested', Record<string, unknown>>;
+export type CapabilityChangedEvent = SocketEnvelope<'capability.changed', Record<string, unknown>>;
+
 export type BackendSocketEvent =
   | BackendSnapshotEvent
   | DecisionUpdatedEvent
   | BackendHeartbeatEvent
-  | BackendErrorEvent;
+  | BackendErrorEvent
+  | TrainingCheckpointEvent
+  | TrainingEvalCompleteEvent
+  | ScenarioIngestedEvent
+  | CapabilityChangedEvent;
 
 export type BackendSocketListener = (event: BackendSocketEvent) => void;

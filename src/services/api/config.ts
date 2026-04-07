@@ -41,6 +41,24 @@ export const API_BASE_URL = readEnvString(
   'http://localhost:8080/api/v1',
 );
 
+const resolveWsUrl = (apiBaseUrl: string): string => {
+  const explicitWsUrl = readEnvString('VITE_WS_URL', '');
+  if (explicitWsUrl.length > 0) {
+    return explicitWsUrl;
+  }
+
+  try {
+    const parsed = new URL(apiBaseUrl);
+    parsed.protocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
+    parsed.pathname = '/ws';
+    parsed.search = '';
+    parsed.hash = '';
+    return parsed.toString().replace(/\/$/, '');
+  } catch {
+    return 'ws://localhost:8080/ws';
+  }
+};
+
 export const API_TRANSPORT = readEnvString('VITE_API_TRANSPORT', 'fetch')
   .toLowerCase() as 'fetch' | 'axios';
 
