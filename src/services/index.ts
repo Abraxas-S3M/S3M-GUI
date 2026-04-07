@@ -7,4 +7,7 @@ export * from './hooks/useApiQuery';
 export * from './hooks/useBackendData';
 export * from './hooks/useRealtimeChannel';
 export * from './hooks/useSystemStatus';
+export * from './hooks/useWorkspaceSyncPolling';
 export * from './mock/mockBackend';
+export * from './connectionStore';
+export * from './realtimeSync';

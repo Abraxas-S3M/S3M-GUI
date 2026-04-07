@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { create } from 'zustand';
 import { useConnectionStore } from '../../app/connectionStore';
 import { APIClient, APIClientError } from '../api/client';
-import type { SystemStatusData } from '../api/types';
+import type { BackendCapabilities, SystemStatusData } from '../api/types';
 
 const POLL_INTERVAL_MS = 30_000;
 const STATUS_ENDPOINT_UNAVAILABLE = 'Backend status endpoint not available';
@@ -23,6 +24,26 @@ const asError = (value: unknown, fallback: string): Error =>
 
 const isEndpointNotAvailable = (error: unknown): boolean =>
   error instanceof APIClientError && error.statusCode === 404;
+
+type CapabilityMap = BackendCapabilities;
+
+interface SystemStatusState {
+  capabilities: CapabilityMap | null;
+  setCapabilities: (capabilities: CapabilityMap | null) => void;
+  mergeCapabilities: (capabilities: CapabilityMap) => void;
+}
+
+export const useSystemStatusStore = create<SystemStatusState>((set) => ({
+  capabilities: null,
+  setCapabilities: (capabilities) => set({ capabilities }),
+  mergeCapabilities: (capabilities) =>
+    set((state) => ({
+      capabilities: {
+        ...(state.capabilities ?? {}),
+        ...capabilities,
+      },
+    })),
+}));
 
 export const useSystemStatus = (): UseSystemStatusResult => {
   const updateApiStatus = useConnectionStore((state) => state.updateApiStatus);
@@ -73,6 +94,7 @@ export const useSystemStatus = (): UseSystemStatusResult => {
       clearApiError();
       setStatusEndpointAvailable(true);
       setCapabilities(nextData.capabilities);
+      useSystemStatusStore.getState().setCapabilities(nextData.capabilities);
     } catch (requestError) {
       if (!mountedRef.current) {
         return;
@@ -90,6 +112,7 @@ export const useSystemStatus = (): UseSystemStatusResult => {
         recordApiError(STATUS_ENDPOINT_UNAVAILABLE);
         setStatusEndpointAvailable(false);
         resetCapabilities();
+        useSystemStatusStore.getState().setCapabilities(null);
         return;
       }
 
@@ -133,3 +156,7 @@ export const useSystemStatus = (): UseSystemStatusResult => {
     [refetch, state],
   );
 };
+export function useCapability(name: string): boolean {
+  const capabilities = useSystemStatusStore((state) => state.capabilities);
+  return capabilities?.[name] ?? false;
+}

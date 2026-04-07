@@ -41,6 +41,24 @@ export const API_BASE_URL = readEnvString(
   'http://localhost:8080/api/v1',
 );
 
+const resolveWsUrl = (apiBaseUrl: string): string => {
+  const explicitWsUrl = readEnvString('VITE_WS_URL', '');
+  if (explicitWsUrl.length > 0) {
+    return explicitWsUrl;
+  }
+
+  try {
+    const parsed = new URL(apiBaseUrl);
+    parsed.protocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
+    parsed.pathname = '/ws';
+    parsed.search = '';
+    parsed.hash = '';
+    return parsed.toString().replace(/\/$/, '');
+  } catch {
+    return 'ws://localhost:8080/ws';
+  }
+};
+
 export const API_TRANSPORT = readEnvString('VITE_API_TRANSPORT', 'fetch')
   .toLowerCase() as 'fetch' | 'axios';
 
@@ -59,6 +77,7 @@ export const API_RETRY_BASE_DELAY_MS = readEnvNumber(
 );
 export const API_TIMEOUT_MS = readEnvNumber('VITE_API_TIMEOUT_MS', 8000);
 export const MOCK_API_LATENCY_MS = readEnvNumber('VITE_MOCK_API_LATENCY_MS', 350);
+export const DEFAULT_BACKEND_SYNC_INTERVAL_MS = readEnvNumber('VITE_BACKEND_SYNC_INTERVAL_MS', 60_000);
 
 export const WORKSPACE_ENDPOINTS = {
   command: '/workspaces/command',
@@ -130,4 +149,10 @@ export const SURVEILLANCE_ENDPOINTS = {
 
 export const SYSTEM_ENDPOINTS = {
   status: '/system/status',
+} as const;
+
+export const API_CONFIG = {
+  baseUrl: API_BASE_URL,
+  wsUrl: resolveWsUrl(API_BASE_URL),
+  useMock: USE_MOCK_BACKEND,
 } as const;

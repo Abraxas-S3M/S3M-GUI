@@ -12,6 +12,9 @@ export interface UseTracksResult {
   refresh: () => Promise<void>;
 }
 
+const toTracksData = (value: unknown): TracksData =>
+  Array.isArray(value) ? (value as TracksData) : [];
+
 export const useTracks = (): UseTracksResult => {
   const [tracks, setTracks] = useState<TracksData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -22,7 +25,7 @@ export const useTracks = (): UseTracksResult => {
       setLoading(true);
       setError(null);
       const nextTracks = await backendApiClient.getTracks();
-      setTracks(nextTracks);
+      setTracks(toTracksData(nextTracks));
     } catch (requestError) {
       setError(toErrorMessage(requestError));
     } finally {
