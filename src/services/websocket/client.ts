@@ -1,4 +1,5 @@
 import { API_CONFIG } from '../api/config';
+import { useConnectionStore } from '../connectionStore';
 import { isBackendSocketEventType } from './handlers';
 import type { BackendSocketEvent, BackendSocketEventType, BackendSocketListener } from './types';
 
@@ -19,18 +20,22 @@ export class BackendWebSocketClient {
     }
 
     this.manuallyDisconnected = false;
+    useConnectionStore.getState().setWsStatus('connecting');
     this.socket = new WebSocket(url);
 
     this.socket.onopen = () => {
       this.reconnectAttempt = 0;
+      useConnectionStore.getState().setWsStatus('connected');
     };
 
     this.socket.onmessage = (event) => {
+      useConnectionStore.getState().recordWsMessage();
       this.handleIncomingMessage(event.data);
     };
 
     this.socket.onclose = () => {
       this.socket = null;
+      useConnectionStore.getState().setWsStatus('disconnected');
       this.scheduleReconnect(url);
     };
 
@@ -44,6 +49,7 @@ export class BackendWebSocketClient {
     this.clearReconnectTimer();
     this.socket?.close();
     this.socket = null;
+    useConnectionStore.getState().setWsStatus('disconnected');
   }
 
   subscribe(listener: BackendSocketListener): () => void {
@@ -91,6 +97,7 @@ export class BackendWebSocketClient {
     this.clearReconnectTimer();
     const delay = Math.min(1_000 * 2 ** this.reconnectAttempt, 15_000);
     this.reconnectAttempt += 1;
+    useConnectionStore.getState().setWsStatus('reconnecting');
 
     this.reconnectTimer = setTimeout(() => {
       this.connect(url);

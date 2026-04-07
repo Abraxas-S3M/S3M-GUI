@@ -30,6 +30,7 @@ import type {
   TimelineEventData,
   TransportType,
 } from './types';
+import { useConnectionStore } from '../connectionStore';
 
 type HttpMethod = 'GET' | 'POST';
 
@@ -322,10 +323,12 @@ export class APIClient implements APIService {
           attempt,
           latencyMs,
         });
+        useConnectionStore.getState().recordApiResponse(latencyMs);
 
         return normalized;
       } catch (error) {
         const normalizedError = normalizeTransportError(error);
+        useConnectionStore.getState().recordApiError();
         const shouldRetry = normalizedError.retriable && attempt < this.retryAttempts;
 
         this.log('error', {
