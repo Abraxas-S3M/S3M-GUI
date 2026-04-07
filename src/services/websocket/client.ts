@@ -15,7 +15,22 @@ export class BackendWebSocketClient<TPayload = unknown> {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectAttempt = 0;
   private manuallyDisconnected = false;
+  private onStateChange?: (state: string) => void;
   private offlineMode = false;
+  lastMessageAt: string | null = null;
+
+  get connectionState(): 'connected' | 'connecting' | 'disconnected' | 'reconnecting' {
+    if (!this.socket) {
+      return this.reconnectAttempt > 0 ? 'reconnecting' : 'disconnected';
+    }
+    if (this.socket.readyState === WebSocket.CONNECTING) {
+      return 'connecting';
+    }
+    if (this.socket.readyState === WebSocket.OPEN) {
+      return 'connected';
+    }
+    return 'disconnected';
+  }
 
   constructor(
     url = API_CONFIG.wsUrl,
@@ -32,7 +47,7 @@ export class BackendWebSocketClient<TPayload = unknown> {
     this.maxReconnectAttempts = options.maxReconnectAttempts ?? Number.POSITIVE_INFINITY;
     this.isOnlineCheck = options.isOnline ?? (() => true);
   }
-
+ 
   connect(url = this.defaultUrl): boolean {
     if (!this.isOnlineCheck()) {
       this.offlineMode = true;
@@ -55,6 +70,7 @@ export class BackendWebSocketClient<TPayload = unknown> {
     this.socket.onopen = () => {
       const reconnected = this.reconnectAttempt > 0;
       this.reconnectAttempt = 0;
+      this.onStateChange?.(this.connectionState);
       useConnectionStore.getState().setWsStatus('connected');
       if (reconnected) {
         const reconnectSnapshotEvent: BackendSocketEvent = {
@@ -67,12 +83,14 @@ export class BackendWebSocketClient<TPayload = unknown> {
     };
 
     this.socket.onmessage = (event) => {
+      this.lastMessageAt = new Date().toISOString();
       useConnectionStore.getState().recordWsMessage();
       this.handleIncomingMessage(event.data);
     };
 
     this.socket.onclose = () => {
       this.socket = null;
+      this.onStateChange?.(this.connectionState);
       useConnectionStore.getState().setWsStatus('disconnected');
       this.scheduleReconnect(url);
     };
@@ -94,6 +112,10 @@ export class BackendWebSocketClient<TPayload = unknown> {
   subscribe(listener: BackendSocketListener): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  }
+
+  setOnStateChange(callback: (state: string) => void): void {
+    this.onStateChange = callback;
   }
 
   onMessage(listener: (payload: unknown) => void): () => void {
@@ -149,6 +171,7 @@ export class BackendWebSocketClient<TPayload = unknown> {
       15_000
     );
     this.reconnectAttempt += 1;
+    this.onStateChange?.(this.connectionState);
     useConnectionStore.getState().setWsStatus('reconnecting');
 
     this.reconnectTimer = setTimeout(() => {

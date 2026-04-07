@@ -13,6 +13,7 @@ import type {
 
 export interface BackendSocketHandlers {
   onSnapshot?: (event: BackendSnapshotEvent) => void;
+  onSnapshotRefetch?: () => void;
   onDecisionUpdated?: (event: DecisionUpdatedEvent) => void;
   onHeartbeat?: (event: BackendHeartbeatEvent) => void;
   onError?: (event: BackendErrorEvent) => void;
@@ -21,6 +22,9 @@ export interface BackendSocketHandlers {
   onScenarioIngested?: (event: ScenarioIngestedEvent) => void;
   onCapabilityChanged?: (event: CapabilityChangedEvent) => void;
 }
+
+const isReconnectSnapshot = (event: BackendSnapshotEvent): boolean =>
+  event.payload._reconnected === true;
 
 export const isBackendSocketEventType = (value: string): value is BackendSocketEventType =>
   value === 'backend.snapshot' ||
@@ -37,6 +41,10 @@ export const createBackendSocketHandler =
   (event: BackendSocketEvent): void => {
     switch (event.type) {
       case 'backend.snapshot':
+        if (isReconnectSnapshot(event)) {
+          handlers.onSnapshotRefetch?.();
+          return;
+        }
         handlers.onSnapshot?.(event);
         return;
       case 'decision.updated':

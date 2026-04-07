@@ -700,3 +700,6 @@ export const backendApiClient = {
     return apiClientInstance.getSystemStatus();
   },
 };
+
+export const apiClient = apiClientInstance;
+export { APIClient as ApiClient, APIClientError as BackendApiError };
