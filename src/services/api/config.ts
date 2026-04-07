@@ -46,15 +46,6 @@ const readEnvBoolean = (key: string, fallback: boolean): boolean => {
   return fallback;
 };
 
-const readOptionalEnvString = (key: string): string => {
-  const value = runtimeEnv[key];
-  if (typeof value === 'string') {
-    return value.trim();
-  }
-
-  return '';
-};
-
 const resolveWsUrl = (baseUrl: string): string => {
   if (baseUrl.startsWith('https://')) {
     return baseUrl.replace('https://', 'wss://');
@@ -66,8 +57,6 @@ const resolveWsUrl = (baseUrl: string): string => {
 
   return baseUrl;
 };
-
-const API_BASE_URL_ENV = readOptionalEnvString('VITE_API_BASE_URL');
 
 export const API_BASE_URL = readEnvString(
   'VITE_API_BASE_URL',
@@ -97,7 +86,7 @@ const apiBaseUrl = readEnvString('VITE_API_BASE_URL', 'http://localhost:8080/api
 
 export const API_CONFIG = {
   baseUrl: apiBaseUrl,
-  wsUrl: readEnvString('VITE_WS_URL', deriveWsUrl(apiBaseUrl)),
+  wsUrl: readEnvString('VITE_WS_URL', resolveWsUrl(apiBaseUrl)),
   useMock: readEnvBoolean('VITE_USE_MOCK_BACKEND', runtimeEnv.DEV === true),
   timeoutMs: readEnvNumber('VITE_API_TIMEOUT_MS', 8000),
   retryAttempts: 2,
@@ -105,19 +94,10 @@ export const API_CONFIG = {
   mockLatencyMs: 350,
 } as const;
 
-export const API_CONFIG = {
-  baseUrl: API_BASE_URL_ENV,
-  wsUrl: readEnvString('VITE_WS_URL', resolveWsUrl(API_BASE_URL)),
-  useMock: USE_MOCK_BACKEND,
-} as const;
-
-export const API_RETRY_ATTEMPTS = readEnvNumber('VITE_API_RETRY_ATTEMPTS', 2);
-export const API_RETRY_BASE_DELAY_MS = readEnvNumber(
-  'VITE_API_RETRY_BASE_DELAY_MS',
-  300,
-);
-export const API_TIMEOUT_MS = readEnvNumber('VITE_API_TIMEOUT_MS', 8000);
-export const MOCK_API_LATENCY_MS = readEnvNumber('VITE_MOCK_API_LATENCY_MS', 350);
+export const API_RETRY_ATTEMPTS = API_CONFIG.retryAttempts;
+export const API_RETRY_BASE_DELAY_MS = API_CONFIG.retryBaseDelayMs;
+export const API_TIMEOUT_MS = API_CONFIG.timeoutMs;
+export const MOCK_API_LATENCY_MS = API_CONFIG.mockLatencyMs;
 
 export const WORKSPACE_ENDPOINTS = {
   command: '/workspaces/command',
@@ -191,7 +171,3 @@ export const SYSTEM_ENDPOINTS = {
   status: '/system/status',
 } as const;
 
-export const API_CONFIG = {
-  apiBaseUrl: API_BASE_URL,
-  wsUrl: API_WS_URL,
-} as const;
