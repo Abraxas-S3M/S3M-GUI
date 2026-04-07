@@ -459,3 +459,7 @@ export class APIClient implements APIService {
     console.debug(`[APIClient:${event}]`, payload);
   }
 }
+
+export const backendApiClient = new APIClient();
+export const apiClient = backendApiClient;
+export { APIClient as ApiClient, APIClientError as BackendApiError };

@@ -1,4 +1,4 @@
-import type { BackendSnapshot, Decision, DecisionStatus } from '../api/types';
+import type { DecisionRecord } from '../api/types';
 
 export type BackendSocketEventType =
   | 'backend.snapshot'
@@ -10,6 +10,14 @@ export interface SocketEnvelope<TType extends BackendSocketEventType, TPayload> 
   type: TType;
   payload: TPayload;
   timestamp: string;
+}
+
+export type Decision = DecisionRecord;
+export type DecisionStatus = DecisionRecord['status'];
+
+export interface BackendSnapshot {
+  _reconnected?: boolean;
+  [key: string]: unknown;
 }
 
 export type BackendSnapshotEvent = SocketEnvelope<'backend.snapshot', BackendSnapshot>;

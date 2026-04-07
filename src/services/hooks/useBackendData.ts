@@ -1,9 +1,9 @@
-import { apiClient, ApiClient } from '../apiClient';
-import type { Decision, MissionSnapshot } from '../types';
+import { APIClient, backendApiClient } from '../api/client';
+import type { DecisionData, OperationalContextData } from '../api/types';
 import { useApiQuery } from './useApiQuery';
 
-export const useMissionSnapshot = (client: ApiClient = apiClient) =>
-  useApiQuery<MissionSnapshot>(() => client.getMissionSnapshot(), [client]);
+export const useMissionSnapshot = (client: APIClient = backendApiClient) =>
+  useApiQuery<OperationalContextData>(() => client.getOperationalContext(), [client]);
 
-export const useDecisions = (client: ApiClient = apiClient) =>
-  useApiQuery<Decision[]>(() => client.listDecisions(), [client]);
+export const useDecisions = (client: APIClient = backendApiClient) =>
+  useApiQuery<DecisionData>(() => client.getDecisions(), [client]);
