@@ -9,6 +9,7 @@ import {
   COMMAND_ENDPOINTS,
   COMMUNICATION_ENDPOINTS,
   DECISION_ENDPOINTS,
+  SYSTEM_ENDPOINTS,
   READINESS_ENDPOINTS,
   RISK_ENDPOINTS,
   SURVEILLANCE_ENDPOINTS,
@@ -26,6 +27,7 @@ import type {
   ReadinessData,
   RiskMetricsData,
   SendMessagePayload,
+  SystemStatusData,
   ThreatTrackData,
   TimelineEventData,
   TransportType,
@@ -274,6 +276,10 @@ export class APIClient implements APIService {
 
   async getTimelineEvents(): Promise<TimelineEventData> {
     return this.request<TimelineEventData>(COMMAND_ENDPOINTS.timeline, 'GET');
+  }
+
+  async getSystemStatus(): Promise<SystemStatusData> {
+    return this.request<SystemStatusData>(SYSTEM_ENDPOINTS.status, 'GET');
   }
 
   private async request<TResponse extends APIResponseBase, TBody = unknown>(

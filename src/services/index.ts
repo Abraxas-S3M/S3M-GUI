@@ -6,4 +6,5 @@ export * from './websocketClient';
 export * from './hooks/useApiQuery';
 export * from './hooks/useBackendData';
 export * from './hooks/useRealtimeChannel';
+export * from './hooks/useSystemStatus';
 export * from './mock/mockBackend';

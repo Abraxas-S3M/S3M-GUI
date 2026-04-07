@@ -220,6 +220,28 @@ export interface SendMessagePayload {
   priority?: 'routine' | 'priority' | 'immediate' | 'emergency';
 }
 
+export interface BackendCapabilities {
+  live_briefing: boolean;
+  bilingual_summary: boolean;
+  training_metrics: boolean;
+  scenario_ingest: boolean;
+  [key: string]: boolean;
+}
+
+export interface SystemStatusData extends APIResponseBase {
+  api_status: 'healthy' | 'degraded' | 'unavailable';
+  active_track: string;
+  promoted_checkpoint: string;
+  uptime_seconds: number;
+  trainer_status: 'idle' | 'training' | 'evaluating';
+  last_checkpoint_at: string;
+  last_eval_score: number;
+  eval_trend: number[];
+  last_scenario_pack: string;
+  last_error: string | null;
+  capabilities: BackendCapabilities;
+}
+
 export interface APIService {
   getOperationalContext(): Promise<OperationalContextData>;
   getDecisions(): Promise<DecisionData>;
@@ -232,4 +254,5 @@ export interface APIService {
   getMessages(): Promise<MessageData>;
   sendMessage(message: SendMessagePayload): Promise<MessageData>;
   getTimelineEvents(): Promise<TimelineEventData>;
+  getSystemStatus(): Promise<SystemStatusData>;
 }

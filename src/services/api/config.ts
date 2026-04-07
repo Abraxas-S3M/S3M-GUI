@@ -127,3 +127,7 @@ export const COMMUNICATION_ENDPOINTS = {
 export const SURVEILLANCE_ENDPOINTS = {
   assets: `${WORKSPACE_ENDPOINTS.surveillance}/assets`,
 } as const;
+
+export const SYSTEM_ENDPOINTS = {
+  status: '/system/status',
+} as const;
