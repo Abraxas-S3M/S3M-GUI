@@ -4,6 +4,8 @@ export type ApiStatus = 'healthy' | 'degraded' | 'unavailable' | 'unknown';
 export type WsStatus = 'connected' | 'connecting' | 'reconnecting' | 'disconnected';
 export type BackendEnvironment = 'local' | 'preview' | 'production';
 
+const WS_HEALTH_WINDOW_MS = 30_000;
+
 interface ConnectionState {
   apiStatus: ApiStatus;
   wsStatus: WsStatus;
@@ -19,6 +21,8 @@ interface ConnectionState {
   recordApiError: () => void;
   recordWsMessage: () => void;
   resetApiErrors: () => void;
+  isWsHealthy: () => boolean;
+  getHeartbeatAgeMs: () => number | null;
 }
 
 function detectEnvironment(): BackendEnvironment {
@@ -28,7 +32,15 @@ function detectEnvironment(): BackendEnvironment {
   return 'production';
 }
 
-export const useConnectionStore = create<ConnectionState>((set) => ({
+const toTimestampMs = (isoTimestamp: string | null): number | null => {
+  if (!isoTimestamp) {
+    return null;
+  }
+  const parsed = new Date(isoTimestamp).getTime();
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+export const useConnectionStore = create<ConnectionState>((set, get) => ({
   apiStatus: 'unknown',
   wsStatus: 'disconnected',
   lastApiResponseAt: null,
@@ -60,4 +72,15 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
       wsStatus: 'connected',
     }),
   resetApiErrors: () => set({ apiErrorCount: 0, apiStatus: 'healthy' }),
+  isWsHealthy: () => {
+    const lastMessageAtMs = toTimestampMs(get().lastWsMessageAt);
+    return lastMessageAtMs !== null && Date.now() - lastMessageAtMs <= WS_HEALTH_WINDOW_MS;
+  },
+  getHeartbeatAgeMs: () => {
+    const lastMessageAtMs = toTimestampMs(get().lastWsMessageAt);
+    if (lastMessageAtMs === null) {
+      return null;
+    }
+    return Date.now() - lastMessageAtMs;
+  },
 }));
