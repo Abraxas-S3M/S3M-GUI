@@ -26,17 +26,6 @@ export interface ThreatTrack {
   [key: string]: unknown;
 }
 
-export interface Decision {
-  id: string;
-  title: string;
-  risk: number;
-  confidence: number;
-  description: string;
-  status: 'pending' | 'approved' | 'rejected';
-  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
-  [key: string]: unknown;
-}
-
 export interface RiskMetrics {
   [key: string]: unknown;
 }
@@ -229,9 +218,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ backendSyncStatus: 'syncing', backendSyncError: null });
 
     try {
-      const decisions = await backendApiClient.getDecisions();
+      const decisionData = await backendApiClient.getDecisions();
       set({
-        decisions,
+        decisions: decisionData.decisions ?? [],
         backendSyncStatus: 'ready',
         backendSyncError: null,
         lastBackendSyncAt: new Date().toISOString()

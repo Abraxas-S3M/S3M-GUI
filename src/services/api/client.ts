@@ -276,6 +276,70 @@ export class APIClient implements APIService {
     return this.request<MessageData>(COMMUNICATION_ENDPOINTS.inbox, 'GET');
   }
 
+  async getComms(): Promise<MessageData> {
+    return this.request<MessageData>(COMMUNICATION_ENDPOINTS.inbox, 'GET');
+  }
+
+  async getRisk(): Promise<RiskMetricsData> {
+    return this.request<RiskMetricsData>(RISK_ENDPOINTS.metrics, 'GET');
+  }
+
+  async getTracks(): Promise<ThreatTrackData> {
+    return this.request<ThreatTrackData>(COP_ENDPOINTS.threatTracks, 'GET');
+  }
+
+  async getSurveillance(): Promise<ISRAssetData> {
+    return this.request<ISRAssetData>(SURVEILLANCE_ENDPOINTS.assets, 'GET');
+  }
+
+  async getReadiness(): Promise<ReadinessData> {
+    return this.request<ReadinessData>(READINESS_ENDPOINTS.summary, 'GET');
+  }
+
+  async updateDecisionStatus(
+    id: string,
+    status: 'approved' | 'rejected',
+  ): Promise<Decision> {
+    if (status === 'approved') {
+      const result = await this.request<DecisionData>(
+        DECISION_ENDPOINTS.approve(id),
+        'POST',
+        { comment: '' },
+      );
+      const found = result.decisions?.find((d) => d.id === id);
+      return (
+        found ??
+        ({
+          id,
+          title: '',
+          risk: 0,
+          confidence: 0,
+          description: '',
+          status,
+          severity: 'LOW',
+        } as Decision)
+      );
+    }
+    const result = await this.request<DecisionData>(
+      DECISION_ENDPOINTS.reject(id),
+      'POST',
+      { comment: '' },
+    );
+    const found = result.decisions?.find((d) => d.id === id);
+    return (
+      found ??
+      ({
+        id,
+        title: '',
+        risk: 0,
+        confidence: 0,
+        description: '',
+        status,
+        severity: 'LOW',
+      } as Decision)
+    );
+  }
+
   async sendMessage(message: SendMessagePayload): Promise<MessageData> {
     return this.request<MessageData>(COMMUNICATION_ENDPOINTS.send, 'POST', message);
   }
@@ -535,94 +599,4 @@ export class APIClient implements APIService {
   }
 }
 
-const apiClientInstance = new APIClient();
-
-const flattenThreatTracks = (payload: ThreatTrackData): unknown[] => [
-  ...(payload.kinetic ?? []),
-  ...(payload.cyber ?? []),
-  ...(payload.intel ?? []),
-];
-
-const findUpdatedDecision = (response: DecisionData, id: string): Decision | null =>
-  response.decisions.find((decision) => decision.id === id) ?? null;
-
-export const backendApiClient = {
-  async getOperationalContext(): Promise<OperationalContextData> {
-    return apiClientInstance.getOperationalContext();
-  },
-
-  async getDecisions(): Promise<Decision[]> {
-    const response = await apiClientInstance.getDecisions();
-    return response.decisions;
-  },
-
-  async updateDecisionStatus(id: string, status: DecisionStatus): Promise<Decision> {
-    const response =
-      status === 'approved'
-        ? await apiClientInstance.approveDecision(id, 'Approved from S3M GUI')
-        : await apiClientInstance.rejectDecision(id, 'Rejected from S3M GUI');
-
-    const updatedDecision = findUpdatedDecision(response, id);
-    if (updatedDecision) {
-      return updatedDecision;
-    }
-
-    const decisions = await this.getDecisions();
-    return (
-      decisions.find((decision) => decision.id === id) ?? {
-        id,
-        title: id,
-        description: 'Decision status updated',
-        status,
-        severity: 'MEDIUM',
-        risk: 0,
-        confidence: 0,
-      }
-    );
-  },
-
-  async getRiskMetrics(): Promise<RiskMetricsData> {
-    return apiClientInstance.getRiskMetrics();
-  },
-
-  async getRisk(): Promise<RiskMetricsData> {
-    return this.getRiskMetrics();
-  },
-
-  async getThreatTracks(): Promise<ThreatTrackData> {
-    return apiClientInstance.getThreatTracks();
-  },
-
-  async getTracks(): Promise<unknown[]> {
-    const response = await this.getThreatTracks();
-    return flattenThreatTracks(response);
-  },
-
-  async getReadinessSummary(): Promise<ReadinessData> {
-    return apiClientInstance.getReadinessSummary();
-  },
-
-  async getReadiness(): Promise<ReadinessData> {
-    return this.getReadinessSummary();
-  },
-
-  async getSurveillanceAssets(): Promise<ISRAssetData> {
-    return apiClientInstance.getSurveillanceAssets();
-  },
-
-  async getSurveillance(): Promise<ISRAssetData> {
-    return this.getSurveillanceAssets();
-  },
-
-  async getMessages(): Promise<MessageData> {
-    return apiClientInstance.getMessages();
-  },
-
-  async getComms(): Promise<MessageData> {
-    return this.getMessages();
-  },
-
-  async getTimelineEvents(): Promise<TimelineEventData> {
-    return apiClientInstance.getTimelineEvents();
-  },
-};
+export const backendApiClient = new APIClient();

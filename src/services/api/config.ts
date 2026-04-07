@@ -77,7 +77,7 @@ export const API_RETRY_BASE_DELAY_MS = readEnvNumber(
 );
 export const API_TIMEOUT_MS = readEnvNumber('VITE_API_TIMEOUT_MS', 8000);
 export const MOCK_API_LATENCY_MS = readEnvNumber('VITE_MOCK_API_LATENCY_MS', 350);
-export const DEFAULT_BACKEND_SYNC_INTERVAL_MS = readEnvNumber('VITE_BACKEND_SYNC_INTERVAL_MS', 60_000);
+export const DEFAULT_BACKEND_SYNC_INTERVAL_MS = 30_000;
 
 export const WORKSPACE_ENDPOINTS = {
   command: '/workspaces/command',
@@ -147,8 +147,12 @@ export const SURVEILLANCE_ENDPOINTS = {
   assets: `${WORKSPACE_ENDPOINTS.surveillance}/assets`,
 } as const;
 
+const API_WS_URL = readEnvString(
+  'VITE_WS_URL',
+  API_BASE_URL.replace(/^http/i, 'ws').replace(/\/api\/v1\/?$/, '/ws'),
+);
+
 export const API_CONFIG = {
-  baseUrl: API_BASE_URL,
-  wsUrl: resolveWsUrl(API_BASE_URL),
-  useMock: USE_MOCK_BACKEND,
+  apiBaseUrl: API_BASE_URL,
+  wsUrl: API_WS_URL,
 } as const;

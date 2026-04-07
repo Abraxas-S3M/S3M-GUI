@@ -10,7 +10,7 @@ export interface UseDecisionsResult {
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
-  updateDecisionStatus: (id: string, status: DecisionStatus) => Promise<void>;
+  updateDecisionStatus: (id: string, status: Exclude<DecisionStatus, 'pending'>) => Promise<void>;
 }
 
 export const useDecisions = (): UseDecisionsResult => {
@@ -23,7 +23,7 @@ export const useDecisions = (): UseDecisionsResult => {
       setLoading(true);
       setError(null);
       const nextDecisions = await backendApiClient.getDecisions();
-      setDecisions(nextDecisions);
+      setDecisions(nextDecisions.decisions ?? []);
     } catch (requestError) {
       setError(toErrorMessage(requestError));
     } finally {
@@ -32,7 +32,7 @@ export const useDecisions = (): UseDecisionsResult => {
   }, []);
 
   const updateDecisionStatus = useCallback(
-    async (id: string, status: DecisionStatus) => {
+    async (id: string, status: Exclude<DecisionStatus, 'pending'>) => {
       const updated = await backendApiClient.updateDecisionStatus(id, status);
       setDecisions((previous) => previous.map((item) => (item.id === updated.id ? updated : item)));
     },
