@@ -165,7 +165,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="relative size-full overflow-hidden bg-black">
+    <div className="relative min-h-screen w-full overflow-hidden bg-black">
       {/* Animated Earth Background with Cyber Grid */}
       <canvas
         ref={canvasRef}
@@ -211,7 +211,7 @@ export function LoginPage() {
       </div>
 
       {/* Main content container */}
-      <div className="relative z-10 flex flex-col items-center justify-center h-full pt-20">
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen pt-20">
         {/* Logo */}
         <div className="mb-12">
           <img
@@ -367,7 +367,7 @@ export function LoginPage() {
               textShadow: '0 0 5px rgba(0, 255, 255, 0.3)',
             }}
           >
-            SOVEREIGN SAUDI STRATEGIC MODEL // AUTHORIZED PERSONNEL ONLY
+            AUTHORIZED PERSONNEL ONLY
           </p>
         </div>
       </div>
