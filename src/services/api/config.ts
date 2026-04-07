@@ -36,6 +36,29 @@ const readEnvBoolean = (key: string, fallback: boolean): boolean => {
   return fallback;
 };
 
+const readOptionalEnvString = (key: string): string => {
+  const value = runtimeEnv[key];
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+
+  return '';
+};
+
+const resolveWsUrl = (baseUrl: string): string => {
+  if (baseUrl.startsWith('https://')) {
+    return baseUrl.replace('https://', 'wss://');
+  }
+
+  if (baseUrl.startsWith('http://')) {
+    return baseUrl.replace('http://', 'ws://');
+  }
+
+  return baseUrl;
+};
+
+const API_BASE_URL_ENV = readOptionalEnvString('VITE_API_BASE_URL');
+
 export const API_BASE_URL = readEnvString(
   'VITE_API_BASE_URL',
   'http://localhost:8080/api/v1',
@@ -51,6 +74,12 @@ export const USE_MOCK_BACKEND = readEnvBoolean(
   'VITE_USE_MOCK_BACKEND',
   API_BACKEND_MODE !== 'real',
 );
+
+export const API_CONFIG = {
+  baseUrl: API_BASE_URL_ENV,
+  wsUrl: readEnvString('VITE_WS_URL', resolveWsUrl(API_BASE_URL)),
+  useMock: USE_MOCK_BACKEND,
+} as const;
 
 export const API_RETRY_ATTEMPTS = readEnvNumber('VITE_API_RETRY_ATTEMPTS', 2);
 export const API_RETRY_BASE_DELAY_MS = readEnvNumber(
