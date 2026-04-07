@@ -4,18 +4,22 @@ const runtimeEnv: RuntimeEnv = (
   (import.meta as unknown as { env?: RuntimeEnv }).env ?? {}
 );
 
-const readEnvString = (key: string, fallback: string): string => {
-  const value = runtimeEnv[key];
-  if (typeof value === 'string' && value.trim().length > 0) {
-    return value.trim();
-  }
-
-  return fallback;
-};
-
-const readEnvNumber = (key: string, fallback: number): number => {
+const readRawEnvString = (key: string): string | undefined => {
   const value = runtimeEnv[key];
   if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
+
+const readEnvString = (key: string, fallback: string): string =>
+  readRawEnvString(key) ?? fallback;
+
+const readEnvNumber = (key: string, fallback: number): number => {
+  const value = readRawEnvString(key);
+  if (!value) {
     return fallback;
   }
 
@@ -30,53 +34,51 @@ const readEnvBoolean = (key: string, fallback: boolean): boolean => {
   }
 
   if (typeof value === 'string') {
-    return value.toLowerCase() === 'true';
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true') {
+      return true;
+    }
+    if (normalized === 'false') {
+      return false;
+    }
   }
 
   return fallback;
 };
 
-export const API_BASE_URL = readEnvString(
-  'VITE_API_BASE_URL',
-  'http://localhost:8080/api/v1',
-);
-
-const resolveWsUrl = (apiBaseUrl: string): string => {
-  const explicitWsUrl = readEnvString('VITE_WS_URL', '');
-  if (explicitWsUrl.length > 0) {
-    return explicitWsUrl;
-  }
-
-  try {
-    const parsed = new URL(apiBaseUrl);
-    parsed.protocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
-    parsed.pathname = '/ws';
-    parsed.search = '';
-    parsed.hash = '';
-    return parsed.toString().replace(/\/$/, '');
-  } catch {
-    return 'ws://localhost:8080/ws';
-  }
+const deriveWsUrl = (apiBaseUrl: string): string => {
+  const wsProtocolBase = apiBaseUrl
+    .replace(/^https:\/\//, 'wss://')
+    .replace(/^http:\/\//, 'ws://');
+  const withoutApiPath = wsProtocolBase.replace(/\/api\/v1\/?$/, '');
+  return `${withoutApiPath}/ws`;
 };
 
-export const API_TRANSPORT = readEnvString('VITE_API_TRANSPORT', 'fetch')
-  .toLowerCase() as 'fetch' | 'axios';
+const hasExplicitApiBaseUrl = readRawEnvString('VITE_API_BASE_URL') != null;
+const useMockRawValue = runtimeEnv.VITE_USE_MOCK_BACKEND;
+const useMockRawString = typeof useMockRawValue === 'string' ? useMockRawValue.trim().toLowerCase() : '';
 
-export const API_BACKEND_MODE = readEnvString('VITE_API_BACKEND_MODE', 'mock')
-  .toLowerCase() as 'mock' | 'real';
+if (
+  runtimeEnv.PROD === true &&
+  (!hasExplicitApiBaseUrl || useMockRawValue === true || useMockRawString === 'true')
+) {
+  throw new Error(
+    '[S3M] FATAL: Production build requires VITE_API_BASE_URL and VITE_USE_MOCK_BACKEND=false',
+  );
+}
 
-export const USE_MOCK_BACKEND = readEnvBoolean(
-  'VITE_USE_MOCK_BACKEND',
-  API_BACKEND_MODE !== 'real',
-);
+const apiBaseUrl = readEnvString('VITE_API_BASE_URL', 'http://localhost:8080/api/v1');
 
-export const API_RETRY_ATTEMPTS = readEnvNumber('VITE_API_RETRY_ATTEMPTS', 2);
-export const API_RETRY_BASE_DELAY_MS = readEnvNumber(
-  'VITE_API_RETRY_BASE_DELAY_MS',
-  300,
-);
-export const API_TIMEOUT_MS = readEnvNumber('VITE_API_TIMEOUT_MS', 8000);
-export const MOCK_API_LATENCY_MS = readEnvNumber('VITE_MOCK_API_LATENCY_MS', 350);
+export const API_CONFIG = {
+  baseUrl: apiBaseUrl,
+  wsUrl: readEnvString('VITE_WS_URL', deriveWsUrl(apiBaseUrl)),
+  useMock: readEnvBoolean('VITE_USE_MOCK_BACKEND', runtimeEnv.DEV === true),
+  timeoutMs: readEnvNumber('VITE_API_TIMEOUT_MS', 8000),
+  retryAttempts: 2,
+  retryBaseDelayMs: 300,
+  mockLatencyMs: 350,
+} as const;
+
 export const DEFAULT_BACKEND_SYNC_INTERVAL_MS = 30_000;
 
 export const WORKSPACE_ENDPOINTS = {

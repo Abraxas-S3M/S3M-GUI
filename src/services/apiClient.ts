@@ -1,10 +1,17 @@
-import { backendConfig, type BackendConfig } from './config';
+import { API_CONFIG } from './api/config';
 import type { ApiResponse, BackendErrorPayload, Decision, MissionSnapshot } from './types';
 
 export interface ApiClientOptions {
   baseUrl?: string;
   timeoutMs?: number;
   defaultHeaders?: HeadersInit;
+}
+
+export interface LegacyBackendConfig {
+  apiBaseUrl: string;
+  wsBaseUrl: string;
+  requestTimeoutMs: number;
+  enableMockBackend: boolean;
 }
 
 export class BackendApiError extends Error {
@@ -24,7 +31,15 @@ export class ApiClient {
   private readonly timeoutMs: number;
   private readonly defaultHeaders: HeadersInit;
 
-  constructor(config: BackendConfig = backendConfig, options: ApiClientOptions = {}) {
+  constructor(
+    config: LegacyBackendConfig = {
+      apiBaseUrl: API_CONFIG.baseUrl,
+      wsBaseUrl: API_CONFIG.wsUrl,
+      requestTimeoutMs: API_CONFIG.timeoutMs,
+      enableMockBackend: API_CONFIG.useMock,
+    },
+    options: ApiClientOptions = {},
+  ) {
     this.baseUrl = options.baseUrl ?? config.apiBaseUrl;
     this.timeoutMs = options.timeoutMs ?? config.requestTimeoutMs;
     this.defaultHeaders = options.defaultHeaders ?? {};

@@ -1,11 +1,7 @@
 import axios, { AxiosError, type AxiosInstance, type AxiosRequestConfig } from 'axios';
 
 import {
-  API_BASE_URL,
-  API_RETRY_ATTEMPTS,
-  API_RETRY_BASE_DELAY_MS,
-  API_TIMEOUT_MS,
-  API_TRANSPORT,
+  API_CONFIG,
   COMMAND_ENDPOINTS,
   COMMUNICATION_ENDPOINTS,
   DECISION_ENDPOINTS,
@@ -98,6 +94,7 @@ const runtimeEnv = (
 ) as Record<string, unknown>;
 
 const isDev = runtimeEnv.DEV === true;
+const DEFAULT_API_TRANSPORT: TransportType = 'fetch';
 
 const sleep = async (ms: number): Promise<void> =>
   new Promise((resolve) => {
@@ -214,11 +211,11 @@ export class APIClient implements APIService {
   private readonly tokenProvider?: () => string | undefined | Promise<string | undefined>;
 
   constructor(config: APIClientConfig = {}) {
-    this.baseURL = config.baseURL ?? config.baseUrl ?? API_BASE_URL;
-    this.retryAttempts = config.retryAttempts ?? API_RETRY_ATTEMPTS;
-    this.retryBaseDelayMs = config.retryBaseDelayMs ?? API_RETRY_BASE_DELAY_MS;
-    this.timeoutMs = config.timeoutMs ?? API_TIMEOUT_MS;
-    this.transportType = config.transport ?? API_TRANSPORT;
+    this.baseURL = config.baseURL ?? API_CONFIG.baseUrl;
+    this.retryAttempts = config.retryAttempts ?? API_CONFIG.retryAttempts;
+    this.retryBaseDelayMs = config.retryBaseDelayMs ?? API_CONFIG.retryBaseDelayMs;
+    this.timeoutMs = config.timeoutMs ?? API_CONFIG.timeoutMs;
+    this.transportType = config.transport ?? DEFAULT_API_TRANSPORT;
     this.transport =
       this.transportType === 'axios' ? new AxiosTransport() : new FetchTransport();
     this.fetchImpl = config.fetchImpl;
