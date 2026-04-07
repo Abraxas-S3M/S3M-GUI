@@ -69,19 +69,6 @@ export const API_TRANSPORT = readEnvString('VITE_API_TRANSPORT', 'fetch')
 export const API_BACKEND_MODE = readEnvString('VITE_API_BACKEND_MODE', 'mock')
   .toLowerCase() as 'mock' | 'real';
 
-const hasExplicitApiBaseUrl = readRawEnvString('VITE_API_BASE_URL') != null;
-const useMockRawValue = runtimeEnv.VITE_USE_MOCK_BACKEND;
-const useMockRawString = typeof useMockRawValue === 'string' ? useMockRawValue.trim().toLowerCase() : '';
-
-if (
-  runtimeEnv.PROD === true &&
-  (!hasExplicitApiBaseUrl || useMockRawValue === true || useMockRawString === 'true')
-) {
-  throw new Error(
-    '[S3M] FATAL: Production build requires VITE_API_BASE_URL and VITE_USE_MOCK_BACKEND=false',
-  );
-}
-
 const apiBaseUrl = readEnvString('VITE_API_BASE_URL', 'http://localhost:8080/api/v1');
 
 export const API_CONFIG = {
@@ -93,11 +80,6 @@ export const API_CONFIG = {
   retryBaseDelayMs: 300,
   mockLatencyMs: 350,
 } as const;
-
-export const API_RETRY_ATTEMPTS = API_CONFIG.retryAttempts;
-export const API_RETRY_BASE_DELAY_MS = API_CONFIG.retryBaseDelayMs;
-export const API_TIMEOUT_MS = API_CONFIG.timeoutMs;
-export const MOCK_API_LATENCY_MS = API_CONFIG.mockLatencyMs;
 
 export const WORKSPACE_ENDPOINTS = {
   command: '/workspaces/command',
