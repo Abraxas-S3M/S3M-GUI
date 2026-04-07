@@ -138,6 +138,9 @@ interface AppState {
   aiPanelOpen: boolean;
   toggleAiPanel: () => void;
   setAiPanelOpen: (open: boolean) => void;
+  backendEvolutionPanelOpen: boolean;
+  toggleBackendEvolutionPanel: () => void;
+  setBackendEvolutionPanelOpen: (open: boolean) => void;
 
   alertsOpen: boolean;
   toggleAlerts: () => void;
@@ -183,6 +186,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   aiPanelOpen: true,
   toggleAiPanel: () => set((state) => ({ aiPanelOpen: !state.aiPanelOpen })),
   setAiPanelOpen: (open) => set({ aiPanelOpen: open }),
+
+  backendEvolutionPanelOpen: false,
+  toggleBackendEvolutionPanel: () =>
+    set((state) => ({ backendEvolutionPanelOpen: !state.backendEvolutionPanelOpen })),
+  setBackendEvolutionPanelOpen: (open) => set({ backendEvolutionPanelOpen: open }),
 
   alertsOpen: false,
   toggleAlerts: () => set((state) => ({ alertsOpen: !state.alertsOpen, aiPanelOpen: state.alertsOpen ? state.aiPanelOpen : false })),

@@ -187,10 +187,9 @@ export const SURVEILLANCE_ENDPOINTS = {
   assets: `${WORKSPACE_ENDPOINTS.surveillance}/assets`,
 } as const;
 
-const API_WS_URL = readEnvString(
-  'VITE_WS_URL',
-  API_BASE_URL.replace(/^http/i, 'ws').replace(/\/api\/v1\/?$/, '/ws'),
-);
+export const SYSTEM_ENDPOINTS = {
+  status: '/system/status',
+} as const;
 
 export const API_CONFIG = {
   apiBaseUrl: API_BASE_URL,

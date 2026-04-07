@@ -5,6 +5,7 @@ import {
   COMMAND_ENDPOINTS,
   COMMUNICATION_ENDPOINTS,
   DECISION_ENDPOINTS,
+  SYSTEM_ENDPOINTS,
   READINESS_ENDPOINTS,
   RISK_ENDPOINTS,
   SURVEILLANCE_ENDPOINTS,
@@ -24,6 +25,7 @@ import type {
   ReadinessData,
   RiskMetricsData,
   SendMessagePayload,
+  SystemStatusData,
   ThreatTrackData,
   TimelineEventData,
   TransportType,
@@ -346,6 +348,10 @@ export class APIClient implements APIService {
     return this.request<TimelineEventData>(COMMAND_ENDPOINTS.timeline, 'GET');
   }
 
+  async getSystemStatus(): Promise<SystemStatusData> {
+    return this.request<SystemStatusData>(SYSTEM_ENDPOINTS.status, 'GET');
+  }
+
   async get<TData>(path: string): Promise<{ data: TData; status: number; headers: Record<string, string> }> {
     return this.requestLegacy<TData>(path, {
       method: 'GET',
@@ -599,4 +605,98 @@ export class APIClient implements APIService {
   }
 }
 
-export const backendApiClient = new APIClient();
+const apiClientInstance = new APIClient();
+
+const flattenThreatTracks = (payload: ThreatTrackData): unknown[] => [
+  ...(payload.kinetic ?? []),
+  ...(payload.cyber ?? []),
+  ...(payload.intel ?? []),
+];
+
+const findUpdatedDecision = (response: DecisionData, id: string): Decision | null =>
+  response.decisions.find((decision) => decision.id === id) ?? null;
+
+export const backendApiClient = {
+  async getOperationalContext(): Promise<OperationalContextData> {
+    return apiClientInstance.getOperationalContext();
+  },
+
+  async getDecisions(): Promise<Decision[]> {
+    const response = await apiClientInstance.getDecisions();
+    return response.decisions;
+  },
+
+  async updateDecisionStatus(id: string, status: DecisionStatus): Promise<Decision> {
+    const response =
+      status === 'approved'
+        ? await apiClientInstance.approveDecision(id, 'Approved from S3M GUI')
+        : await apiClientInstance.rejectDecision(id, 'Rejected from S3M GUI');
+
+    const updatedDecision = findUpdatedDecision(response, id);
+    if (updatedDecision) {
+      return updatedDecision;
+    }
+
+    const decisions = await this.getDecisions();
+    return (
+      decisions.find((decision) => decision.id === id) ?? {
+        id,
+        title: id,
+        description: 'Decision status updated',
+        status,
+        severity: 'MEDIUM',
+        risk: 0,
+        confidence: 0,
+      }
+    );
+  },
+
+  async getRiskMetrics(): Promise<RiskMetricsData> {
+    return apiClientInstance.getRiskMetrics();
+  },
+
+  async getRisk(): Promise<RiskMetricsData> {
+    return this.getRiskMetrics();
+  },
+
+  async getThreatTracks(): Promise<ThreatTrackData> {
+    return apiClientInstance.getThreatTracks();
+  },
+
+  async getTracks(): Promise<unknown[]> {
+    const response = await this.getThreatTracks();
+    return flattenThreatTracks(response);
+  },
+
+  async getReadinessSummary(): Promise<ReadinessData> {
+    return apiClientInstance.getReadinessSummary();
+  },
+
+  async getReadiness(): Promise<ReadinessData> {
+    return this.getReadinessSummary();
+  },
+
+  async getSurveillanceAssets(): Promise<ISRAssetData> {
+    return apiClientInstance.getSurveillanceAssets();
+  },
+
+  async getSurveillance(): Promise<ISRAssetData> {
+    return this.getSurveillanceAssets();
+  },
+
+  async getMessages(): Promise<MessageData> {
+    return apiClientInstance.getMessages();
+  },
+
+  async getComms(): Promise<MessageData> {
+    return this.getMessages();
+  },
+
+  async getTimelineEvents(): Promise<TimelineEventData> {
+    return apiClientInstance.getTimelineEvents();
+  },
+
+  async getSystemStatus(): Promise<SystemStatusData> {
+    return apiClientInstance.getSystemStatus();
+  },
+};
