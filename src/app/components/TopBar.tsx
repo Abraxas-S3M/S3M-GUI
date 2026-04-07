@@ -1,9 +1,28 @@
+import { Activity } from 'lucide-react';
+import { useConnectionStore } from '../connectionStore';
 import { useAppStore } from '../store';
 import { StatusIndicator } from './StatusIndicator';
-import svgPaths from "../../imports/svg-aroo79n245";
 
 export function TopBar() {
-  const { currentTime, language, setLanguage } = useAppStore();
+  const {
+    currentTime,
+    language,
+    setLanguage,
+    aiPanelOpen,
+    toggleAiPanel,
+    backendEvolutionPanelOpen,
+    toggleBackendEvolutionPanel,
+  } = useAppStore();
+  const apiStatus = useConnectionStore((state) => state.apiStatus);
+
+  const connectionStyle =
+    apiStatus === 'healthy'
+      ? { background: '#05DF72', glow: 'rgba(5, 223, 114, 0.99)' }
+      : apiStatus === 'degraded'
+        ? { background: '#FFB800', glow: 'rgba(255, 184, 0, 0.8)' }
+        : apiStatus === 'unavailable'
+          ? { background: '#FF3366', glow: 'rgba(255, 51, 102, 0.8)' }
+          : { background: '#7c8596', glow: 'rgba(124, 133, 150, 0.8)' };
 
   return (
     <div className="h-16 bg-cyber-deep/40 border-b border-cyber-glass-border flex items-center px-6 gap-6" style={{ backdropFilter: 'blur(15px)' }}>
@@ -55,13 +74,13 @@ export function TopBar() {
 
       {/* AI Toggle */}
       <button
-        onClick={() => useAppStore.getState().toggleAiPanel()}
+        onClick={toggleAiPanel}
         className={`px-3 py-1 rounded-lg transition-all duration-300 text-[11px] font-semibold uppercase tracking-wider ${
-          useAppStore.getState().aiPanelOpen
+          aiPanelOpen
             ? 'text-cyber-void'
             : 'text-cyber-text-tertiary hover:text-cyber-cyan'
         }`}
-        style={useAppStore.getState().aiPanelOpen ? {
+        style={aiPanelOpen ? {
           background: '#00F0FF',
           boxShadow: '0 0 20px rgba(0, 240, 255, 0.6)'
         } : {
@@ -71,8 +90,29 @@ export function TopBar() {
         AI
       </button>
 
+      <button
+        onClick={toggleBackendEvolutionPanel}
+        className={`px-3 py-1 rounded-lg transition-all duration-300 text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1 ${
+          backendEvolutionPanelOpen
+            ? 'text-cyber-void'
+            : 'text-cyber-text-tertiary hover:text-cyber-cyan'
+        }`}
+        style={backendEvolutionPanelOpen ? {
+          background: '#00F0FF',
+          boxShadow: '0 0 20px rgba(0, 240, 255, 0.6)'
+        } : {
+          border: '1px solid rgba(0, 240, 255, 0.2)'
+        }}
+      >
+        <Activity className="w-3.5 h-3.5" />
+        {language === 'AR' ? 'الخلفية' : 'Backend'}
+      </button>
+
       {/* Connection */}
-      <div className="w-2 h-2 rounded-full bg-cyber-green" style={{ boxShadow: '0 0 12px rgba(5, 223, 114, 0.99)' }} />
+      <div
+        className="w-2 h-2 rounded-full"
+        style={{ backgroundColor: connectionStyle.background, boxShadow: `0 0 12px ${connectionStyle.glow}` }}
+      />
     </div>
   );
 }

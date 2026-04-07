@@ -5,6 +5,7 @@ import { Sidebar } from './Sidebar';
 import { Timeline } from './Timeline';
 import { HealthStrip } from './HealthStrip';
 import { AIPanel } from './AIPanel';
+import { BackendEvolutionPanel } from './BackendEvolutionPanel';
 import { CommandOverview } from './workspaces/CommandOverview';
 import { COPWorkspace } from './workspaces/COPWorkspace';
 import { DecisionsWorkspace } from './workspaces/DecisionsWorkspace';
@@ -16,10 +17,19 @@ import { CyberWorkspace } from './workspaces/CyberWorkspace';
 import { SimulationWorkspace } from './workspaces/SimulationWorkspace';
 import { CommunicationWorkspace } from './workspaces/CommunicationWorkspace';
 import { SurveillanceWorkspace } from './workspaces/SurveillanceWorkspace';
+import { ConnectionStatusBar } from './ConnectionStatusBar';
 import { MessageSquare } from 'lucide-react';
+import { useSystemStatus } from '../../services/hooks/useSystemStatus';
 
 export function DashboardLayout() {
-  const { activeWorkspace, aiPanelOpen, toggleAiPanel, updateTime } = useAppStore();
+  const {
+    activeWorkspace,
+    aiPanelOpen,
+    toggleAiPanel,
+    updateTime,
+    backendEvolutionPanelOpen,
+  } = useAppStore();
+  const systemStatus = useSystemStatus();
 
   // Update clock every second
   useEffect(() => {
@@ -61,6 +71,8 @@ export function DashboardLayout() {
 
   return (
     <div className="h-screen w-screen bg-s3m-base text-s3m-text-primary flex flex-col overflow-hidden">
+      <ConnectionStatusBar />
+
       {/* Top Bar */}
       <TopBar />
 
@@ -76,6 +88,15 @@ export function DashboardLayout() {
         <div className="flex-1 overflow-auto">
           {renderWorkspace()}
         </div>
+
+        <BackendEvolutionPanel
+          isOpen={backendEvolutionPanelOpen}
+          data={systemStatus.data}
+          isLoading={systemStatus.isLoading}
+          error={systemStatus.error}
+          endpointUnavailable={systemStatus.endpointUnavailable}
+          onRefresh={systemStatus.refetch}
+        />
 
         {/* AI Panel */}
         <AIPanel isOpen={aiPanelOpen} />

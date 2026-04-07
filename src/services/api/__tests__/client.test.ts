@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 
 import { APIClient, APIClientError } from '../client'

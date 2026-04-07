@@ -1,11 +1,14 @@
 import axios, { AxiosError, type AxiosInstance, type AxiosRequestConfig } from 'axios';
 
 import {
-  API_CONFIG,
+  API_BASE_URL,
+  API_RETRY_ATTEMPTS,
+  API_RETRY_BASE_DELAY_MS,
+  API_TIMEOUT_MS,
+  API_TRANSPORT,
   COMMAND_ENDPOINTS,
   COMMUNICATION_ENDPOINTS,
   DECISION_ENDPOINTS,
-  SYSTEM_ENDPOINTS,
   READINESS_ENDPOINTS,
   RISK_ENDPOINTS,
   SURVEILLANCE_ENDPOINTS,
@@ -16,21 +19,17 @@ import type {
   APIService,
   ClassificationLevel,
   DataSource,
-  Decision,
   DecisionData,
-  DecisionStatus,
   ISRAssetData,
   MessageData,
   OperationalContextData,
   ReadinessData,
   RiskMetricsData,
   SendMessagePayload,
-  SystemStatusData,
   ThreatTrackData,
   TimelineEventData,
   TransportType,
 } from './types';
-import { useConnectionStore } from '../connectionStore';
 
 type HttpMethod = 'GET' | 'POST';
 
@@ -55,8 +54,6 @@ interface HttpTransport {
 
 export interface APIClientConfig {
   baseURL?: string;
-  baseUrl?: string;
-  fetchImpl?: typeof fetch;
   transport?: TransportType;
   retryAttempts?: number;
   retryBaseDelayMs?: number;
@@ -70,7 +67,6 @@ export interface APIClientConfig {
 
 export class APIClientError extends Error {
   public readonly statusCode: number;
-  public readonly status: number;
   public readonly code: string;
   public readonly retriable: boolean;
   public readonly details?: unknown;
@@ -85,7 +81,6 @@ export class APIClientError extends Error {
     super(message);
     this.name = 'APIClientError';
     this.statusCode = statusCode;
-    this.status = statusCode;
     this.code = code;
     this.retriable = retriable;
     this.details = details;
@@ -97,7 +92,6 @@ const runtimeEnv = (
 ) as Record<string, unknown>;
 
 const isDev = runtimeEnv.DEV === true;
-const DEFAULT_API_TRANSPORT: TransportType = 'fetch';
 
 const sleep = async (ms: number): Promise<void> =>
   new Promise((resolve) => {
@@ -206,7 +200,6 @@ export class APIClient implements APIService {
   private readonly timeoutMs: number;
   private readonly transportType: TransportType;
   private readonly transport: HttpTransport;
-  private readonly fetchImpl?: typeof fetch;
   private readonly enableLogging: boolean;
   private readonly responseSource: DataSource;
   private readonly defaultClassification: ClassificationLevel;
@@ -214,14 +207,13 @@ export class APIClient implements APIService {
   private readonly tokenProvider?: () => string | undefined | Promise<string | undefined>;
 
   constructor(config: APIClientConfig = {}) {
-    this.baseURL = config.baseURL ?? API_CONFIG.baseUrl;
-    this.retryAttempts = config.retryAttempts ?? API_CONFIG.retryAttempts;
-    this.retryBaseDelayMs = config.retryBaseDelayMs ?? API_CONFIG.retryBaseDelayMs;
-    this.timeoutMs = config.timeoutMs ?? API_CONFIG.timeoutMs;
-    this.transportType = config.transport ?? DEFAULT_API_TRANSPORT;
+    this.baseURL = config.baseURL ?? API_BASE_URL;
+    this.retryAttempts = config.retryAttempts ?? API_RETRY_ATTEMPTS;
+    this.retryBaseDelayMs = config.retryBaseDelayMs ?? API_RETRY_BASE_DELAY_MS;
+    this.timeoutMs = config.timeoutMs ?? API_TIMEOUT_MS;
+    this.transportType = config.transport ?? API_TRANSPORT;
     this.transport =
       this.transportType === 'axios' ? new AxiosTransport() : new FetchTransport();
-    this.fetchImpl = config.fetchImpl;
     this.token = config.token;
     this.tokenProvider = config.tokenProvider;
     this.enableLogging = config.enableLogging ?? isDev;
@@ -276,147 +268,12 @@ export class APIClient implements APIService {
     return this.request<MessageData>(COMMUNICATION_ENDPOINTS.inbox, 'GET');
   }
 
-  async getComms(): Promise<MessageData> {
-    return this.request<MessageData>(COMMUNICATION_ENDPOINTS.inbox, 'GET');
-  }
-
-  async getRisk(): Promise<RiskMetricsData> {
-    return this.request<RiskMetricsData>(RISK_ENDPOINTS.metrics, 'GET');
-  }
-
-  async getTracks(): Promise<ThreatTrackData> {
-    return this.request<ThreatTrackData>(COP_ENDPOINTS.threatTracks, 'GET');
-  }
-
-  async getSurveillance(): Promise<ISRAssetData> {
-    return this.request<ISRAssetData>(SURVEILLANCE_ENDPOINTS.assets, 'GET');
-  }
-
-  async getReadiness(): Promise<ReadinessData> {
-    return this.request<ReadinessData>(READINESS_ENDPOINTS.summary, 'GET');
-  }
-
-  async updateDecisionStatus(
-    id: string,
-    status: 'approved' | 'rejected',
-  ): Promise<Decision> {
-    if (status === 'approved') {
-      const result = await this.request<DecisionData>(
-        DECISION_ENDPOINTS.approve(id),
-        'POST',
-        { comment: '' },
-      );
-      const found = result.decisions?.find((d) => d.id === id);
-      return (
-        found ??
-        ({
-          id,
-          title: '',
-          risk: 0,
-          confidence: 0,
-          description: '',
-          status,
-          severity: 'LOW',
-        } as Decision)
-      );
-    }
-    const result = await this.request<DecisionData>(
-      DECISION_ENDPOINTS.reject(id),
-      'POST',
-      { comment: '' },
-    );
-    const found = result.decisions?.find((d) => d.id === id);
-    return (
-      found ??
-      ({
-        id,
-        title: '',
-        risk: 0,
-        confidence: 0,
-        description: '',
-        status,
-        severity: 'LOW',
-      } as Decision)
-    );
-  }
-
   async sendMessage(message: SendMessagePayload): Promise<MessageData> {
     return this.request<MessageData>(COMMUNICATION_ENDPOINTS.send, 'POST', message);
   }
 
   async getTimelineEvents(): Promise<TimelineEventData> {
     return this.request<TimelineEventData>(COMMAND_ENDPOINTS.timeline, 'GET');
-  }
-
-  async getSystemStatus(): Promise<SystemStatusData> {
-    return this.request<SystemStatusData>(SYSTEM_ENDPOINTS.status, 'GET');
-  }
-
-  async get<TData>(path: string): Promise<{ data: TData; status: number; headers: Record<string, string> }> {
-    return this.requestLegacy<TData>(path, {
-      method: 'GET',
-      headers: { Accept: 'application/json' },
-    });
-  }
-
-  async post<TData>(path: string, body: unknown): Promise<{ data: TData; status: number; headers: Record<string, string> }> {
-    return this.requestLegacy<TData>(path, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-  }
-
-  private async requestLegacy<TData>(
-    path: string,
-    init: RequestInit
-  ): Promise<{ data: TData; status: number; headers: Record<string, string> }> {
-    const fetcher = this.fetchImpl ?? fetch;
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
-    const requestHeaders = new Headers(init.headers ?? {});
-
-    try {
-      const response = await fetcher(`${this.baseURL}${path}`, {
-        ...init,
-        headers: requestHeaders,
-        signal: controller.signal,
-      });
-      const raw = await response.text();
-      const parsed = raw.length > 0 ? safeJsonParse(raw) : null;
-
-      if (!response.ok) {
-        throw new APIClientError(
-          `HTTP ${response.status} ${response.statusText}`,
-          response.status,
-          'HTTP',
-          response.status >= 500 || response.status === 429,
-          parsed ?? undefined
-        );
-      }
-
-      return {
-        data: (parsed ?? {}) as TData,
-        status: response.status,
-        headers: Object.fromEntries(response.headers.entries()),
-      };
-    } catch (error) {
-      if (error instanceof APIClientError) {
-        throw error;
-      }
-
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new APIClientError('Request timed out', 0, 'TIMEOUT', true, undefined);
-      }
-
-      const message = error instanceof Error ? error.message : 'Unknown network error';
-      throw new APIClientError(message, 0, 'NETWORK', true, error);
-    } finally {
-      clearTimeout(timeout);
-    }
   }
 
   private async request<TResponse extends APIResponseBase, TBody = unknown>(
@@ -465,12 +322,10 @@ export class APIClient implements APIService {
           attempt,
           latencyMs,
         });
-        useConnectionStore.getState().recordApiResponse(latencyMs);
 
         return normalized;
       } catch (error) {
         const normalizedError = normalizeTransportError(error);
-        useConnectionStore.getState().recordApiError();
         const shouldRetry = normalizedError.retriable && attempt < this.retryAttempts;
 
         this.log('error', {
@@ -604,102 +459,3 @@ export class APIClient implements APIService {
     console.debug(`[APIClient:${event}]`, payload);
   }
 }
-
-const apiClientInstance = new APIClient();
-
-const flattenThreatTracks = (payload: ThreatTrackData): unknown[] => [
-  ...(payload.kinetic ?? []),
-  ...(payload.cyber ?? []),
-  ...(payload.intel ?? []),
-];
-
-const findUpdatedDecision = (response: DecisionData, id: string): Decision | null =>
-  response.decisions.find((decision) => decision.id === id) ?? null;
-
-export const backendApiClient = {
-  async getOperationalContext(): Promise<OperationalContextData> {
-    return apiClientInstance.getOperationalContext();
-  },
-
-  async getDecisions(): Promise<Decision[]> {
-    const response = await apiClientInstance.getDecisions();
-    return response.decisions;
-  },
-
-  async updateDecisionStatus(id: string, status: DecisionStatus): Promise<Decision> {
-    const response =
-      status === 'approved'
-        ? await apiClientInstance.approveDecision(id, 'Approved from S3M GUI')
-        : await apiClientInstance.rejectDecision(id, 'Rejected from S3M GUI');
-
-    const updatedDecision = findUpdatedDecision(response, id);
-    if (updatedDecision) {
-      return updatedDecision;
-    }
-
-    const decisions = await this.getDecisions();
-    return (
-      decisions.find((decision) => decision.id === id) ?? {
-        id,
-        title: id,
-        description: 'Decision status updated',
-        status,
-        severity: 'MEDIUM',
-        risk: 0,
-        confidence: 0,
-      }
-    );
-  },
-
-  async getRiskMetrics(): Promise<RiskMetricsData> {
-    return apiClientInstance.getRiskMetrics();
-  },
-
-  async getRisk(): Promise<RiskMetricsData> {
-    return this.getRiskMetrics();
-  },
-
-  async getThreatTracks(): Promise<ThreatTrackData> {
-    return apiClientInstance.getThreatTracks();
-  },
-
-  async getTracks(): Promise<unknown[]> {
-    const response = await this.getThreatTracks();
-    return flattenThreatTracks(response);
-  },
-
-  async getReadinessSummary(): Promise<ReadinessData> {
-    return apiClientInstance.getReadinessSummary();
-  },
-
-  async getReadiness(): Promise<ReadinessData> {
-    return this.getReadinessSummary();
-  },
-
-  async getSurveillanceAssets(): Promise<ISRAssetData> {
-    return apiClientInstance.getSurveillanceAssets();
-  },
-
-  async getSurveillance(): Promise<ISRAssetData> {
-    return this.getSurveillanceAssets();
-  },
-
-  async getMessages(): Promise<MessageData> {
-    return apiClientInstance.getMessages();
-  },
-
-  async getComms(): Promise<MessageData> {
-    return this.getMessages();
-  },
-
-  async getTimelineEvents(): Promise<TimelineEventData> {
-    return apiClientInstance.getTimelineEvents();
-  },
-
-  async getSystemStatus(): Promise<SystemStatusData> {
-    return apiClientInstance.getSystemStatus();
-  },
-};
-
-export const apiClient = apiClientInstance;
-export { APIClient as ApiClient, APIClientError as BackendApiError };
