@@ -46,13 +46,39 @@ const readEnvBoolean = (key: string, fallback: boolean): boolean => {
   return fallback;
 };
 
-const deriveWsUrl = (apiBaseUrl: string): string => {
-  const wsProtocolBase = apiBaseUrl
-    .replace(/^https:\/\//, 'wss://')
-    .replace(/^http:\/\//, 'ws://');
-  const withoutApiPath = wsProtocolBase.replace(/\/api\/v1\/?$/, '');
-  return `${withoutApiPath}/ws`;
+const readOptionalEnvString = (key: string): string => {
+  const value = runtimeEnv[key];
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+
+  return '';
 };
+
+const resolveWsUrl = (baseUrl: string): string => {
+  if (baseUrl.startsWith('https://')) {
+    return baseUrl.replace('https://', 'wss://');
+  }
+
+  if (baseUrl.startsWith('http://')) {
+    return baseUrl.replace('http://', 'ws://');
+  }
+
+  return baseUrl;
+};
+
+const API_BASE_URL_ENV = readOptionalEnvString('VITE_API_BASE_URL');
+
+export const API_BASE_URL = readEnvString(
+  'VITE_API_BASE_URL',
+  'http://localhost:8080/api/v1',
+);
+
+export const API_TRANSPORT = readEnvString('VITE_API_TRANSPORT', 'fetch')
+  .toLowerCase() as 'fetch' | 'axios';
+
+export const API_BACKEND_MODE = readEnvString('VITE_API_BACKEND_MODE', 'mock')
+  .toLowerCase() as 'mock' | 'real';
 
 const hasExplicitApiBaseUrl = readRawEnvString('VITE_API_BASE_URL') != null;
 const useMockRawValue = runtimeEnv.VITE_USE_MOCK_BACKEND;
@@ -79,7 +105,19 @@ export const API_CONFIG = {
   mockLatencyMs: 350,
 } as const;
 
-export const DEFAULT_BACKEND_SYNC_INTERVAL_MS = 30_000;
+export const API_CONFIG = {
+  baseUrl: API_BASE_URL_ENV,
+  wsUrl: readEnvString('VITE_WS_URL', resolveWsUrl(API_BASE_URL)),
+  useMock: USE_MOCK_BACKEND,
+} as const;
+
+export const API_RETRY_ATTEMPTS = readEnvNumber('VITE_API_RETRY_ATTEMPTS', 2);
+export const API_RETRY_BASE_DELAY_MS = readEnvNumber(
+  'VITE_API_RETRY_BASE_DELAY_MS',
+  300,
+);
+export const API_TIMEOUT_MS = readEnvNumber('VITE_API_TIMEOUT_MS', 8000);
+export const MOCK_API_LATENCY_MS = readEnvNumber('VITE_MOCK_API_LATENCY_MS', 350);
 
 export const WORKSPACE_ENDPOINTS = {
   command: '/workspaces/command',
