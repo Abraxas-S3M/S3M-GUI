@@ -2,8 +2,13 @@ import { CommandCard } from '../CommandCard';
 import { ProgressBar } from '../ProgressBar';
 import { CheckSquare, Square, Users, Award, Languages, AlertCircle, TrendingDown, Calendar, Clock, Target, ChevronDown, ChevronRight, Zap, Shield } from 'lucide-react';
 import { useState } from 'react';
+import { useAppStore } from '../../store';
+import { useWorkspaceSyncPolling } from '../../../services/hooks/useWorkspaceSyncPolling';
 
 export function ReadinessWorkspace() {
+  const syncReadiness = useAppStore((state) => state.syncReadiness);
+  useWorkspaceSyncPolling(syncReadiness);
+
   const [expandedPersonnel, setExpandedPersonnel] = useState(true);
   const [expandedManning, setExpandedManning] = useState(false);
   const [expandedQualification, setExpandedQualification] = useState(false);

@@ -3,8 +3,13 @@ import { RingGauge } from '../RingGauge';
 import { ProgressBar } from '../ProgressBar';
 import { TrendingUp, TrendingDown, Users, Zap, Package, AlertTriangle, Shield, Clock, Wrench, Truck, Globe, Radio, Megaphone, TrendingUp as Escalation, ChevronDown, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
+import { useAppStore } from '../../store';
+import { useWorkspaceSyncPolling } from '../../../services/hooks/useWorkspaceSyncPolling';
 
 export function RiskWorkspace() {
+  const syncRiskMetrics = useAppStore((state) => state.syncRiskMetrics);
+  useWorkspaceSyncPolling(syncRiskMetrics);
+
   const [expandedCategory, setExpandedCategory] = useState<string | null>('mission');
   const [selectedRiskView, setSelectedRiskView] = useState<'mission' | 'cyber' | 'supply' | 'political' | 'all'>('all');
 
