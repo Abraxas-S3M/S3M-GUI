@@ -17,6 +17,7 @@ import { CyberWorkspace } from './workspaces/CyberWorkspace';
 import { SimulationWorkspace } from './workspaces/SimulationWorkspace';
 import { CommunicationWorkspace } from './workspaces/CommunicationWorkspace';
 import { SurveillanceWorkspace } from './workspaces/SurveillanceWorkspace';
+import { ConnectionStatusBar } from './ConnectionStatusBar';
 import { MessageSquare } from 'lucide-react';
 import { useSystemStatus } from '../../services/hooks/useSystemStatus';
 
@@ -70,6 +71,8 @@ export function DashboardLayout() {
 
   return (
     <div className="h-screen w-screen bg-s3m-base text-s3m-text-primary flex flex-col overflow-hidden">
+      <ConnectionStatusBar />
+
       {/* Top Bar */}
       <TopBar />
 

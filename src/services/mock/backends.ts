@@ -1,8 +1,8 @@
 import {
+  API_CONFIG,
   MOCK_API_LATENCY_MS,
-  USE_MOCK_BACKEND,
 } from '../api/config';
-import { APIClient, type APIClientConfig } from '../api/client';
+import { APIClient, type APIClientConfig } from '../api/clientCore';
 import type {
   APIResponseBase,
   APIService,
@@ -34,7 +34,7 @@ const createRequestId = (): string =>
     ? crypto.randomUUID()
     : `mock-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
-export class MockBackend implements APIService {
+class MockBackend implements APIService {
   private readonly latencyMs: number;
   private readonly classification: ClassificationLevel;
 
@@ -141,7 +141,7 @@ export class MockBackend implements APIService {
     },
   ];
 
-  constructor(latencyMs = MOCK_API_LATENCY_MS, classification: ClassificationLevel = 'SECRET') {
+  constructor(latencyMs = API_CONFIG.mockLatencyMs, classification: ClassificationLevel = 'SECRET') {
     this.latencyMs = latencyMs;
     this.classification = classification;
   }
@@ -550,7 +550,16 @@ export class MockBackend implements APIService {
   }
 }
 
-export const BACKEND_MODE = USE_MOCK_BACKEND ? 'mock' : 'real';
+const MockBackendExport = API_CONFIG.useMock ? MockBackend : undefined;
+export { MockBackendExport as MockBackend };
 
-export const createBackendClient = (config?: APIClientConfig): APIService =>
-  USE_MOCK_BACKEND ? new MockBackend() : new APIClient(config);
+export const BACKEND_MODE = API_CONFIG.useMock ? 'mock' : 'real';
+
+export const createBackendClient = (config?: APIClientConfig): APIService => {
+  if (API_CONFIG.useMock) {
+    return new MockBackend();
+  }
+  return new APIClient(config);
+};
+
+export const backendApiClient: APIService = createBackendClient();

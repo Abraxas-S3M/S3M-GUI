@@ -1,12 +1,10 @@
 import { create } from 'zustand';
 import { backendApiClient } from '../services/api/client';
-import { mockBackendData } from '../services/mock/data';
-import type { BackendSyncStatus } from '../services/api/types';
+import type { BackendSyncStatus, Decision } from '../services/api/types';
 
 const getCurrentZuluTime = (): string => new Date().toISOString().substr(11, 8) + 'Z';
 const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : 'Backend synchronization failed';
-const cloneSeedDecisions = (): Decision[] => (mockBackendData.decisions ?? []).map((decision) => ({ ...decision }));
 
 export type WorkspaceType =
   | 'command'
@@ -23,17 +21,6 @@ export type WorkspaceType =
 
 export interface ThreatTrack {
   id: string;
-  [key: string]: unknown;
-}
-
-export interface Decision {
-  id: string;
-  title: string;
-  risk: number;
-  confidence: number;
-  description: string;
-  status: 'pending' | 'approved' | 'rejected';
-  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
   [key: string]: unknown;
 }
 
@@ -223,7 +210,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   mode: 'CMD',
   setMode: (mode) => set({ mode }),
 
-  decisions: cloneSeedDecisions(),
+  decisions: [],
   setDecisions: (decisions) => set({ decisions }),
 
   backendSyncStatus: 'idle',
@@ -237,9 +224,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ backendSyncStatus: 'syncing', backendSyncError: null });
 
     try {
-      const decisions = await backendApiClient.getDecisions();
+      const decisionData = await backendApiClient.getDecisions();
       set({
-        decisions,
+        decisions: decisionData.decisions ?? [],
         backendSyncStatus: 'ready',
         backendSyncError: null,
         lastBackendSyncAt: new Date().toISOString()
