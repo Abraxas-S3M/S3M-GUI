@@ -1,6 +1,5 @@
 import {
   API_CONFIG,
-  MOCK_API_LATENCY_MS,
 } from '../api/config';
 import { APIClient, type APIClientConfig } from '../api/clientCore';
 import type {

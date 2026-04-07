@@ -1,10 +1,8 @@
 import axios, { AxiosError, type AxiosInstance, type AxiosRequestConfig } from 'axios';
 
 import {
+  API_CONFIG,
   API_BASE_URL,
-  API_RETRY_ATTEMPTS,
-  API_RETRY_BASE_DELAY_MS,
-  API_TIMEOUT_MS,
   API_TRANSPORT,
   COMMAND_ENDPOINTS,
   COMMUNICATION_ENDPOINTS,
@@ -208,9 +206,9 @@ export class APIClient implements APIService {
 
   constructor(config: APIClientConfig = {}) {
     this.baseURL = config.baseURL ?? API_BASE_URL;
-    this.retryAttempts = config.retryAttempts ?? API_RETRY_ATTEMPTS;
-    this.retryBaseDelayMs = config.retryBaseDelayMs ?? API_RETRY_BASE_DELAY_MS;
-    this.timeoutMs = config.timeoutMs ?? API_TIMEOUT_MS;
+    this.retryAttempts = config.retryAttempts ?? API_CONFIG.retryAttempts;
+    this.retryBaseDelayMs = config.retryBaseDelayMs ?? API_CONFIG.retryBaseDelayMs;
+    this.timeoutMs = config.timeoutMs ?? API_CONFIG.timeoutMs;
     this.transportType = config.transport ?? API_TRANSPORT;
     this.transport =
       this.transportType === 'axios' ? new AxiosTransport() : new FetchTransport();
