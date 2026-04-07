@@ -1,5 +1,5 @@
 export * from './apiClient';
-export * from './config';
+export * from './api/config';
 export * from './storeSync';
 export * from './types';
 export * from './websocketClient';

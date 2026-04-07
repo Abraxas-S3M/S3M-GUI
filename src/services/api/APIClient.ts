@@ -8,6 +8,7 @@ import type {
   SurveillanceData,
   ThreatTrack
 } from './types';
+import { API_CONFIG } from './config';
 
 type RequestOptions = RequestInit & {
   timeoutMs?: number;
@@ -34,7 +35,7 @@ function withTimeout(signal: AbortSignal | null, timeoutMs: number): AbortSignal
 
 export class APIClient {
   private static get baseUrl(): string {
-    return (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api';
+    return API_CONFIG.baseUrl;
   }
 
   private static async request<T>(path: string, options: RequestOptions = {}): Promise<T> {

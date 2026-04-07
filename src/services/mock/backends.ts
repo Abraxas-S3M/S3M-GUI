@@ -1,6 +1,5 @@
 import {
-  MOCK_API_LATENCY_MS,
-  USE_MOCK_BACKEND,
+  API_CONFIG,
 } from '../api/config';
 import { APIClient, type APIClientConfig } from '../api/client';
 import type {
@@ -141,7 +140,7 @@ export class MockBackend implements APIService {
     },
   ];
 
-  constructor(latencyMs = MOCK_API_LATENCY_MS, classification: ClassificationLevel = 'SECRET') {
+  constructor(latencyMs = API_CONFIG.mockLatencyMs, classification: ClassificationLevel = 'SECRET') {
     this.latencyMs = latencyMs;
     this.classification = classification;
   }
@@ -550,7 +549,7 @@ export class MockBackend implements APIService {
   }
 }
 
-export const BACKEND_MODE = USE_MOCK_BACKEND ? 'mock' : 'real';
+export const BACKEND_MODE = API_CONFIG.useMock ? 'mock' : 'real';
 
 export const createBackendClient = (config?: APIClientConfig): APIService =>
-  USE_MOCK_BACKEND ? new MockBackend() : new APIClient(config);
+  API_CONFIG.useMock ? new MockBackend() : new APIClient(config);
