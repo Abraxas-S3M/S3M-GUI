@@ -1,10 +1,14 @@
 import type {
   BackendSocketEvent,
   BackendSocketEventType,
+  CapabilityChangedEvent,
   DecisionUpdatedEvent,
   BackendSnapshotEvent,
   BackendErrorEvent,
-  BackendHeartbeatEvent
+  BackendHeartbeatEvent,
+  ScenarioIngestedEvent,
+  TrainingCheckpointEvent,
+  TrainingEvalCompleteEvent
 } from './types';
 
 export interface BackendSocketHandlers {
@@ -13,6 +17,10 @@ export interface BackendSocketHandlers {
   onDecisionUpdated?: (event: DecisionUpdatedEvent) => void;
   onHeartbeat?: (event: BackendHeartbeatEvent) => void;
   onError?: (event: BackendErrorEvent) => void;
+  onTrainingCheckpoint?: (event: TrainingCheckpointEvent) => void;
+  onTrainingEvalComplete?: (event: TrainingEvalCompleteEvent) => void;
+  onScenarioIngested?: (event: ScenarioIngestedEvent) => void;
+  onCapabilityChanged?: (event: CapabilityChangedEvent) => void;
 }
 
 const isReconnectSnapshot = (event: BackendSnapshotEvent): boolean =>
@@ -22,7 +30,11 @@ export const isBackendSocketEventType = (value: string): value is BackendSocketE
   value === 'backend.snapshot' ||
   value === 'decision.updated' ||
   value === 'backend.heartbeat' ||
-  value === 'backend.error';
+  value === 'backend.error' ||
+  value === 'training.checkpoint' ||
+  value === 'training.eval_complete' ||
+  value === 'scenario.ingested' ||
+  value === 'capability.changed';
 
 export const createBackendSocketHandler =
   (handlers: BackendSocketHandlers) =>
@@ -43,6 +55,38 @@ export const createBackendSocketHandler =
         return;
       case 'backend.error':
         handlers.onError?.(event);
+        return;
+      case 'training.checkpoint':
+        if (handlers.onTrainingCheckpoint) {
+          handlers.onTrainingCheckpoint(event);
+        } else {
+          // eslint-disable-next-line no-console
+          console.info('[S3M WS] training.checkpoint event received', event.payload);
+        }
+        return;
+      case 'training.eval_complete':
+        if (handlers.onTrainingEvalComplete) {
+          handlers.onTrainingEvalComplete(event);
+        } else {
+          // eslint-disable-next-line no-console
+          console.info('[S3M WS] training.eval_complete event received', event.payload);
+        }
+        return;
+      case 'scenario.ingested':
+        if (handlers.onScenarioIngested) {
+          handlers.onScenarioIngested(event);
+        } else {
+          // eslint-disable-next-line no-console
+          console.info('[S3M WS] scenario.ingested event received', event.payload);
+        }
+        return;
+      case 'capability.changed':
+        if (handlers.onCapabilityChanged) {
+          handlers.onCapabilityChanged(event);
+        } else {
+          // eslint-disable-next-line no-console
+          console.info('[S3M WS] capability.changed event received', event.payload);
+        }
         return;
       default:
         return;

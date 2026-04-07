@@ -5,6 +5,7 @@ import { StatusIndicator } from '../StatusIndicator';
 import { CornerBrackets } from '../CornerBrackets';
 import { Maximize2, Zap, Shield, Target, Radio, ChevronDown, ChevronRight, Play, Pause, SkipBack, Layers, MapPin, Eye, Radar, Satellite, AlertTriangle } from 'lucide-react';
 import { useAppStore } from '../../store';
+import { useWorkspaceSyncPolling } from '../../../services/hooks/useWorkspaceSyncPolling';
 
 export function COPWorkspace() {
   const [activeEnvironment, setActiveEnvironment] = useState<'AIR' | 'GROUND' | 'MARITIME' | 'CYBER'>('AIR');
@@ -13,7 +14,8 @@ export function COPWorkspace() {
   const [showMissionLayer, setShowMissionLayer] = useState(false);
   const [isPlaybackActive, setIsPlaybackActive] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<'5m' | '30m' | '6h'>('30m');
-  const { setAiPanelOpen } = useAppStore();
+  const { setAiPanelOpen, syncThreatTracks } = useAppStore();
+  useWorkspaceSyncPolling(syncThreatTracks);
 
   const tracks = [
     {

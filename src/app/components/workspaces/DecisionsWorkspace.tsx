@@ -5,12 +5,14 @@ import { ProgressBar } from '../ProgressBar';
 import { useAppStore } from '../../store';
 import { CheckCircle2, XCircle, Eye, Clock, AlertCircle, Sparkles, History, GitBranch, TrendingUp, TrendingDown, DollarSign, Timer, Shield, FileText, ChevronDown, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
+import { useWorkspaceSyncPolling } from '../../../services/hooks/useWorkspaceSyncPolling';
 
 type QueueFilter = 'pending' | 'auto-approved' | 'human-approved' | 'vetoed' | 'stale';
 type ExplainView = 'why' | 'replay' | 'alternatives';
 
 export function DecisionsWorkspace() {
-  const { decisions, updateDecisionStatus } = useAppStore();
+  const { decisions, updateDecisionStatus, syncDecisionsFromBackend } = useAppStore();
+  useWorkspaceSyncPolling(syncDecisionsFromBackend);
   const [queueFilter, setQueueFilter] = useState<QueueFilter>('pending');
   const [selectedDecision, setSelectedDecision] = useState<string | null>(null);
   const [explainView, setExplainView] = useState<ExplainView>('why');

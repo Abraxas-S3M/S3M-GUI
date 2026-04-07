@@ -19,7 +19,9 @@ import type {
   APIService,
   ClassificationLevel,
   DataSource,
+  Decision,
   DecisionData,
+  DecisionStatus,
   ISRAssetData,
   MessageData,
   OperationalContextData,
@@ -54,6 +56,8 @@ interface HttpTransport {
 
 export interface APIClientConfig {
   baseURL?: string;
+  baseUrl?: string;
+  fetchImpl?: typeof fetch;
   transport?: TransportType;
   retryAttempts?: number;
   retryBaseDelayMs?: number;
@@ -67,6 +71,7 @@ export interface APIClientConfig {
 
 export class APIClientError extends Error {
   public readonly statusCode: number;
+  public readonly status: number;
   public readonly code: string;
   public readonly retriable: boolean;
   public readonly details?: unknown;
@@ -81,6 +86,7 @@ export class APIClientError extends Error {
     super(message);
     this.name = 'APIClientError';
     this.statusCode = statusCode;
+    this.status = statusCode;
     this.code = code;
     this.retriable = retriable;
     this.details = details;
@@ -200,6 +206,7 @@ export class APIClient implements APIService {
   private readonly timeoutMs: number;
   private readonly transportType: TransportType;
   private readonly transport: HttpTransport;
+  private readonly fetchImpl?: typeof fetch;
   private readonly enableLogging: boolean;
   private readonly responseSource: DataSource;
   private readonly defaultClassification: ClassificationLevel;
@@ -207,13 +214,14 @@ export class APIClient implements APIService {
   private readonly tokenProvider?: () => string | undefined | Promise<string | undefined>;
 
   constructor(config: APIClientConfig = {}) {
-    this.baseURL = config.baseURL ?? API_BASE_URL;
+    this.baseURL = config.baseURL ?? config.baseUrl ?? API_BASE_URL;
     this.retryAttempts = config.retryAttempts ?? API_RETRY_ATTEMPTS;
     this.retryBaseDelayMs = config.retryBaseDelayMs ?? API_RETRY_BASE_DELAY_MS;
     this.timeoutMs = config.timeoutMs ?? API_TIMEOUT_MS;
     this.transportType = config.transport ?? API_TRANSPORT;
     this.transport =
       this.transportType === 'axios' ? new AxiosTransport() : new FetchTransport();
+    this.fetchImpl = config.fetchImpl;
     this.token = config.token;
     this.tokenProvider = config.tokenProvider;
     this.enableLogging = config.enableLogging ?? isDev;
@@ -274,6 +282,73 @@ export class APIClient implements APIService {
 
   async getTimelineEvents(): Promise<TimelineEventData> {
     return this.request<TimelineEventData>(COMMAND_ENDPOINTS.timeline, 'GET');
+  }
+
+  async get<TData>(path: string): Promise<{ data: TData; status: number; headers: Record<string, string> }> {
+    return this.requestLegacy<TData>(path, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+  }
+
+  async post<TData>(path: string, body: unknown): Promise<{ data: TData; status: number; headers: Record<string, string> }> {
+    return this.requestLegacy<TData>(path, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+  }
+
+  private async requestLegacy<TData>(
+    path: string,
+    init: RequestInit
+  ): Promise<{ data: TData; status: number; headers: Record<string, string> }> {
+    const fetcher = this.fetchImpl ?? fetch;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+    const requestHeaders = new Headers(init.headers ?? {});
+
+    try {
+      const response = await fetcher(`${this.baseURL}${path}`, {
+        ...init,
+        headers: requestHeaders,
+        signal: controller.signal,
+      });
+      const raw = await response.text();
+      const parsed = raw.length > 0 ? safeJsonParse(raw) : null;
+
+      if (!response.ok) {
+        throw new APIClientError(
+          `HTTP ${response.status} ${response.statusText}`,
+          response.status,
+          'HTTP',
+          response.status >= 500 || response.status === 429,
+          parsed ?? undefined
+        );
+      }
+
+      return {
+        data: (parsed ?? {}) as TData,
+        status: response.status,
+        headers: Object.fromEntries(response.headers.entries()),
+      };
+    } catch (error) {
+      if (error instanceof APIClientError) {
+        throw error;
+      }
+
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new APIClientError('Request timed out', 0, 'TIMEOUT', true, undefined);
+      }
+
+      const message = error instanceof Error ? error.message : 'Unknown network error';
+      throw new APIClientError(message, 0, 'NETWORK', true, error);
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
   private async request<TResponse extends APIResponseBase, TBody = unknown>(
@@ -460,6 +535,97 @@ export class APIClient implements APIService {
   }
 }
 
-export const backendApiClient = new APIClient();
-export const apiClient = backendApiClient;
+const apiClientInstance = new APIClient();
+
+const flattenThreatTracks = (payload: ThreatTrackData): unknown[] => [
+  ...(payload.kinetic ?? []),
+  ...(payload.cyber ?? []),
+  ...(payload.intel ?? []),
+];
+
+const findUpdatedDecision = (response: DecisionData, id: string): Decision | null =>
+  response.decisions.find((decision) => decision.id === id) ?? null;
+
+export const backendApiClient = {
+  async getOperationalContext(): Promise<OperationalContextData> {
+    return apiClientInstance.getOperationalContext();
+  },
+
+  async getDecisions(): Promise<Decision[]> {
+    const response = await apiClientInstance.getDecisions();
+    return response.decisions;
+  },
+
+  async updateDecisionStatus(id: string, status: DecisionStatus): Promise<Decision> {
+    const response =
+      status === 'approved'
+        ? await apiClientInstance.approveDecision(id, 'Approved from S3M GUI')
+        : await apiClientInstance.rejectDecision(id, 'Rejected from S3M GUI');
+
+    const updatedDecision = findUpdatedDecision(response, id);
+    if (updatedDecision) {
+      return updatedDecision;
+    }
+
+    const decisions = await this.getDecisions();
+    return (
+      decisions.find((decision) => decision.id === id) ?? {
+        id,
+        title: id,
+        description: 'Decision status updated',
+        status,
+        severity: 'MEDIUM',
+        risk: 0,
+        confidence: 0,
+      }
+    );
+  },
+
+  async getRiskMetrics(): Promise<RiskMetricsData> {
+    return apiClientInstance.getRiskMetrics();
+  },
+
+  async getRisk(): Promise<RiskMetricsData> {
+    return this.getRiskMetrics();
+  },
+
+  async getThreatTracks(): Promise<ThreatTrackData> {
+    return apiClientInstance.getThreatTracks();
+  },
+
+  async getTracks(): Promise<unknown[]> {
+    const response = await this.getThreatTracks();
+    return flattenThreatTracks(response);
+  },
+
+  async getReadinessSummary(): Promise<ReadinessData> {
+    return apiClientInstance.getReadinessSummary();
+  },
+
+  async getReadiness(): Promise<ReadinessData> {
+    return this.getReadinessSummary();
+  },
+
+  async getSurveillanceAssets(): Promise<ISRAssetData> {
+    return apiClientInstance.getSurveillanceAssets();
+  },
+
+  async getSurveillance(): Promise<ISRAssetData> {
+    return this.getSurveillanceAssets();
+  },
+
+  async getMessages(): Promise<MessageData> {
+    return apiClientInstance.getMessages();
+  },
+
+  async getComms(): Promise<MessageData> {
+    return this.getMessages();
+  },
+
+  async getTimelineEvents(): Promise<TimelineEventData> {
+    return apiClientInstance.getTimelineEvents();
+  },
+};
+
+export const apiClient = apiClientInstance;
 export { APIClient as ApiClient, APIClientError as BackendApiError };

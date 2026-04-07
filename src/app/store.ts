@@ -1,12 +1,12 @@
 import { create } from 'zustand';
 import { backendApiClient } from '../services/api/client';
 import { mockBackendData } from '../services/mock/data';
-import type { BackendSyncStatus, Decision } from '../services/api/types';
+import type { BackendSyncStatus } from '../services/api/types';
 
 const getCurrentZuluTime = (): string => new Date().toISOString().substr(11, 8) + 'Z';
 const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : 'Backend synchronization failed';
-const cloneSeedDecisions = (): Decision[] => mockBackendData.decisions.map((decision) => ({ ...decision }));
+const cloneSeedDecisions = (): Decision[] => (mockBackendData.decisions ?? []).map((decision) => ({ ...decision }));
 
 export type WorkspaceType =
   | 'command'
@@ -176,7 +176,15 @@ interface AppState {
   backendSyncStatus: BackendSyncStatus;
   backendSyncError: string | null;
   lastBackendSyncAt: string | null;
+  operationalContext: unknown | null;
+  tracks: ThreatTrack[];
+  riskMetrics: RiskMetrics;
+  readinessStatus: ReadinessStatus;
   syncDecisionsFromBackend: () => Promise<void>;
+  syncOperationalContext: () => Promise<void>;
+  syncThreatTracks: () => Promise<void>;
+  syncRiskMetrics: () => Promise<void>;
+  syncReadiness: () => Promise<void>;
 
   updateDecisionStatus: (id: string, status: 'approved' | 'rejected') => void;
 }
@@ -213,6 +221,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   backendSyncStatus: 'idle',
   backendSyncError: null,
   lastBackendSyncAt: null,
+  operationalContext: null,
+  tracks: [],
+  riskMetrics: {},
+  readinessStatus: {},
   syncDecisionsFromBackend: async () => {
     set({ backendSyncStatus: 'syncing', backendSyncError: null });
 
@@ -220,6 +232,83 @@ export const useAppStore = create<AppState>((set, get) => ({
       const decisions = await backendApiClient.getDecisions();
       set({
         decisions,
+        backendSyncStatus: 'ready',
+        backendSyncError: null,
+        lastBackendSyncAt: new Date().toISOString()
+      });
+    } catch (error) {
+      set({
+        backendSyncStatus: 'error',
+        backendSyncError: getErrorMessage(error)
+      });
+    }
+  },
+  syncOperationalContext: async () => {
+    set({ backendSyncStatus: 'syncing', backendSyncError: null });
+
+    try {
+      const operationalContext = await backendApiClient.getOperationalContext();
+      set({
+        operationalContext,
+        backendSyncStatus: 'ready',
+        backendSyncError: null,
+        lastBackendSyncAt: new Date().toISOString()
+      });
+    } catch (error) {
+      set({
+        backendSyncStatus: 'error',
+        backendSyncError: getErrorMessage(error)
+      });
+    }
+  },
+  syncThreatTracks: async () => {
+    set({ backendSyncStatus: 'syncing', backendSyncError: null });
+
+    try {
+      const threatTracks = await backendApiClient.getThreatTracks();
+      const tracks = [
+        ...(threatTracks.kinetic ?? []),
+        ...(threatTracks.cyber ?? []),
+        ...(threatTracks.intel ?? []),
+      ].map((track) => ({ ...track })) as ThreatTrack[];
+      set({
+        tracks,
+        backendSyncStatus: 'ready',
+        backendSyncError: null,
+        lastBackendSyncAt: new Date().toISOString()
+      });
+    } catch (error) {
+      set({
+        backendSyncStatus: 'error',
+        backendSyncError: getErrorMessage(error)
+      });
+    }
+  },
+  syncRiskMetrics: async () => {
+    set({ backendSyncStatus: 'syncing', backendSyncError: null });
+
+    try {
+      const riskMetrics = await backendApiClient.getRiskMetrics();
+      set({
+        riskMetrics: riskMetrics as unknown as RiskMetrics,
+        backendSyncStatus: 'ready',
+        backendSyncError: null,
+        lastBackendSyncAt: new Date().toISOString()
+      });
+    } catch (error) {
+      set({
+        backendSyncStatus: 'error',
+        backendSyncError: getErrorMessage(error)
+      });
+    }
+  },
+  syncReadiness: async () => {
+    set({ backendSyncStatus: 'syncing', backendSyncError: null });
+
+    try {
+      const readinessStatus = await backendApiClient.getReadinessSummary();
+      set({
+        readinessStatus: readinessStatus as unknown as ReadinessStatus,
         backendSyncStatus: 'ready',
         backendSyncError: null,
         lastBackendSyncAt: new Date().toISOString()
