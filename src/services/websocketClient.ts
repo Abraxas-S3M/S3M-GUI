@@ -1,4 +1,4 @@
-import { backendConfig } from './config';
+import { API_CONFIG } from './api/config';
 
 type MessageHandler<TPayload> = (payload: TPayload) => void;
 type SocketFactory = (url: string) => WebSocket;
@@ -22,7 +22,7 @@ export class RealtimeWebSocketClient {
   private shouldReconnect = true;
   private readonly listeners = new Map<string, Set<MessageHandler<unknown>>>();
 
-  constructor(url = backendConfig.wsBaseUrl, options: WebSocketClientOptions = {}) {
+  constructor(url = API_CONFIG.wsUrl, options: WebSocketClientOptions = {}) {
     this.url = url;
     this.reconnectDelayMs = options.reconnectDelayMs ?? 2_500;
     this.socketFactory = options.socketFactory ?? ((socketUrl) => new WebSocket(socketUrl));

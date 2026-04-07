@@ -1,3 +1,5 @@
+import { API_CONFIG } from '../config';
+
 export type WebSocketConnectionStatus =
   | 'idle'
   | 'connecting'
@@ -23,13 +25,7 @@ class BackendWebSocketManager {
   private shouldReconnect = true;
 
   private getSocketUrl(): string {
-    const envUrl = import.meta.env.VITE_WS_URL as string | undefined;
-    if (envUrl) {
-      return envUrl;
-    }
-
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${protocol}//${window.location.host}/ws`;
+    return API_CONFIG.wsUrl;
   }
 
   private setStatus(status: WebSocketConnectionStatus): void {
