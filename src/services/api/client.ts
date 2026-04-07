@@ -19,6 +19,7 @@ import type {
   APIService,
   ClassificationLevel,
   DataSource,
+  Decision,
   DecisionData,
   ISRAssetData,
   MessageData,
@@ -268,6 +269,70 @@ export class APIClient implements APIService {
     return this.request<MessageData>(COMMUNICATION_ENDPOINTS.inbox, 'GET');
   }
 
+  async getComms(): Promise<MessageData> {
+    return this.request<MessageData>(COMMUNICATION_ENDPOINTS.inbox, 'GET');
+  }
+
+  async getRisk(): Promise<RiskMetricsData> {
+    return this.request<RiskMetricsData>(RISK_ENDPOINTS.metrics, 'GET');
+  }
+
+  async getTracks(): Promise<ThreatTrackData> {
+    return this.request<ThreatTrackData>(COP_ENDPOINTS.threatTracks, 'GET');
+  }
+
+  async getSurveillance(): Promise<ISRAssetData> {
+    return this.request<ISRAssetData>(SURVEILLANCE_ENDPOINTS.assets, 'GET');
+  }
+
+  async getReadiness(): Promise<ReadinessData> {
+    return this.request<ReadinessData>(READINESS_ENDPOINTS.summary, 'GET');
+  }
+
+  async updateDecisionStatus(
+    id: string,
+    status: 'approved' | 'rejected',
+  ): Promise<Decision> {
+    if (status === 'approved') {
+      const result = await this.request<DecisionData>(
+        DECISION_ENDPOINTS.approve(id),
+        'POST',
+        { comment: '' },
+      );
+      const found = result.decisions?.find((d) => d.id === id);
+      return (
+        found ??
+        ({
+          id,
+          title: '',
+          risk: 0,
+          confidence: 0,
+          description: '',
+          status,
+          severity: 'LOW',
+        } as Decision)
+      );
+    }
+    const result = await this.request<DecisionData>(
+      DECISION_ENDPOINTS.reject(id),
+      'POST',
+      { comment: '' },
+    );
+    const found = result.decisions?.find((d) => d.id === id);
+    return (
+      found ??
+      ({
+        id,
+        title: '',
+        risk: 0,
+        confidence: 0,
+        description: '',
+        status,
+        severity: 'LOW',
+      } as Decision)
+    );
+  }
+
   async sendMessage(message: SendMessagePayload): Promise<MessageData> {
     return this.request<MessageData>(COMMUNICATION_ENDPOINTS.send, 'POST', message);
   }
@@ -459,3 +524,5 @@ export class APIClient implements APIService {
     console.debug(`[APIClient:${event}]`, payload);
   }
 }
+
+export const backendApiClient = new APIClient();

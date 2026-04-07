@@ -11,6 +11,27 @@ export type SeverityLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type OperationalStatus = 'operational' | 'caution' | 'critical';
 export type DataSource = 'mock' | 's3m-core';
 export type TransportType = 'fetch' | 'axios';
+export type BackendSyncStatus = 'idle' | 'syncing' | 'ready' | 'error';
+export type DecisionStatus = 'pending' | 'approved' | 'rejected';
+
+export interface Decision {
+  id: string;
+  title: string;
+  risk: number;
+  confidence: number;
+  description: string;
+  status: DecisionStatus;
+  severity: SeverityLevel;
+}
+
+export interface BackendSnapshot {
+  decisions: Decision[];
+  risk?: Record<string, unknown>;
+  readiness?: Record<string, unknown>;
+  surveillance?: Record<string, unknown>;
+  comms?: Record<string, unknown>;
+  tracks?: Record<string, unknown>;
+}
 
 export interface APIErrorDetails {
   code: string;
@@ -199,6 +220,11 @@ export interface MessageData extends APIResponseBase {
   inbox: MessageItem[];
   pendingApprovals: PendingItem[];
 }
+
+export type CommsData = MessageData;
+export type RiskData = RiskMetricsData;
+export type TracksData = ThreatTrackData;
+export type SurveillanceData = ISRAssetData;
 
 export interface TimelineEvent {
   id: string;

@@ -59,6 +59,7 @@ export const API_RETRY_BASE_DELAY_MS = readEnvNumber(
 );
 export const API_TIMEOUT_MS = readEnvNumber('VITE_API_TIMEOUT_MS', 8000);
 export const MOCK_API_LATENCY_MS = readEnvNumber('VITE_MOCK_API_LATENCY_MS', 350);
+export const DEFAULT_BACKEND_SYNC_INTERVAL_MS = 30_000;
 
 export const WORKSPACE_ENDPOINTS = {
   command: '/workspaces/command',

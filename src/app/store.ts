@@ -26,17 +26,6 @@ export interface ThreatTrack {
   [key: string]: unknown;
 }
 
-export interface Decision {
-  id: string;
-  title: string;
-  risk: number;
-  confidence: number;
-  description: string;
-  status: 'pending' | 'approved' | 'rejected';
-  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
-  [key: string]: unknown;
-}
-
 export interface RiskMetrics {
   [key: string]: unknown;
 }
