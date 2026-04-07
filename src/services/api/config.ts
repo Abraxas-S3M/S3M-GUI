@@ -4,18 +4,22 @@ const runtimeEnv: RuntimeEnv = (
   (import.meta as unknown as { env?: RuntimeEnv }).env ?? {}
 );
 
-const readEnvString = (key: string, fallback: string): string => {
-  const value = runtimeEnv[key];
-  if (typeof value === 'string' && value.trim().length > 0) {
-    return value.trim();
-  }
-
-  return fallback;
-};
-
-const readEnvNumber = (key: string, fallback: number): number => {
+const readRawEnvString = (key: string): string | undefined => {
   const value = runtimeEnv[key];
   if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
+
+const readEnvString = (key: string, fallback: string): string =>
+  readRawEnvString(key) ?? fallback;
+
+const readEnvNumber = (key: string, fallback: number): number => {
+  const value = readRawEnvString(key);
+  if (!value) {
     return fallback;
   }
 
@@ -30,7 +34,13 @@ const readEnvBoolean = (key: string, fallback: boolean): boolean => {
   }
 
   if (typeof value === 'string') {
-    return value.toLowerCase() === 'true';
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true') {
+      return true;
+    }
+    if (normalized === 'false') {
+      return false;
+    }
   }
 
   return fallback;
@@ -70,10 +80,30 @@ export const API_TRANSPORT = readEnvString('VITE_API_TRANSPORT', 'fetch')
 export const API_BACKEND_MODE = readEnvString('VITE_API_BACKEND_MODE', 'mock')
   .toLowerCase() as 'mock' | 'real';
 
-export const USE_MOCK_BACKEND = readEnvBoolean(
-  'VITE_USE_MOCK_BACKEND',
-  API_BACKEND_MODE !== 'real',
-);
+const hasExplicitApiBaseUrl = readRawEnvString('VITE_API_BASE_URL') != null;
+const useMockRawValue = runtimeEnv.VITE_USE_MOCK_BACKEND;
+const useMockRawString = typeof useMockRawValue === 'string' ? useMockRawValue.trim().toLowerCase() : '';
+
+if (
+  runtimeEnv.PROD === true &&
+  (!hasExplicitApiBaseUrl || useMockRawValue === true || useMockRawString === 'true')
+) {
+  throw new Error(
+    '[S3M] FATAL: Production build requires VITE_API_BASE_URL and VITE_USE_MOCK_BACKEND=false',
+  );
+}
+
+const apiBaseUrl = readEnvString('VITE_API_BASE_URL', 'http://localhost:8080/api/v1');
+
+export const API_CONFIG = {
+  baseUrl: apiBaseUrl,
+  wsUrl: readEnvString('VITE_WS_URL', deriveWsUrl(apiBaseUrl)),
+  useMock: readEnvBoolean('VITE_USE_MOCK_BACKEND', runtimeEnv.DEV === true),
+  timeoutMs: readEnvNumber('VITE_API_TIMEOUT_MS', 8000),
+  retryAttempts: 2,
+  retryBaseDelayMs: 300,
+  mockLatencyMs: 350,
+} as const;
 
 export const API_CONFIG = {
   baseUrl: API_BASE_URL_ENV,
@@ -155,4 +185,14 @@ export const COMMUNICATION_ENDPOINTS = {
 
 export const SURVEILLANCE_ENDPOINTS = {
   assets: `${WORKSPACE_ENDPOINTS.surveillance}/assets`,
+} as const;
+
+const API_WS_URL = readEnvString(
+  'VITE_WS_URL',
+  API_BASE_URL.replace(/^http/i, 'ws').replace(/\/api\/v1\/?$/, '/ws'),
+);
+
+export const API_CONFIG = {
+  apiBaseUrl: API_BASE_URL,
+  wsUrl: API_WS_URL,
 } as const;

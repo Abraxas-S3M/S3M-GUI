@@ -141,7 +141,7 @@ class MockBackend implements APIService {
     },
   ];
 
-  constructor(latencyMs = MOCK_API_LATENCY_MS, classification: ClassificationLevel = 'SECRET') {
+  constructor(latencyMs = API_CONFIG.mockLatencyMs, classification: ClassificationLevel = 'SECRET') {
     this.latencyMs = latencyMs;
     this.classification = classification;
   }

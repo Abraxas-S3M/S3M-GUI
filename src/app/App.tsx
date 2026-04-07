@@ -1,9 +1,16 @@
 import { BrowserRouter, Routes, Route } from 'react-router';
+import { useEffect } from 'react';
 import { LoginPage } from './components/LoginPage';
 import { AuthGuard } from './components/AuthGuard';
 import { DashboardLayout } from './components/DashboardLayout';
+import { initializeRealtimeSync, teardownRealtimeSync } from '../services/realtimeSync';
 
 export default function App() {
+  useEffect(() => {
+    initializeRealtimeSync();
+    return () => teardownRealtimeSync();
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
