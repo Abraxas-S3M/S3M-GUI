@@ -15,7 +15,9 @@ import type {
   APIService,
   ClassificationLevel,
   DataSource,
+  Decision,
   DecisionData,
+  DecisionStatus,
   ISRAssetData,
   MessageData,
   OperationalContextData,
@@ -50,6 +52,8 @@ interface HttpTransport {
 
 export interface APIClientConfig {
   baseURL?: string;
+  baseUrl?: string;
+  fetchImpl?: typeof fetch;
   transport?: TransportType;
   retryAttempts?: number;
   retryBaseDelayMs?: number;
@@ -63,6 +67,7 @@ export interface APIClientConfig {
 
 export class APIClientError extends Error {
   public readonly statusCode: number;
+  public readonly status: number;
   public readonly code: string;
   public readonly retriable: boolean;
   public readonly details?: unknown;
@@ -77,6 +82,7 @@ export class APIClientError extends Error {
     super(message);
     this.name = 'APIClientError';
     this.statusCode = statusCode;
+    this.status = statusCode;
     this.code = code;
     this.retriable = retriable;
     this.details = details;
@@ -197,6 +203,7 @@ export class APIClient implements APIService {
   private readonly timeoutMs: number;
   private readonly transportType: TransportType;
   private readonly transport: HttpTransport;
+  private readonly fetchImpl?: typeof fetch;
   private readonly enableLogging: boolean;
   private readonly responseSource: DataSource;
   private readonly defaultClassification: ClassificationLevel;
@@ -211,6 +218,7 @@ export class APIClient implements APIService {
     this.transportType = config.transport ?? DEFAULT_API_TRANSPORT;
     this.transport =
       this.transportType === 'axios' ? new AxiosTransport() : new FetchTransport();
+    this.fetchImpl = config.fetchImpl;
     this.token = config.token;
     this.tokenProvider = config.tokenProvider;
     this.enableLogging = config.enableLogging ?? isDev;
@@ -265,12 +273,143 @@ export class APIClient implements APIService {
     return this.request<MessageData>(COMMUNICATION_ENDPOINTS.inbox, 'GET');
   }
 
+  async getComms(): Promise<MessageData> {
+    return this.request<MessageData>(COMMUNICATION_ENDPOINTS.inbox, 'GET');
+  }
+
+  async getRisk(): Promise<RiskMetricsData> {
+    return this.request<RiskMetricsData>(RISK_ENDPOINTS.metrics, 'GET');
+  }
+
+  async getTracks(): Promise<ThreatTrackData> {
+    return this.request<ThreatTrackData>(COP_ENDPOINTS.threatTracks, 'GET');
+  }
+
+  async getSurveillance(): Promise<ISRAssetData> {
+    return this.request<ISRAssetData>(SURVEILLANCE_ENDPOINTS.assets, 'GET');
+  }
+
+  async getReadiness(): Promise<ReadinessData> {
+    return this.request<ReadinessData>(READINESS_ENDPOINTS.summary, 'GET');
+  }
+
+  async updateDecisionStatus(
+    id: string,
+    status: 'approved' | 'rejected',
+  ): Promise<Decision> {
+    if (status === 'approved') {
+      const result = await this.request<DecisionData>(
+        DECISION_ENDPOINTS.approve(id),
+        'POST',
+        { comment: '' },
+      );
+      const found = result.decisions?.find((d) => d.id === id);
+      return (
+        found ??
+        ({
+          id,
+          title: '',
+          risk: 0,
+          confidence: 0,
+          description: '',
+          status,
+          severity: 'LOW',
+        } as Decision)
+      );
+    }
+    const result = await this.request<DecisionData>(
+      DECISION_ENDPOINTS.reject(id),
+      'POST',
+      { comment: '' },
+    );
+    const found = result.decisions?.find((d) => d.id === id);
+    return (
+      found ??
+      ({
+        id,
+        title: '',
+        risk: 0,
+        confidence: 0,
+        description: '',
+        status,
+        severity: 'LOW',
+      } as Decision)
+    );
+  }
+
   async sendMessage(message: SendMessagePayload): Promise<MessageData> {
     return this.request<MessageData>(COMMUNICATION_ENDPOINTS.send, 'POST', message);
   }
 
   async getTimelineEvents(): Promise<TimelineEventData> {
     return this.request<TimelineEventData>(COMMAND_ENDPOINTS.timeline, 'GET');
+  }
+
+  async get<TData>(path: string): Promise<{ data: TData; status: number; headers: Record<string, string> }> {
+    return this.requestLegacy<TData>(path, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+  }
+
+  async post<TData>(path: string, body: unknown): Promise<{ data: TData; status: number; headers: Record<string, string> }> {
+    return this.requestLegacy<TData>(path, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+  }
+
+  private async requestLegacy<TData>(
+    path: string,
+    init: RequestInit
+  ): Promise<{ data: TData; status: number; headers: Record<string, string> }> {
+    const fetcher = this.fetchImpl ?? fetch;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+    const requestHeaders = new Headers(init.headers ?? {});
+
+    try {
+      const response = await fetcher(`${this.baseURL}${path}`, {
+        ...init,
+        headers: requestHeaders,
+        signal: controller.signal,
+      });
+      const raw = await response.text();
+      const parsed = raw.length > 0 ? safeJsonParse(raw) : null;
+
+      if (!response.ok) {
+        throw new APIClientError(
+          `HTTP ${response.status} ${response.statusText}`,
+          response.status,
+          'HTTP',
+          response.status >= 500 || response.status === 429,
+          parsed ?? undefined
+        );
+      }
+
+      return {
+        data: (parsed ?? {}) as TData,
+        status: response.status,
+        headers: Object.fromEntries(response.headers.entries()),
+      };
+    } catch (error) {
+      if (error instanceof APIClientError) {
+        throw error;
+      }
+
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new APIClientError('Request timed out', 0, 'TIMEOUT', true, undefined);
+      }
+
+      const message = error instanceof Error ? error.message : 'Unknown network error';
+      throw new APIClientError(message, 0, 'NETWORK', true, error);
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
   private async request<TResponse extends APIResponseBase, TBody = unknown>(
@@ -456,3 +595,5 @@ export class APIClient implements APIService {
     console.debug(`[APIClient:${event}]`, payload);
   }
 }
+
+export const backendApiClient = new APIClient();

@@ -1,9 +1,14 @@
 import { useState } from 'react';
+import { useAppStore } from '../../store';
+import { useWorkspaceSyncPolling } from '../../../services/hooks/useWorkspaceSyncPolling';
 import { CommandCard } from '../CommandCard';
 import { CornerBrackets } from '../CornerBrackets';
 import { AlertCircle, Bot, Activity, Zap, Package, X, ChevronDown, ChevronRight, Inbox, Shield, CheckSquare, Clock, Users, FileText, MapPin } from 'lucide-react';
 
 export function CommandOverview() {
+  const syncOperationalContext = useAppStore((state) => state.syncOperationalContext);
+  useWorkspaceSyncPolling(syncOperationalContext);
+
   const [expandedAgent, setExpandedAgent] = useState<string | null>(null);
   const [expandedInbox, setExpandedInbox] = useState(false);
   const [expandedDirectives, setExpandedDirectives] = useState(false);
