@@ -1,4 +1,5 @@
 import { API_CONFIG } from '../api/config';
+import { useConnectionStore } from '../connectionStore';
 import { isBackendSocketEventType } from './handlers';
 import type { BackendSocketEvent, BackendSocketEventType, BackendSocketListener } from './types';
 
@@ -48,11 +49,13 @@ export class BackendWebSocketClient<TPayload = unknown> {
     }
 
     this.manuallyDisconnected = false;
+    useConnectionStore.getState().setWsStatus('connecting');
     this.socket = this.webSocketFactory(url);
 
     this.socket.onopen = () => {
       const reconnected = this.reconnectAttempt > 0;
       this.reconnectAttempt = 0;
+      useConnectionStore.getState().setWsStatus('connected');
       if (reconnected) {
         const reconnectSnapshotEvent: BackendSocketEvent = {
           type: 'backend.snapshot',
@@ -64,11 +67,13 @@ export class BackendWebSocketClient<TPayload = unknown> {
     };
 
     this.socket.onmessage = (event) => {
+      useConnectionStore.getState().recordWsMessage();
       this.handleIncomingMessage(event.data);
     };
 
     this.socket.onclose = () => {
       this.socket = null;
+      useConnectionStore.getState().setWsStatus('disconnected');
       this.scheduleReconnect(url);
     };
 
@@ -83,6 +88,7 @@ export class BackendWebSocketClient<TPayload = unknown> {
     this.clearReconnectTimer();
     this.socket?.close();
     this.socket = null;
+    useConnectionStore.getState().setWsStatus('disconnected');
   }
 
   subscribe(listener: BackendSocketListener): () => void {
@@ -143,6 +149,7 @@ export class BackendWebSocketClient<TPayload = unknown> {
       15_000
     );
     this.reconnectAttempt += 1;
+    useConnectionStore.getState().setWsStatus('reconnecting');
 
     this.reconnectTimer = setTimeout(() => {
       this.connect(url);
