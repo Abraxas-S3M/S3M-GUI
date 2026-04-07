@@ -206,9 +206,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ backendSyncStatus: 'syncing', backendSyncError: null });
 
     try {
-      const decisions = await backendApiClient.getDecisions();
+      const decisionData = await backendApiClient.getDecisions();
       set({
-        decisions,
+        decisions: decisionData.decisions ?? [],
         backendSyncStatus: 'ready',
         backendSyncError: null,
         lastBackendSyncAt: new Date().toISOString()
