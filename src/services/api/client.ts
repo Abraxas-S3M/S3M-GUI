@@ -282,6 +282,39 @@ export class APIClient implements APIService {
     return this.request<SystemStatusData>(SYSTEM_ENDPOINTS.status, 'GET');
   }
 
+  // Compatibility aliases for legacy hooks/store callers.
+  async getComms(): Promise<MessageData> {
+    return this.getMessages();
+  }
+
+  async getTracks(): Promise<ThreatTrackData> {
+    return this.getThreatTracks();
+  }
+
+  async getReadiness(): Promise<ReadinessData> {
+    return this.getReadinessSummary();
+  }
+
+  async getRisk(): Promise<RiskMetricsData> {
+    return this.getRiskMetrics();
+  }
+
+  async getSurveillance(): Promise<ISRAssetData> {
+    return this.getSurveillanceAssets();
+  }
+
+  async updateDecisionStatus(
+    id: string,
+    status: 'approved' | 'rejected',
+  ): Promise<{ id: string; status: 'approved' | 'rejected' }> {
+    if (status === 'approved') {
+      await this.approveDecision(id, '');
+    } else {
+      await this.rejectDecision(id, '');
+    }
+    return { id, status };
+  }
+
   private async request<TResponse extends APIResponseBase, TBody = unknown>(
     endpoint: string,
     method: HttpMethod,
@@ -465,3 +498,5 @@ export class APIClient implements APIService {
     console.debug(`[APIClient:${event}]`, payload);
   }
 }
+
+export const backendApiClient = new APIClient();
