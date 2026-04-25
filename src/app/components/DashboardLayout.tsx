@@ -6,7 +6,6 @@ import { Timeline } from './Timeline';
 import { HealthStrip } from './HealthStrip';
 import { AIPanel } from './AIPanel';
 import { BackendEvolutionPanel } from './BackendEvolutionPanel';
-import { DemoRoomPage } from './DemoRoomPage';
 import { CommandOverview } from './workspaces/CommandOverview';
 import { COPWorkspace } from './workspaces/COPWorkspace';
 import { DecisionsWorkspace } from './workspaces/DecisionsWorkspace';
@@ -22,11 +21,7 @@ import { ConnectionStatusBar } from './ConnectionStatusBar';
 import { MessageSquare } from 'lucide-react';
 import { useSystemStatus } from '../../services/hooks/useSystemStatus';
 
-interface DashboardLayoutProps {
-  content?: 'dashboard' | 'demo-room';
-}
-
-export function DashboardLayout({ content = 'dashboard' }: DashboardLayoutProps) {
+export function DashboardLayout() {
   const {
     activeWorkspace,
     aiPanelOpen,
@@ -35,8 +30,6 @@ export function DashboardLayout({ content = 'dashboard' }: DashboardLayoutProps)
     backendEvolutionPanelOpen,
   } = useAppStore();
   const systemStatus = useSystemStatus();
-  const showDemoRoom = content === 'demo-room';
-
 
   // Update clock every second
   useEffect(() => {
@@ -93,7 +86,7 @@ export function DashboardLayout({ content = 'dashboard' }: DashboardLayoutProps)
 
         {/* Workspace Content */}
         <div className="flex-1 overflow-auto">
-          {showDemoRoom ? <DemoRoomPage /> : renderWorkspace()}
+          {renderWorkspace()}
         </div>
 
         <BackendEvolutionPanel

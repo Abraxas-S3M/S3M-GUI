@@ -5,6 +5,7 @@ import type { BackendSyncStatus, Decision } from '../services/api/types';
 const getCurrentZuluTime = (): string => new Date().toISOString().substr(11, 8) + 'Z';
 const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : 'Backend synchronization failed';
+const DEMO_ROOM_SELECTION_STORAGE_KEY = 's3m_demo_room_selection';
 
 export type WorkspaceType =
   | 'command'
@@ -49,6 +50,14 @@ export interface ISRAsset {
 
 export interface OperationalDirectives {
   [key: string]: unknown;
+}
+
+export interface DemoRoomSelection {
+  track: string;
+  trackLabel: string;
+  trackName: string;
+  theater: string;
+  pacing: string;
 }
 
 interface AppOperationalData {
@@ -131,6 +140,51 @@ const emptyOperationalData: AppOperationalData = {
   operationalDirectives: {}
 };
 
+const loadDemoRoomSelection = (): DemoRoomSelection | null => {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const rawValue = window.localStorage.getItem(DEMO_ROOM_SELECTION_STORAGE_KEY);
+    if (!rawValue) return null;
+
+    const parsed = JSON.parse(rawValue) as Partial<DemoRoomSelection>;
+    if (
+      typeof parsed.track !== 'string' ||
+      typeof parsed.trackLabel !== 'string' ||
+      typeof parsed.trackName !== 'string' ||
+      typeof parsed.theater !== 'string' ||
+      typeof parsed.pacing !== 'string'
+    ) {
+      return null;
+    }
+
+    return {
+      track: parsed.track,
+      trackLabel: parsed.trackLabel,
+      trackName: parsed.trackName,
+      theater: parsed.theater,
+      pacing: parsed.pacing
+    };
+  } catch {
+    return null;
+  }
+};
+
+const persistDemoRoomSelection = (selection: DemoRoomSelection | null): void => {
+  if (typeof window === 'undefined') return;
+
+  try {
+    if (selection) {
+      window.localStorage.setItem(DEMO_ROOM_SELECTION_STORAGE_KEY, JSON.stringify(selection));
+      return;
+    }
+
+    window.localStorage.removeItem(DEMO_ROOM_SELECTION_STORAGE_KEY);
+  } catch {
+    // Local storage can be blocked in restrictive browser contexts.
+  }
+};
+
 interface AppState {
   activeWorkspace: WorkspaceType;
   setActiveWorkspace: (workspace: WorkspaceType) => void;
@@ -159,6 +213,9 @@ interface AppState {
 
   mode: string;
   setMode: (mode: string) => void;
+
+  selectedDemoRoomSelection: DemoRoomSelection | null;
+  setSelectedDemoRoomSelection: (selection: DemoRoomSelection) => void;
 
   decisions: Decision[];
   setDecisions: (decisions: Decision[]) => void;
@@ -209,6 +266,12 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   mode: 'CMD',
   setMode: (mode) => set({ mode }),
+
+  selectedDemoRoomSelection: loadDemoRoomSelection(),
+  setSelectedDemoRoomSelection: (selection) => {
+    persistDemoRoomSelection(selection);
+    set({ selectedDemoRoomSelection: selection });
+  },
 
   decisions: [],
   setDecisions: (decisions) => set({ decisions }),

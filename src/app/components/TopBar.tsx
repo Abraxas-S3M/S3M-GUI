@@ -1,9 +1,11 @@
 import { Activity } from 'lucide-react';
+import { useNavigate } from 'react-router';
 import { useConnectionStore } from '../connectionStore';
 import { useAppStore } from '../store';
 import { StatusIndicator } from './StatusIndicator';
 
 export function TopBar() {
+  const navigate = useNavigate();
   const {
     currentTime,
     language,
@@ -12,6 +14,7 @@ export function TopBar() {
     toggleAiPanel,
     backendEvolutionPanelOpen,
     toggleBackendEvolutionPanel,
+    selectedDemoRoomSelection,
   } = useAppStore();
   const apiStatus = useConnectionStore((state) => state.apiStatus);
 
@@ -32,6 +35,25 @@ export function TopBar() {
       </div>
 
       <div className="flex-1" />
+
+      {selectedDemoRoomSelection && (
+        <div className="px-2 py-1 rounded text-[10px] uppercase tracking-wider text-cyber-text-tertiary" style={{
+          border: '1px solid rgba(0, 240, 255, 0.2)'
+        }}>
+          {selectedDemoRoomSelection.trackName} · {selectedDemoRoomSelection.pacing}
+        </div>
+      )}
+
+      <button
+        onClick={() => navigate('/demo-room')}
+        className="px-3 py-1 rounded-lg transition-all duration-300 text-[11px] font-semibold uppercase tracking-wider text-cyber-text-tertiary hover:text-cyber-cyan"
+        style={{
+          border: '1px solid rgba(0, 240, 255, 0.2)'
+        }}
+        title={selectedDemoRoomSelection ? `Current theater: ${selectedDemoRoomSelection.theater}` : 'Open Demo Room'}
+      >
+        Change Theater
+      </button>
 
       {/* Status Indicators */}
       <div className="flex items-center gap-4">

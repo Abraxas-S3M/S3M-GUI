@@ -156,7 +156,7 @@ export function LoginPage() {
       // Store auth state
       sessionStorage.setItem('s3m_authenticated', 'true');
       sessionStorage.setItem('s3m_user', name.trim());
-      navigate('/dashboard', { replace: true });
+      navigate('/demo-room', { replace: true });
     } else {
       setError('CREDENTIALS REQUIRED');
       setIsLoading(false);
