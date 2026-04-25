@@ -574,10 +574,10 @@ export function DemoRoomPage() {
 
   return (
     <div
-      className="h-screen w-screen overflow-hidden bg-[#0A0E14] p-4 text-slate-200"
+      className="h-full overflow-hidden p-4 text-slate-200"
       style={{ fontFamily: '"JetBrains Mono", monospace' }}
     >
-      <div className="flex h-full flex-col gap-4">
+      <div className="flex h-full min-h-0 flex-col gap-4">
         <header className="rounded border border-slate-700/70 bg-slate-900/40 px-4 py-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">

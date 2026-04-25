@@ -3,7 +3,6 @@ import { useEffect } from 'react';
 import { LoginPage } from './components/LoginPage';
 import { AuthGuard } from './components/AuthGuard';
 import { DashboardLayout } from './components/DashboardLayout';
-import { DemoRoomPage } from './components/DemoRoomPage';
 import { initializeRealtimeSync, teardownRealtimeSync } from '../services/realtimeSync';
 
 export default function App() {
@@ -28,7 +27,14 @@ export default function App() {
           }
         />
 
-        <Route path="/demo-room" element={<DemoRoomPage />} />
+        <Route
+          path="/demo-room"
+          element={
+            <AuthGuard>
+              <DashboardLayout content="demo-room" />
+            </AuthGuard>
+          }
+        />
 
         {/* Catch-all — redirect to login */}
         <Route path="*" element={<LoginPage />} />
