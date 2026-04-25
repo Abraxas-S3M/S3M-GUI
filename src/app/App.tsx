@@ -1,8 +1,9 @@
-import { BrowserRouter, Routes, Route } from 'react-router';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
 import { useEffect } from 'react';
 import { LoginPage } from './components/LoginPage';
 import { AuthGuard } from './components/AuthGuard';
 import { DashboardLayout } from './components/DashboardLayout';
+import { DemoRoomPage } from './components/DemoRoomPage';
 import { initializeRealtimeSync, teardownRealtimeSync } from '../services/realtimeSync';
 
 export default function App() {
@@ -15,6 +16,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         {/* Login route — the public entry point */}
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<LoginPage />} />
 
         {/* Dashboard route — protected behind auth */}
@@ -31,13 +33,13 @@ export default function App() {
           path="/demo-room"
           element={
             <AuthGuard>
-              <DashboardLayout content="demo-room" />
+              <DemoRoomPage />
             </AuthGuard>
           }
         />
 
         {/* Catch-all — redirect to login */}
-        <Route path="*" element={<LoginPage />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   );

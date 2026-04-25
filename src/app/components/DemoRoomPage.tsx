@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router';
+import { useAppStore } from '../store';
 
 const API_BASE = import.meta.env.VITE_S3M_API_URL || 'http://138.199.171.135:8080';
 const DEMO_ROOM_WS_URL = `${API_BASE.replace(/^http/, 'ws')}/ws/demo-room`;
@@ -11,6 +13,8 @@ const TRACK_OPTIONS = [
   { value: 'southam_mod', label: 'South America', color: '#34D399' },
   { value: 'africa_mod', label: 'Africa/Sahel', color: '#F59E0B' },
 ] as const;
+
+type TrackOption = (typeof TRACK_OPTIONS)[number];
 
 const PACING_OPTIONS = [
   { value: 'realtime', label: 'Realtime' },
@@ -417,8 +421,19 @@ function renderEventBody(event: DemoRoomEvent) {
 }
 
 export function DemoRoomPage() {
-  const [track, setTrack] = useState<(typeof TRACK_OPTIONS)[number]['value']>('saudi_mod');
-  const [pacing, setPacing] = useState<(typeof PACING_OPTIONS)[number]['value']>('realtime');
+  const navigate = useNavigate();
+  const selectedDemoRoomSelection = useAppStore((state) => state.selectedDemoRoomSelection);
+  const setSelectedDemoRoomSelection = useAppStore((state) => state.setSelectedDemoRoomSelection);
+
+  const initialTrack = TRACK_OPTIONS.some((option) => option.value === selectedDemoRoomSelection?.track)
+    ? (selectedDemoRoomSelection?.track as TrackOption['value'])
+    : 'saudi_mod';
+  const initialPacing = PACING_OPTIONS.some((option) => option.value === selectedDemoRoomSelection?.pacing)
+    ? (selectedDemoRoomSelection?.pacing as (typeof PACING_OPTIONS)[number]['value'])
+    : 'realtime';
+
+  const [track, setTrack] = useState<TrackOption['value']>(initialTrack);
+  const [pacing, setPacing] = useState<(typeof PACING_OPTIONS)[number]['value']>(initialPacing);
   const [phase, setPhase] = useState<PhaseState>('IDLE');
   const [isConnected, setIsConnected] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
@@ -434,6 +449,16 @@ export function DemoRoomPage() {
     () => TRACK_OPTIONS.find((option) => option.value === track) ?? TRACK_OPTIONS[0],
     [track]
   );
+
+  const getTrackName = useCallback((trackLabel: string): string => {
+    const [trackName] = trackLabel.split(' / ');
+    return trackName || trackLabel;
+  }, []);
+
+  const getTrackTheater = useCallback((trackLabel: string): string => {
+    const [, theaterName] = trackLabel.split(' / ');
+    return theaterName || trackLabel;
+  }, []);
 
   const connect = useCallback(() => {
     if (socketRef.current && (socketRef.current.readyState === WebSocket.OPEN || socketRef.current.readyState === WebSocket.CONNECTING)) {
@@ -560,8 +585,17 @@ export function DemoRoomPage() {
       connect();
     }
 
+    setSelectedDemoRoomSelection({
+      track: selectedTrack.value,
+      trackLabel: selectedTrack.label,
+      trackName: getTrackName(selectedTrack.label),
+      theater: getTrackTheater(selectedTrack.label),
+      pacing
+    });
+
     setPhase('RUNNING');
     setIsRunning(true);
+    navigate('/dashboard');
   };
 
   const handleStop = () => {
@@ -574,10 +608,10 @@ export function DemoRoomPage() {
 
   return (
     <div
-      className="h-full overflow-hidden p-4 text-slate-200"
+      className="min-h-screen bg-s3m-base overflow-hidden p-4 text-slate-200"
       style={{ fontFamily: '"JetBrains Mono", monospace' }}
     >
-      <div className="flex h-full min-h-0 flex-col gap-4">
+      <div className="flex min-h-[calc(100vh-2rem)] flex-col gap-4">
         <header className="rounded border border-slate-700/70 bg-slate-900/40 px-4 py-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
