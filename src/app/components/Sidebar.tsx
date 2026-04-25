@@ -1,5 +1,6 @@
 import { useAppStore, WorkspaceType } from '../store';
-import { Home, Target, CheckSquare, AlertTriangle, Map, Package, Activity, Shield, Play, Radio, Eye } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router';
+import { Home, Target, CheckSquare, AlertTriangle, Map, Package, Activity, Shield, Play, Radio, Eye, Monitor } from 'lucide-react';
 
 const workspaceIcons: Record<WorkspaceType, any> = {
   command: Home,
@@ -31,6 +32,9 @@ const workspaceLabels: Record<WorkspaceType, string> = {
 
 export function Sidebar() {
   const { activeWorkspace, setActiveWorkspace } = useAppStore();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isDemoRoomRoute = location.pathname === '/demo-room';
 
   const workspaces: WorkspaceType[] = [
     'command',
@@ -48,14 +52,50 @@ export function Sidebar() {
 
   return (
     <div className="w-48 bg-cyber-deep/50 border-r border-cyber-glass-border flex flex-col py-4 gap-1" style={{ backdropFilter: 'blur(10px)' }}>
+      <button
+        type="button"
+        onClick={() => navigate('/demo-room')}
+        className={`relative h-12 mx-2 px-3 rounded-xl flex items-center gap-3 transition-all duration-300 group ${
+          isDemoRoomRoute
+            ? 'text-cyber-cyan'
+            : 'text-cyber-text-tertiary hover:text-cyber-cyan'
+        }`}
+        style={isDemoRoomRoute ? {
+          background: 'rgba(0, 240, 255, 0.1)',
+          border: '1px solid rgba(0, 240, 255, 0.4)',
+          boxShadow: '0 0 20px rgba(0, 240, 255, 0.3)'
+        } : {
+          border: '1px solid transparent'
+        }}
+      >
+        {isDemoRoomRoute && (
+          <div
+            className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full"
+            style={{
+              backgroundColor: '#00F0FF',
+              boxShadow: '0 0 12px rgba(0, 240, 255, 0.8)'
+            }}
+          />
+        )}
+        <Monitor className="w-5 h-5 flex-shrink-0" style={isDemoRoomRoute ? { filter: 'drop-shadow(0 0 4px rgba(0, 240, 255, 0.8))' } : {}} />
+        <span className={`text-[11px] font-semibold uppercase tracking-wider ${
+          isDemoRoomRoute ? 'text-cyber-cyan' : 'text-cyber-text-tertiary'
+        }`} style={isDemoRoomRoute ? { textShadow: '0 0 8px rgba(0, 240, 255, 0.6)' } : {}}>
+          DEMO ROOM
+        </span>
+      </button>
+
       {workspaces.map((workspace) => {
         const Icon = workspaceIcons[workspace];
-        const isActive = activeWorkspace === workspace;
+        const isActive = !isDemoRoomRoute && activeWorkspace === workspace;
 
         return (
           <button
             key={workspace}
-            onClick={() => setActiveWorkspace(workspace)}
+            onClick={() => {
+              setActiveWorkspace(workspace);
+              navigate('/dashboard');
+            }}
             className={`relative h-12 mx-2 px-3 rounded-xl flex items-center gap-3 transition-all duration-300 group ${
               isActive
                 ? 'text-cyber-cyan'
