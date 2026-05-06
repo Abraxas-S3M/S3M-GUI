@@ -40,8 +40,12 @@ const ACTION_WORKSPACE_MAP: Partial<Record<ChatAction, WorkspaceType>> = {
 };
 
 const QUICK_PROMPTS = [
+  'Hello',
+  'What threats were detected today?',
+  'What is my top priority right now?',
   'What is our readiness at Jubail?',
   'What is the risk of this mission?',
+  'Launch defensive measures',
   'Launch Red Sea drone swarm simulation',
   'Generate Saudi MOD SITREP'
 ] as const;
@@ -57,7 +61,7 @@ const LIVE_FEED_EVENTS = [
 const DEMO_SEED_MESSAGES: Omit<ChatMessage, 'id'>[] = [
   {
     role: 'system',
-    text: 'Saudi MOD Command Agent online. Demo channels synchronized for command operations.',
+    text: 'S3M Live Feed / Chat online. Demo channels synchronized for command operations.',
     source: 'Source: Command Workspace'
   },
   {
@@ -73,20 +77,6 @@ const DEMO_SEED_MESSAGES: Omit<ChatMessage, 'id'>[] = [
     confidence: 88,
     source: 'Source: Readiness Workspace',
     actions: ['OPEN READINESS']
-  },
-  {
-    role: 'system',
-    text: 'Risk engine update: Convoy mission corridor risk index moved to HIGH after hostile track proximity.',
-    confidence: 79,
-    source: 'Source: Risk Workspace',
-    actions: ['OPEN RISK']
-  },
-  {
-    role: 'system',
-    text: 'Cyber/SOC update: Network anomaly detected on subnet 10.5.2.0/24, monitoring set to active containment.',
-    confidence: 84,
-    source: 'Source: Cyber Workspace',
-    actions: ['CYBER WORKSPACE']
   }
 ];
 
@@ -96,6 +86,43 @@ const capMessages = (messages: ChatMessage[]): ChatMessage[] =>
 const buildAssistantResponse = (input: string): Omit<ChatMessage, 'id' | 'role'> => {
   const query = input.toLowerCase();
   const includesAny = (keywords: string[]) => keywords.some((keyword) => query.includes(keyword));
+  const greetingPattern = /(^|\b)(hello|hi|salam)(\b|$)/;
+
+  if (greetingPattern.test(query)) {
+    return {
+      text: 'Welcome to S3M Live Feed / Chat. I can retrieve readiness, risk, threats, priorities, simulation status, and command reports in this demo environment.',
+      confidence: 96,
+      source: 'Source: Command Workspace',
+      actions: ['COMMAND SUMMARY', 'OPEN COP', 'OPEN READINESS']
+    };
+  }
+
+  if (includesAny(['launch defensive measures', 'defensive measures', 'defend'])) {
+    return {
+      text: 'Defensive measures queued in sandbox/demo mode. No real-world mission, live autonomy, or external action was executed.',
+      confidence: 95,
+      source: 'Source: Command Workspace',
+      actions: ['OPEN COP', 'RUN SIMULATION', 'OPEN RISK']
+    };
+  }
+
+  if (includesAny(['top priority', 'priority right now', 'what should i do'])) {
+    return {
+      text: 'Top priority: review Red Sea ISR against hostile UAV track T-218, then verify readiness before launching simulation.',
+      confidence: 89,
+      source: 'Source: Command + COP + Readiness',
+      actions: ['OPEN COP', 'OPEN READINESS', 'OPEN RISK']
+    };
+  }
+
+  if (includesAny(['threats', 'detected today', 'threat detected'])) {
+    return {
+      text: "Today's threat summary: hostile UAV track T-218 remains active, maritime low-visibility traffic is elevated, a cyber anomaly cluster is contained, and readiness shows a minor delta from maintenance windows.",
+      confidence: 84,
+      source: 'Source: COP + Risk + Cyber + Readiness',
+      actions: ['OPEN COP', 'OPEN RISK']
+    };
+  }
 
   if (includesAny(['readiness', 'base', 'unit', 'jubail', 'riyadh', 'king abdulaziz'])) {
     return {
@@ -117,7 +144,7 @@ const buildAssistantResponse = (input: string): Omit<ChatMessage, 'id' | 'role'>
 
   if (includesAny(['simulation', 'launch simulation', 'wargame', 'red sea', 'drone swarm'])) {
     return {
-      text: 'Simulation package prepared for Red Sea drone swarm scenario. Recommended next step is launching the deterministic demo run with current COP tracks.',
+      text: 'Simulation package prepared for Red Sea drone swarm scenario. Sandbox/demo mode only; this is a deterministic training run with current COP tracks.',
       confidence: 92,
       source: 'Source: Simulation Workspace',
       actions: ['RUN SIMULATION', 'OPEN COP']
@@ -144,7 +171,7 @@ const buildAssistantResponse = (input: string): Omit<ChatMessage, 'id' | 'role'>
 
   if (includesAny(['brief', 'sitrep', 'report', 'arabic'])) {
     return {
-      text: 'SITREP package is ready for command brief generation, including Arabic-ready summary sections for threat, readiness, and mission risk.',
+      text: 'Saudi MOD SITREP package is ready for command brief generation, including Arabic-ready sections for threats, readiness, and mission risk.',
       confidence: 87,
       source: 'Source: Command Workspace',
       actions: ['GENERATE SITREP', 'COMMAND SUMMARY']
@@ -165,6 +192,7 @@ export function AIPanel({ isOpen }: AIPanelProps) {
   const timeoutIdsRef = useRef<number[]>([]);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const [inputValue, setInputValue] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>(() =>
     DEMO_SEED_MESSAGES.map((message) => ({
       ...message,
@@ -269,20 +297,6 @@ export function AIPanel({ isOpen }: AIPanelProps) {
         </button>
       </div>
 
-      {/* Status Strip */}
-      <div className="px-4 py-2 border-b border-cyber-glass-border">
-        <div className="flex flex-wrap gap-2">
-          {['COMMAND AGENT ONLINE', 'DEMO MODE', 'SAUDI_MOD'].map((status) => (
-            <span
-              key={status}
-              className="text-[10px] uppercase tracking-wider px-2 py-1 rounded-md text-cyber-cyan border border-cyber-cyan/30 bg-cyber-cyan/5"
-            >
-              {status}
-            </span>
-          ))}
-        </div>
-      </div>
-
       {/* Messages */}
       <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message) => {
@@ -337,17 +351,26 @@ export function AIPanel({ isOpen }: AIPanelProps) {
 
       {/* Input */}
       <div className="p-4 border-t border-cyber-glass-border">
-        <div className="flex flex-wrap gap-2 mb-3">
-          {QUICK_PROMPTS.map((prompt) => (
-            <button
-              key={prompt}
-              onClick={() => handleSend(prompt)}
-              className="text-[10px] uppercase tracking-wider px-2 py-1 rounded-md border border-cyber-cyan/25 text-cyber-cyan hover:border-cyber-cyan/60 hover:bg-cyber-cyan/10 transition-colors"
-            >
-              {prompt}
-            </button>
-          ))}
-        </div>
+        <button
+          onClick={() => setShowSuggestions((previous) => !previous)}
+          className="w-full flex items-center justify-between text-[10px] tracking-[0.18em] px-3 py-2 mb-3 rounded-md border border-cyber-cyan/25 text-cyber-cyan hover:border-cyber-cyan/60 hover:bg-cyber-cyan/10 transition-colors"
+        >
+          <span>SUGGESTED COMMANDS</span>
+          <span className="text-[11px]">{showSuggestions ? 'HIDE' : 'SHOW'}</span>
+        </button>
+        {showSuggestions && (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {QUICK_PROMPTS.map((prompt) => (
+              <button
+                key={prompt}
+                onClick={() => handleSend(prompt)}
+                className="text-[10px] tracking-wide px-2 py-1 rounded-md border border-cyber-cyan/25 text-cyber-cyan hover:border-cyber-cyan/60 hover:bg-cyber-cyan/10 transition-colors"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="flex gap-2">
           <input
             type="text"
