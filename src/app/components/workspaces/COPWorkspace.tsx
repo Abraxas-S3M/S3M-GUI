@@ -55,6 +55,7 @@ type TrackHistory = {
 
 type WorkspaceTrack = {
   id: string;
+  callsign: string;
   type: string;
   conf: number;
   status: string;
@@ -75,6 +76,7 @@ type WorkspaceTrack = {
 const FALLBACK_TRACKS: WorkspaceTrack[] = [
   {
     id: 'T-218',
+    callsign: 'T-218',
     type: 'HOSTILE',
     conf: 89,
     status: 'critical',
@@ -92,6 +94,7 @@ const FALLBACK_TRACKS: WorkspaceTrack[] = [
   },
   {
     id: 'T-331',
+    callsign: 'T-331',
     type: 'UNKNOWN',
     conf: 67,
     status: 'caution',
@@ -109,6 +112,7 @@ const FALLBACK_TRACKS: WorkspaceTrack[] = [
   },
   {
     id: 'UAV-01',
+    callsign: 'UAV-01',
     type: 'FRIENDLY',
     conf: 98,
     status: 'operational',
@@ -126,6 +130,7 @@ const FALLBACK_TRACKS: WorkspaceTrack[] = [
   },
   {
     id: 'UAV-02',
+    callsign: 'UAV-02',
     type: 'FRIENDLY',
     conf: 95,
     status: 'operational',
@@ -143,6 +148,7 @@ const FALLBACK_TRACKS: WorkspaceTrack[] = [
   },
   {
     id: 'UAV-04',
+    callsign: 'UAV-04',
     type: 'FRIENDLY',
     conf: 72,
     status: 'caution',
@@ -200,6 +206,14 @@ const asString = (value: unknown, fallback: string): string =>
 const asNumber = (value: unknown, fallback: number): number =>
   typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 
+const clampNumber = (value: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, value));
+
+const safePercentValue = (value: unknown): number =>
+  clampNumber(Math.round(asNumber(value, 0)), 0, 100);
+
+const safePercent = (value: unknown): string => `${safePercentValue(value)}%`;
+
 const toTrackHistory = (value: unknown, fallback: TrackHistory): TrackHistory => {
   if (typeof value !== 'object' || value === null) {
     return fallback;
@@ -214,23 +228,52 @@ const toTrackHistory = (value: unknown, fallback: TrackHistory): TrackHistory =>
 
 const toWorkspaceTrack = (track: CopTrack, fallback: WorkspaceTrack): WorkspaceTrack => ({
   id: asString(track.id, fallback.id),
+  callsign: asString(track.callsign, track.id ?? fallback.callsign ?? fallback.id),
   type: asString(track.type, fallback.type).toUpperCase(),
   conf: Math.round(asNumber(track.confidence, fallback.conf)),
-  status: asString(track.status, fallback.status),
-  speed: asString(track.speed, fallback.speed),
-  alt: asString(track.altitude, fallback.alt),
+  status: asString(track.status, fallback.status ?? 'unknown'),
+  speed: asString(track.speed, fallback.speed ?? '--'),
+  alt: asString(track.altitude, fallback.alt ?? '--'),
   identityConf: Math.round(asNumber(track.confidence, fallback.identityConf)),
-  hostileProbability: Math.round(asNumber(track.hostileProbability, fallback.hostileProbability)),
-  friendlyProbability: Math.round(asNumber(track.friendlyProbability, fallback.friendlyProbability)),
-  unknownProbability: Math.round(asNumber(track.unknownProbability, fallback.unknownProbability)),
-  sourceReliability: asString(track.sourceReliability, fallback.sourceReliability).toUpperCase(),
+  hostileProbability: safePercentValue(track.hostileProbability ?? fallback.hostileProbability ?? 0),
+  friendlyProbability: safePercentValue(track.friendlyProbability ?? fallback.friendlyProbability ?? 0),
+  unknownProbability: safePercentValue(track.unknownProbability ?? fallback.unknownProbability ?? 0),
+  sourceReliability: asString(track.sourceReliability, fallback.sourceReliability ?? 'UNKNOWN').toUpperCase(),
   lastUpdate: asString(track.lastUpdate, fallback.lastUpdate),
   recommendedAction: asString(track.recommendedAction, fallback.recommendedAction),
-  sensors: Array.isArray(track.sensors) && track.sensors.length > 0 ? track.sensors : fallback.sensors,
+  sensors:
+    Array.isArray(track.sensors) && track.sensors.length > 0
+      ? track.sensors.filter((sensor): sensor is string => typeof sensor === 'string' && sensor.length > 0)
+      : fallback.sensors,
   trackHistory: toTrackHistory(track.trackHistory, fallback.trackHistory),
   coordinates: Array.isArray(track.coordinates) && track.coordinates.length >= 2
     ? [track.coordinates[0], track.coordinates[1]]
     : undefined,
+});
+
+const toSafeWorkspaceTrack = (track: WorkspaceTrack, fallback: WorkspaceTrack): WorkspaceTrack => ({
+  id: asString(track.id, fallback.id),
+  callsign: asString(track.callsign, track.id ?? fallback.callsign ?? fallback.id),
+  type: asString(track.type, fallback.type).toUpperCase(),
+  conf: safePercentValue(track.conf),
+  status: asString(track.status, 'unknown'),
+  speed: asString(track.speed, '--'),
+  alt: asString(track.alt, '--'),
+  identityConf: safePercentValue(track.identityConf),
+  hostileProbability: safePercentValue(track.hostileProbability ?? 0),
+  friendlyProbability: safePercentValue(track.friendlyProbability ?? 0),
+  unknownProbability: safePercentValue(track.unknownProbability ?? 0),
+  sourceReliability: asString(track.sourceReliability, fallback.sourceReliability ?? 'UNKNOWN').toUpperCase(),
+  lastUpdate: asString(track.lastUpdate, fallback.lastUpdate),
+  recommendedAction: asString(track.recommendedAction, fallback.recommendedAction),
+  sensors: (Array.isArray(track.sensors) ? track.sensors : fallback.sensors).filter(
+    (sensor): sensor is string => typeof sensor === 'string' && sensor.length > 0
+  ),
+  trackHistory: toTrackHistory(track.trackHistory, fallback.trackHistory),
+  coordinates:
+    Array.isArray(track.coordinates) && track.coordinates.length >= 2
+      ? [track.coordinates[0], track.coordinates[1]]
+      : fallback.coordinates,
 });
 
 const mergeMissionLayers = (incomingLayers: ReturnType<typeof normalizeCopMap>['layers']): MissionLayer[] =>
@@ -471,24 +514,44 @@ export function COPWorkspace() {
     };
   }, [connectSocket, loadSnapshot]);
 
+  const safeTracks = Array.isArray(tracks) ? tracks : FALLBACK_TRACKS;
+  const safeMissionLayers = Array.isArray(missionLayers) ? missionLayers : FALLBACK_MISSION_LAYERS;
+  const safeDecisions = Array.isArray(decisions) ? decisions : FALLBACK_DECISIONS;
+  const safeFeedItems = Array.isArray(feedItems) ? feedItems : FALLBACK_FEED;
+  const safeAlerts = Array.isArray(alerts) ? alerts : FALLBACK_ALERTS;
+
+  const displayTracks = useMemo(
+    () =>
+      safeTracks.map((track, index) =>
+        toSafeWorkspaceTrack(
+          track,
+          FALLBACK_TRACKS[index] ?? FALLBACK_TRACKS[FALLBACK_TRACKS.length - 1]
+        )
+      ),
+    [safeTracks]
+  );
+
   useEffect(() => {
     if (!expandedTrack) {
       return;
     }
-    if (!tracks.some((track) => track.id === expandedTrack)) {
+    if (!displayTracks.some((track) => track.id === expandedTrack)) {
       setExpandedTrack(null);
     }
-  }, [expandedTrack, tracks]);
+  }, [displayTracks, expandedTrack]);
 
   const primaryHostileTrack = useMemo(
-    () => tracks.find((track) => track.type === 'HOSTILE') ?? tracks[0],
-    [tracks]
+    () => displayTracks.find((track) => track.type === 'HOSTILE') ?? displayTracks[0],
+    [displayTracks]
   );
   const friendlyTracks = useMemo(
-    () => tracks.filter((track) => track.type === 'FRIENDLY').slice(0, 4),
-    [tracks]
+    () => displayTracks.filter((track) => track.type === 'FRIENDLY').slice(0, 4),
+    [displayTracks]
   );
-  const unknownTrack = useMemo(() => tracks.find((track) => track.type === 'UNKNOWN'), [tracks]);
+  const unknownTrack = useMemo(
+    () => displayTracks.find((track) => track.type === 'UNKNOWN'),
+    [displayTracks]
+  );
   const fallbackFriendlyTrackIds = useMemo(
     () =>
       (friendlyTracks.length > 0
@@ -497,9 +560,9 @@ export function COPWorkspace() {
       ).map((track) => track.id),
     [friendlyTracks]
   );
-  const markerDecisions = decisions.length;
-  const markerInterventions = feedItems.length;
-  const markerTrackDivergence = Math.max(1, alerts.length);
+  const markerDecisions = safeDecisions.length;
+  const markerInterventions = safeFeedItems.length;
+  const markerTrackDivergence = Math.max(1, safeAlerts.length);
 
   const handleMapDoubleClick = () => {
     setIsMapExpanded(!isMapExpanded);
@@ -589,7 +652,7 @@ export function COPWorkspace() {
         <div className="relative bg-s3m-card border border-cyber-cyan/30 rounded-lg p-3">
           <CornerBrackets color="#00F0FF" />
           <div className="grid grid-cols-5 gap-2">
-            {missionLayers.map((layer) => (
+            {safeMissionLayers.map((layer) => (
               <button
                 key={layer.id}
                 className="px-3 py-2 rounded text-[11px] uppercase tracking-wider font-semibold transition-all"
@@ -734,7 +797,7 @@ export function COPWorkspace() {
           })}
 
           <LiveCopMap
-            tracks={tracks}
+            tracks={displayTracks}
             mapBounds={mapBounds}
             dataSource={dataSource}
             selectedTrackId={expandedTrack}
@@ -748,7 +811,20 @@ export function COPWorkspace() {
         {/* Track Panel */}
         {!isMapExpanded && (
           <div className="flex-1 space-y-2 overflow-y-auto">
-            {tracks.map((track) => (
+            {displayTracks.map((track) => {
+              const trackType = asString(track.type, 'UNKNOWN').toUpperCase();
+              const trackTypeColor = typeColors[trackType] ?? '#6B7C95';
+              const trackStatus = asString(track.status, 'unknown');
+              const trackHistory = toTrackHistory(track.trackHistory, { splits: 0, merges: 0, deception: 'UNKNOWN' });
+              const trackSensors = Array.isArray(track.sensors) ? track.sensors : [];
+              const hostileProbability = safePercentValue(track.hostileProbability ?? 0);
+              const friendlyProbability = safePercentValue(track.friendlyProbability ?? 0);
+              const unknownProbability = safePercentValue(track.unknownProbability ?? 0);
+              const trackSpeed = asString(track.speed, '--');
+              const trackAlt = asString(track.alt, '--');
+              const trackCallsign = asString(track.callsign, track.id ?? 'UNKNOWN');
+              const sourceReliability = asString(track.sourceReliability, 'UNKNOWN');
+              return (
               <div key={track.id}>
                 <CommandCard
                   className="hover:bg-cyber-glass/20 transition-colors cursor-pointer"
@@ -757,8 +833,8 @@ export function COPWorkspace() {
                   <div
                     className="absolute left-0 top-0 bottom-0 w-0.5"
                     style={{
-                      backgroundColor: typeColors[track.type],
-                      boxShadow: `0 0 8px ${typeColors[track.type]}`
+                      backgroundColor: trackTypeColor,
+                      boxShadow: `0 0 8px ${trackTypeColor}`
                     }}
                   />
                   <div className="pl-2 space-y-2">
@@ -767,33 +843,33 @@ export function COPWorkspace() {
                         <span
                           className="font-mono text-[13px] font-semibold"
                           style={{
-                            color: typeColors[track.type],
-                            textShadow: `0 0 8px ${typeColors[track.type]}80`
+                            color: trackTypeColor,
+                            textShadow: `0 0 8px ${trackTypeColor}80`
                           }}
                         >
-                          {track.id}
+                          {trackCallsign || track.id}
                         </span>
                         <span
                           className="text-[15px] uppercase tracking-wider px-1.5 py-0.5 rounded"
                           style={{
-                            color: typeColors[track.type],
-                            backgroundColor: `${typeColors[track.type]}20`,
-                            border: `1px solid ${typeColors[track.type]}40`
+                            color: trackTypeColor,
+                            backgroundColor: `${trackTypeColor}20`,
+                            border: `1px solid ${trackTypeColor}40`
                           }}
                         >
-                          {track.type}
+                          {trackType}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <ConfidenceBadge value={track.conf} size="sm" />
+                        <ConfidenceBadge value={safePercentValue(track.conf)} size="sm" />
                         {expandedTrack === track.id ? <ChevronDown className="w-3 h-3 text-cyber-cyan" /> : <ChevronRight className="w-3 h-3 text-cyber-cyan" />}
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <StatusIndicator
-                        status={track.status as any}
-                        label={track.status.toUpperCase()}
+                        status={trackStatus as any}
+                        label={trackStatus.toUpperCase()}
                         size="sm"
                       />
                     </div>
@@ -801,11 +877,11 @@ export function COPWorkspace() {
                     <div className="grid grid-cols-2 gap-2 text-[11px]">
                       <div>
                         <span className="text-cyber-text-tertiary">Speed:</span>{' '}
-                        <span className="font-mono text-cyber-text-secondary">{track.speed}</span>
+                        <span className="font-mono text-cyber-text-secondary">{trackSpeed}</span>
                       </div>
                       <div>
                         <span className="text-cyber-text-tertiary">Alt:</span>{' '}
-                        <span className="font-mono text-cyber-text-secondary">{track.alt}</span>
+                        <span className="font-mono text-cyber-text-secondary">{trackAlt}</span>
                       </div>
                     </div>
                   </div>
@@ -825,36 +901,36 @@ export function COPWorkspace() {
                             <div
                               className="h-full transition-all"
                               style={{
-                                width: `${track.hostileProbability}%`,
+                                width: safePercent(hostileProbability),
                                 background: '#FF3366'
                               }}
                             />
                           </div>
-                          <span className="text-[15px] font-mono text-cyber-red w-12 text-right">{track.hostileProbability}% H</span>
+                          <span className="text-[15px] font-mono text-cyber-red w-12 text-right">{hostileProbability}% H</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="flex-1 h-2 bg-s3m-card rounded-full overflow-hidden">
                             <div
                               className="h-full transition-all"
                               style={{
-                                width: `${track.friendlyProbability}%`,
+                                width: safePercent(friendlyProbability),
                                 background: '#05DF72'
                               }}
                             />
                           </div>
-                          <span className="text-[15px] font-mono text-cyber-green w-12 text-right">{track.friendlyProbability}% F</span>
+                          <span className="text-[15px] font-mono text-cyber-green w-12 text-right">{friendlyProbability}% F</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="flex-1 h-2 bg-s3m-card rounded-full overflow-hidden">
                             <div
                               className="h-full transition-all"
                               style={{
-                                width: `${track.unknownProbability}%`,
+                                width: safePercent(unknownProbability),
                                 background: '#FFB800'
                               }}
                             />
                           </div>
-                          <span className="text-[15px] font-mono text-s3m-warning w-12 text-right">{track.unknownProbability}% U</span>
+                          <span className="text-[15px] font-mono text-s3m-warning w-12 text-right">{unknownProbability}% U</span>
                         </div>
                       </div>
                     </div>
@@ -868,11 +944,11 @@ export function COPWorkspace() {
                         <div
                           className="text-[11px] uppercase tracking-wider font-semibold px-2 py-1 rounded inline-block"
                           style={{
-                            color: getReliabilityColor(track.sourceReliability),
-                            backgroundColor: `${getReliabilityColor(track.sourceReliability)}20`
+                            color: getReliabilityColor(sourceReliability),
+                            backgroundColor: `${getReliabilityColor(sourceReliability)}20`
                           }}
                         >
-                          {track.sourceReliability}
+                          {sourceReliability}
                         </div>
                       </div>
                       <div>
@@ -891,7 +967,7 @@ export function COPWorkspace() {
                         CROSS-DOMAIN CORRELATION
                       </div>
                       <div className="flex flex-wrap gap-1.5">
-                        {track.sensors.map((sensor, i) => {
+                        {(trackSensors ?? []).map((sensor, i) => {
                           const SensorIcon = sensorIcons[sensor] || Target;
                           return (
                             <div
@@ -914,19 +990,19 @@ export function COPWorkspace() {
                       <div className="grid grid-cols-3 gap-2">
                         <div className="bg-s3m-card rounded p-2">
                           <div className="text-[11px] text-s3m-text-tertiary mb-0.5">SPLITS</div>
-                          <div className="text-[15px] font-mono text-s3m-text-primary">{track.trackHistory.splits}</div>
+                          <div className="text-[15px] font-mono text-s3m-text-primary">{trackHistory?.splits ?? 0}</div>
                         </div>
                         <div className="bg-s3m-card rounded p-2">
                           <div className="text-[11px] text-s3m-text-tertiary mb-0.5">MERGES</div>
-                          <div className="text-[15px] font-mono text-s3m-text-primary">{track.trackHistory.merges}</div>
+                          <div className="text-[15px] font-mono text-s3m-text-primary">{trackHistory?.merges ?? 0}</div>
                         </div>
                         <div className="bg-s3m-card rounded p-2">
                           <div className="text-[11px] text-s3m-text-tertiary mb-0.5">DECEPTION</div>
                           <div
                             className="text-[15px] uppercase tracking-wider font-semibold"
-                            style={{ color: getDeceptionColor(track.trackHistory.deception) }}
+                            style={{ color: getDeceptionColor(trackHistory?.deception ?? 'UNKNOWN') }}
                           >
-                            {track.trackHistory.deception}
+                            {trackHistory?.deception ?? 'UNKNOWN'}
                           </div>
                         </div>
                       </div>
@@ -939,13 +1015,14 @@ export function COPWorkspace() {
                         RECOMMENDED ACTION
                       </div>
                       <div className="text-[11px] text-s3m-text-primary leading-relaxed">
-                        {track.recommendedAction}
+                        {asString(track.recommendedAction, 'No recommendation available')}
                       </div>
                     </div>
                   </div>
                 )}
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
       </div>

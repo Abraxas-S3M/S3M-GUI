@@ -18,6 +18,7 @@ import { SimulationWorkspace } from './workspaces/SimulationWorkspace';
 import { CommunicationWorkspace } from './workspaces/CommunicationWorkspace';
 import { SurveillanceWorkspace } from './workspaces/SurveillanceWorkspace';
 import { ConnectionStatusBar } from './ConnectionStatusBar';
+import { WorkspaceCrashBoundary } from './WorkspaceCrashBoundary';
 import { MessageSquare } from 'lucide-react';
 import { useSystemStatus } from '../../services/hooks/useSystemStatus';
 
@@ -45,7 +46,11 @@ export function DashboardLayout() {
       case 'command':
         return <CommandOverview />;
       case 'cop':
-        return <COPWorkspace />;
+        return (
+          <WorkspaceCrashBoundary name="COP">
+            <COPWorkspace />
+          </WorkspaceCrashBoundary>
+        );
       case 'decisions':
         return <DecisionsWorkspace />;
       case 'risk':
