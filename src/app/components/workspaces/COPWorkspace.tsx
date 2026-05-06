@@ -24,6 +24,7 @@ import { useAppStore } from '../../store';
 import {
   type CopAlert,
   copClient,
+  type CopMapConfig,
   type CopDecision,
   type CopFeedItem,
   getSaudiModCopWsUrl,
@@ -35,6 +36,7 @@ import {
   parseCopSocketEvent,
   type CopTrack,
 } from '../../../services/api/copClient';
+import { LiveCopMap } from './LiveCopMap';
 
 type EnvironmentType = 'AIR' | 'GROUND' | 'MARITIME' | 'CYBER';
 
@@ -67,6 +69,7 @@ type WorkspaceTrack = {
   recommendedAction: string;
   sensors: string[];
   trackHistory: TrackHistory;
+  coordinates?: [number, number];
 };
 
 const FALLBACK_TRACKS: WorkspaceTrack[] = [
@@ -225,6 +228,9 @@ const toWorkspaceTrack = (track: CopTrack, fallback: WorkspaceTrack): WorkspaceT
   recommendedAction: asString(track.recommendedAction, fallback.recommendedAction),
   sensors: Array.isArray(track.sensors) && track.sensors.length > 0 ? track.sensors : fallback.sensors,
   trackHistory: toTrackHistory(track.trackHistory, fallback.trackHistory),
+  coordinates: Array.isArray(track.coordinates) && track.coordinates.length >= 2
+    ? [track.coordinates[0], track.coordinates[1]]
+    : undefined,
 });
 
 const mergeMissionLayers = (incomingLayers: ReturnType<typeof normalizeCopMap>['layers']): MissionLayer[] =>
@@ -258,6 +264,7 @@ export function COPWorkspace() {
   const [wsConnected, setWsConnected] = useState(false);
   const [lastUpdateAt, setLastUpdateAt] = useState<string>(new Date().toISOString());
   const [dataSource, setDataSource] = useState<'backend' | 'fallback'>('fallback');
+  const [mapBounds, setMapBounds] = useState<CopMapConfig['bounds'] | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<number | null>(null);
@@ -314,6 +321,7 @@ export function COPWorkspace() {
         if (record.map || record.map_config) {
           const mapState = normalizeCopMap(record.map || record.map_config);
           setMissionLayers(mergeMissionLayers(mapState.layers));
+          setMapBounds(mapState.bounds);
         }
         if (record.decisions) {
           setDecisions((previous) => mergeById(previous, normalizeCopDecisions(record.decisions), 40));
@@ -343,6 +351,7 @@ export function COPWorkspace() {
       setApiConnected(true);
       setDataSource('backend');
       hydrateTracks(state.tracks);
+      setMapBounds(state.map.bounds);
       if (state.map.layers.length > 0) {
         setMissionLayers(mergeMissionLayers(state.map.layers));
       }
@@ -379,6 +388,9 @@ export function COPWorkspace() {
       }
       if (mapResult.status === 'fulfilled' && mapResult.value.layers.length > 0) {
         setMissionLayers(mergeMissionLayers(mapResult.value.layers));
+        setMapBounds(mapResult.value.bounds);
+      } else if (mapResult.status === 'fulfilled') {
+        setMapBounds(mapResult.value.bounds);
       }
       setLastUpdateAt(new Date().toISOString());
     } catch {
@@ -389,6 +401,7 @@ export function COPWorkspace() {
       setDecisions(FALLBACK_DECISIONS);
       setFeedItems(FALLBACK_FEED);
       setAlerts(FALLBACK_ALERTS);
+      setMapBounds(null);
       setLastUpdateAt(new Date().toISOString());
     }
   }, [hydrateTracks]);
@@ -476,6 +489,14 @@ export function COPWorkspace() {
     [tracks]
   );
   const unknownTrack = useMemo(() => tracks.find((track) => track.type === 'UNKNOWN'), [tracks]);
+  const fallbackFriendlyTrackIds = useMemo(
+    () =>
+      (friendlyTracks.length > 0
+        ? friendlyTracks
+        : FALLBACK_TRACKS.filter((track) => track.type === 'FRIENDLY').slice(0, 4)
+      ).map((track) => track.id),
+    [friendlyTracks]
+  );
   const markerDecisions = decisions.length;
   const markerInterventions = feedItems.length;
   const markerTrackDivergence = Math.max(1, alerts.length);
@@ -712,78 +733,16 @@ export function COPWorkspace() {
             );
           })}
 
-          {/* Tracks (simplified representation) */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            {/* T-218 Hostile with threat ring */}
-            <div className="absolute" style={{ top: '30%', left: '45%' }}>
-              <svg width="30" height="30" className="relative">
-                <circle
-                  cx="15"
-                  cy="15"
-                  r="13"
-                  fill="none"
-                  stroke="#FF3366"
-                  strokeWidth="1"
-                  strokeDasharray="3,3"
-                  opacity="0.5"
-                  style={{ filter: 'drop-shadow(0 0 8px rgba(255, 51, 102, 0.6))' }}
-                />
-                <path
-                  d="M 15 5 L 20 18 L 15 15 L 10 18 Z"
-                  fill="none"
-                  stroke="#FF3366"
-                  strokeWidth="2"
-                  style={{ filter: 'drop-shadow(0 0 4px rgba(255, 51, 102, 0.8))' }}
-                />
-              </svg>
-              <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[15px] font-mono text-cyber-red whitespace-nowrap glow-red">
-                {primaryHostileTrack?.id ?? 'T-218'}
-              </div>
-            </div>
-
-            {/* UAVs */}
-            {(friendlyTracks.length > 0
-              ? friendlyTracks
-              : FALLBACK_TRACKS.filter((track) => track.type === 'FRIENDLY').slice(0, 4)
-            ).map((track, i) => (
-              <div
-                key={`${track.id}_${i}`}
-                className="absolute"
-                style={{ top: `${35 + i * 10}%`, left: `${55 + i * 5}%` }}
-              >
-                <svg width="16" height="16">
-                  <circle
-                    cx="8"
-                    cy="8"
-                    r="6"
-                    fill="none"
-                    stroke="#05DF72"
-                    strokeWidth="2"
-                    style={{ filter: 'drop-shadow(0 0 4px rgba(5, 223, 114, 0.6))' }}
-                  />
-                </svg>
-              </div>
-            ))}
-
-            {/* Unknown track */}
-            {unknownTrack && (
-              <div className="absolute" style={{ top: '55%', left: '35%' }}>
-                <svg width="18" height="18">
-                  <rect
-                    x="4"
-                    y="4"
-                    width="10"
-                    height="10"
-                    fill="none"
-                    stroke="#FFB800"
-                    strokeWidth="2"
-                    transform="rotate(45 9 9)"
-                    style={{ filter: 'drop-shadow(0 0 4px rgba(255, 184, 0, 0.6))' }}
-                  />
-                </svg>
-              </div>
-            )}
-          </div>
+          <LiveCopMap
+            tracks={tracks}
+            mapBounds={mapBounds}
+            dataSource={dataSource}
+            selectedTrackId={expandedTrack}
+            onTrackSelect={(trackId) => setExpandedTrack(trackId)}
+            fallbackHostileTrackId={primaryHostileTrack?.id ?? 'T-218'}
+            fallbackFriendlyTrackIds={fallbackFriendlyTrackIds}
+            showFallbackUnknownTrack={Boolean(unknownTrack)}
+          />
         </div>
 
         {/* Track Panel */}
