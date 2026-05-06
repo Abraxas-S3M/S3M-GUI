@@ -214,6 +214,31 @@ const safePercentValue = (value: unknown): number =>
 
 const safePercent = (value: unknown): string => `${safePercentValue(value)}%`;
 
+const safeArray = <T,>(value: T[] | null | undefined): T[] => (Array.isArray(value) ? value : []);
+
+type IndicatorStatus = 'operational' | 'caution' | 'critical' | 'degraded';
+
+const normalizeIndicatorStatus = (status: unknown): IndicatorStatus => {
+  const normalized = asString(status, 'degraded').toLowerCase();
+  switch (normalized) {
+    case 'operational':
+    case 'active':
+    case 'stable':
+    case 'nominal':
+      return 'operational';
+    case 'caution':
+    case 'pending':
+    case 'warning':
+      return 'caution';
+    case 'critical':
+    case 'hostile':
+    case 'alert':
+      return 'critical';
+    default:
+      return 'degraded';
+  }
+};
+
 const toTrackHistory = (value: unknown, fallback: TrackHistory): TrackHistory => {
   if (typeof value !== 'object' || value === null) {
     return fallback;
@@ -343,11 +368,12 @@ export function COPWorkspace() {
   };
 
   const hydrateTracks = useCallback((incomingTracks: CopTrack[]) => {
-    if (incomingTracks.length === 0) {
+    const normalizedIncomingTracks = safeArray(incomingTracks);
+    if (normalizedIncomingTracks.length === 0) {
       return;
     }
     setTracks(
-      incomingTracks.map((track, index) =>
+      normalizedIncomingTracks.map((track, index) =>
         toWorkspaceTrack(track, FALLBACK_TRACKS[index] ?? FALLBACK_TRACKS[FALLBACK_TRACKS.length - 1])
       )
     );
@@ -522,7 +548,7 @@ export function COPWorkspace() {
 
   const displayTracks = useMemo(
     () =>
-      safeTracks.map((track, index) =>
+      safeArray(safeTracks).map((track, index) =>
         toSafeWorkspaceTrack(
           track,
           FALLBACK_TRACKS[index] ?? FALLBACK_TRACKS[FALLBACK_TRACKS.length - 1]
@@ -811,12 +837,13 @@ export function COPWorkspace() {
         {/* Track Panel */}
         {!isMapExpanded && (
           <div className="flex-1 space-y-2 overflow-y-auto">
-            {displayTracks.map((track) => {
+            {safeArray(displayTracks).map((track) => {
               const trackType = asString(track.type, 'UNKNOWN').toUpperCase();
               const trackTypeColor = typeColors[trackType] ?? '#6B7C95';
               const trackStatus = asString(track.status, 'unknown');
+              const indicatorStatus = normalizeIndicatorStatus(trackStatus);
               const trackHistory = toTrackHistory(track.trackHistory, { splits: 0, merges: 0, deception: 'UNKNOWN' });
-              const trackSensors = Array.isArray(track.sensors) ? track.sensors : [];
+              const trackSensors = safeArray(track.sensors);
               const hostileProbability = safePercentValue(track.hostileProbability ?? 0);
               const friendlyProbability = safePercentValue(track.friendlyProbability ?? 0);
               const unknownProbability = safePercentValue(track.unknownProbability ?? 0);
@@ -868,7 +895,7 @@ export function COPWorkspace() {
 
                     <div className="flex items-center gap-2">
                       <StatusIndicator
-                        status={trackStatus as any}
+                        status={indicatorStatus}
                         label={trackStatus.toUpperCase()}
                         size="sm"
                       />
@@ -967,7 +994,7 @@ export function COPWorkspace() {
                         CROSS-DOMAIN CORRELATION
                       </div>
                       <div className="flex flex-wrap gap-1.5">
-                        {(trackSensors ?? []).map((sensor, i) => {
+                        {safeArray(trackSensors).map((sensor, i) => {
                           const SensorIcon = sensorIcons[sensor] || Target;
                           return (
                             <div
