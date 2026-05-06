@@ -1,694 +1,856 @@
-import { useState } from 'react';
-import { CommandCard } from '../CommandCard';
-import { ConfidenceBadge } from '../ConfidenceBadge';
-import { StatusIndicator } from '../StatusIndicator';
-import { CornerBrackets } from '../CornerBrackets';
-import { Maximize2, Zap, Shield, Target, Radio, ChevronDown, ChevronRight, Play, Pause, SkipBack, Layers, MapPin, Eye, Radar, Satellite, AlertTriangle } from 'lucide-react';
-import { useAppStore } from '../../store';
-import { useWorkspaceSyncPolling } from '../../../services/hooks/useWorkspaceSyncPolling';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Activity,
+  AlertTriangle,
+  CheckCircle2,
+  Clock3,
+  Layers,
+  MapPin,
+  Radio,
+  RefreshCw,
+  ShieldAlert,
+  Workflow,
+} from 'lucide-react';
 
-export function COPWorkspace() {
-  const [activeEnvironment, setActiveEnvironment] = useState<'AIR' | 'GROUND' | 'MARITIME' | 'CYBER'>('AIR');
-  const [isMapExpanded, setIsMapExpanded] = useState(false);
-  const [expandedTrack, setExpandedTrack] = useState<string | null>(null);
-  const [showMissionLayer, setShowMissionLayer] = useState(false);
-  const [isPlaybackActive, setIsPlaybackActive] = useState(false);
-  const [playbackSpeed, setPlaybackSpeed] = useState<'5m' | '30m' | '6h'>('30m');
-  const { setAiPanelOpen, syncThreatTracks } = useAppStore();
-  useWorkspaceSyncPolling(syncThreatTracks);
+import {
+  type CopAlert,
+  copClient,
+  type CopDecision,
+  type CopFeedItem,
+  getSaudiModCopWsUrl,
+  normalizeCopAlerts,
+  normalizeCopDecisions,
+  normalizeCopFeatures,
+  normalizeCopFeed,
+  normalizeCopMap,
+  normalizeCopPanelStates,
+  normalizeCopTracks,
+  parseCopSocketEvent,
+  type CopPanelState,
+  type CopState,
+} from '../../../services/api/copClient';
 
-  const tracks = [
+const TRACK_COLOR: Record<string, string> = {
+  HOSTILE: '#FF3366',
+  UNKNOWN: '#FFB800',
+  FRIENDLY: '#05DF72',
+};
+
+const DEFAULT_LAYER_COLORS: Record<string, string> = {
+  units: '#05DF72',
+  objectives: '#00F0FF',
+  restricted: '#FF3366',
+  intel: '#8A5CFF',
+  alerts: '#FFB800',
+};
+
+const FALLBACK_COP_STATE: CopState = {
+  theater: {
+    id: 'saudi_mod',
+    name: 'Saudi MOD',
+    region: 'Arabian Gulf',
+    center: [50.8, 25.6],
+    bounds: [
+      [44.5, 20.0],
+      [57.5, 31.5],
+    ],
+  },
+  map: {
+    center: [50.8, 25.6],
+    bounds: [
+      [44.5, 20.0],
+      [57.5, 31.5],
+    ],
+    layers: [
+      { id: 'units', name: 'Tasked Units', enabled: true, color: '#05DF72' },
+      { id: 'objectives', name: 'Objective Zones', enabled: true, color: '#00F0FF' },
+      { id: 'restricted', name: 'No-Go Areas', enabled: true, color: '#FF3366' },
+      { id: 'intel', name: 'Intel Overlay', enabled: true, color: '#8A5CFF' },
+      { id: 'alerts', name: 'Alert Markers', enabled: true, color: '#FFB800' },
+    ],
+  },
+  features: [
+    { id: 'feature_task_group', type: 'unit', layer: 'units', label: 'Task Group East', coordinates: [51.2, 25.3] },
+    { id: 'feature_radar_node', type: 'sensor', layer: 'intel', label: 'Radar Node 7', coordinates: [49.9, 24.8] },
+    { id: 'feature_restricted', type: 'zone', layer: 'restricted', label: 'No-Fly Corridor', coordinates: [52.4, 26.3] },
+    { id: 'feature_objective', type: 'objective', layer: 'objectives', label: 'Objective Delta', coordinates: [48.8, 26.1] },
+  ],
+  tracks: [
     {
       id: 'T-218',
       type: 'HOSTILE',
-      conf: 89,
       status: 'critical',
+      confidence: 89,
       speed: '420 kts',
-      alt: '15K ft',
-      identityConf: 89,
+      altitude: '15K ft',
+      sourceReliability: 'HIGH',
       hostileProbability: 94,
       friendlyProbability: 2,
       unknownProbability: 4,
-      sourceReliability: 'HIGH',
       lastUpdate: '12s ago',
       recommendedAction: 'Immediate visual ID required',
       sensors: ['EO/IR', 'Radar', 'SIGINT'],
-      trackHistory: { splits: 0, merges: 0, deception: 'LOW' }
+      coordinates: [50.6, 26.8],
     },
     {
       id: 'T-331',
       type: 'UNKNOWN',
-      conf: 67,
       status: 'caution',
+      confidence: 67,
       speed: '180 kts',
-      alt: '8K ft',
-      identityConf: 67,
+      altitude: '8K ft',
+      sourceReliability: 'MEDIUM',
       hostileProbability: 35,
       friendlyProbability: 22,
       unknownProbability: 43,
-      sourceReliability: 'MEDIUM',
       lastUpdate: '45s ago',
-      recommendedAction: 'Continue tracking, request additional sensors',
+      recommendedAction: 'Continue tracking and request additional sensors',
       sensors: ['Radar', 'AIS'],
-      trackHistory: { splits: 1, merges: 0, deception: 'MEDIUM' }
+      coordinates: [48.2, 24.9],
     },
     {
       id: 'UAV-01',
       type: 'FRIENDLY',
-      conf: 98,
       status: 'operational',
+      confidence: 98,
       speed: '85 kts',
-      alt: '12K ft',
-      identityConf: 98,
+      altitude: '12K ft',
+      sourceReliability: 'HIGH',
       hostileProbability: 1,
       friendlyProbability: 98,
       unknownProbability: 1,
-      sourceReliability: 'HIGH',
       lastUpdate: '3s ago',
       recommendedAction: 'Nominal operations',
       sensors: ['EO/IR', 'Radar', 'HUMINT', 'Datalink'],
-      trackHistory: { splits: 0, merges: 0, deception: 'NONE' }
+      coordinates: [52.1, 25.0],
+    },
+  ],
+  alerts: [
+    {
+      id: 'fallback_alert_1',
+      title: 'Air Track Escalation',
+      message: 'Track T-218 entered defended approach corridor.',
+      severity: 'critical',
+      timestamp: new Date().toISOString(),
     },
     {
-      id: 'UAV-02',
-      type: 'FRIENDLY',
-      conf: 95,
-      status: 'operational',
-      speed: '90 kts',
-      alt: '14K ft',
-      identityConf: 95,
-      hostileProbability: 2,
-      friendlyProbability: 95,
-      unknownProbability: 3,
-      sourceReliability: 'HIGH',
-      lastUpdate: '5s ago',
-      recommendedAction: 'Nominal operations',
-      sensors: ['Radar', 'Datalink'],
-      trackHistory: { splits: 0, merges: 0, deception: 'NONE' }
+      id: 'fallback_alert_2',
+      title: 'IFF Timeout',
+      message: 'Track T-331 failed three interrogation attempts.',
+      severity: 'high',
+      timestamp: new Date().toISOString(),
+    },
+  ],
+  decisions: [
+    {
+      id: 'fallback_decision_1',
+      title: 'Engage Track T-218',
+      description: 'Authorize intercept package to perform visual ID and hold.',
+      status: 'pending',
+      severity: 'CRITICAL',
+      confidence: 74,
+      risk: 82,
+      timestamp: new Date().toISOString(),
     },
     {
-      id: 'UAV-04',
-      type: 'FRIENDLY',
-      conf: 72,
-      status: 'caution',
-      speed: '45 kts',
-      alt: '3K ft',
-      identityConf: 72,
-      hostileProbability: 8,
-      friendlyProbability: 72,
-      unknownProbability: 20,
-      sourceReliability: 'MEDIUM',
-      lastUpdate: '2m 14s ago',
-      recommendedAction: 'IFF interrogation recommended - signal degraded',
-      sensors: ['Radar'],
-      trackHistory: { splits: 0, merges: 1, deception: 'MEDIUM' }
-    }
+      id: 'fallback_decision_2',
+      title: 'Reroute Convoy CVY-A',
+      description: 'Shift convoy through corridor Delta due to air activity.',
+      status: 'pending',
+      severity: 'MEDIUM',
+      confidence: 91,
+      risk: 45,
+      timestamp: new Date().toISOString(),
+    },
+  ],
+  feed: [
+    {
+      id: 'fallback_feed_1',
+      type: 'intel_feed',
+      message: 'SIGINT burst linked to T-218 behavior profile.',
+      priority: 'HIGH',
+      confidence: 88,
+      timestamp: new Date().toISOString(),
+    },
+    {
+      id: 'fallback_feed_2',
+      type: 'intel_feed',
+      message: 'UAV-01 confirms visual corridor remains clear.',
+      priority: 'MEDIUM',
+      confidence: 93,
+      timestamp: new Date().toISOString(),
+    },
+  ],
+  panelState: [
+    { key: 'threat_level', label: 'Threat Level', value: 'HIGH', status: 'critical' },
+    { key: 'pending_decisions', label: 'Pending Decisions', value: 2, status: 'caution' },
+    { key: 'active_alerts', label: 'Active Alerts', value: 2, status: 'critical' },
+    { key: 'feed_items', label: 'Live Feed', value: 2, status: 'operational' },
+  ],
+  systemStatus: {
+    mission_state: 'WATCHCON-2',
+    command_posture: 'ELEVATED',
+    sensor_health: 'OPERATIONAL',
+  },
+  lastUpdate: new Date().toISOString(),
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const asString = (value: unknown, fallback = '--'): string =>
+  typeof value === 'string'
+    ? value
+    : typeof value === 'number'
+      ? String(value)
+      : fallback;
+
+const formatTimestamp = (value: string | undefined): string => {
+  if (!value) {
+    return '--';
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+  return parsed.toLocaleString();
+};
+
+const severityColor = (severity: string | undefined): string => {
+  const normalized = (severity ?? '').toLowerCase();
+  if (normalized.includes('critical') || normalized.includes('high')) {
+    return '#FF3366';
+  }
+  if (normalized.includes('medium') || normalized.includes('caution')) {
+    return '#FFB800';
+  }
+  return '#05DF72';
+};
+
+const clampPercent = (value: number): number => Math.min(96, Math.max(4, value));
+
+const isInsideBounds = (
+  lng: number,
+  lat: number,
+  bounds: [[number, number], [number, number]]
+): boolean => {
+  const minLng = Math.min(bounds[0][0], bounds[1][0]);
+  const maxLng = Math.max(bounds[0][0], bounds[1][0]);
+  const minLat = Math.min(bounds[0][1], bounds[1][1]);
+  const maxLat = Math.max(bounds[0][1], bounds[1][1]);
+  return lng >= minLng && lng <= maxLng && lat >= minLat && lat <= maxLat;
+};
+
+const coordinateToPercent = (
+  point: [number, number] | undefined,
+  bounds: [[number, number], [number, number]]
+): { left: string; top: string } | null => {
+  if (!point) {
+    return null;
+  }
+
+  let [lng, lat] = point;
+  if (!isInsideBounds(lng, lat, bounds) && isInsideBounds(lat, lng, bounds)) {
+    [lng, lat] = [lat, lng];
+  }
+
+  const minLng = Math.min(bounds[0][0], bounds[1][0]);
+  const maxLng = Math.max(bounds[0][0], bounds[1][0]);
+  const minLat = Math.min(bounds[0][1], bounds[1][1]);
+  const maxLat = Math.max(bounds[0][1], bounds[1][1]);
+
+  const lngSpan = maxLng - minLng || 1;
+  const latSpan = maxLat - minLat || 1;
+  const xPercent = ((lng - minLng) / lngSpan) * 100;
+  const yPercent = 100 - ((lat - minLat) / latSpan) * 100;
+
+  return {
+    left: `${clampPercent(xPercent)}%`,
+    top: `${clampPercent(yPercent)}%`,
+  };
+};
+
+const mergeById = <T extends { id: string }>(existing: T[], updates: T[], maxItems = 50): T[] => {
+  const byId = new Map(existing.map((item) => [item.id, item]));
+  updates.forEach((item) => byId.set(item.id, item));
+  return Array.from(byId.values()).slice(-maxItems);
+};
+
+const mergePanelState = (existing: CopPanelState[], updates: CopPanelState[]): CopPanelState[] => {
+  if (updates.length === 0) {
+    return existing;
+  }
+  const byKey = new Map(existing.map((item) => [item.key, item]));
+  updates.forEach((item) => byKey.set(item.key, item));
+  return Array.from(byKey.values());
+};
+
+const toRiskPanels = (value: unknown): CopPanelState[] => {
+  if (!isRecord(value)) {
+    return [];
+  }
+  return [
+    { key: 'risk_threat_level', label: 'Threat Level', value: asString(value.threat_level || value.threat, '--') },
+    { key: 'risk_probability', label: 'Probability', value: asString(value.probability, '--') },
+    { key: 'risk_impact', label: 'Impact', value: asString(value.impact, '--') },
+    { key: 'risk_time_horizon', label: 'Time Horizon', value: asString(value.time_horizon || value.horizon, '--') },
   ];
+};
 
-  const missionLayers = [
-    { id: 'units', name: 'Tasked Units', enabled: true, color: '#05DF72' },
-    { id: 'objectives', name: 'Objective Zones', enabled: true, color: '#00F0FF' },
-    { id: 'corridors', name: 'Corridors', enabled: false, color: '#FFB800' },
-    { id: 'restricted', name: 'No-Go Areas', enabled: true, color: '#FF3366' },
-    { id: 'weather', name: 'Weather/Comms', enabled: false, color: '#8A5CFF' }
-  ];
+export function COPWorkspace() {
+  const [copState, setCopState] = useState<CopState>(FALLBACK_COP_STATE);
+  const [selectedTrackId, setSelectedTrackId] = useState<string>(FALLBACK_COP_STATE.tracks[0]?.id ?? '');
+  const [layerVisibility, setLayerVisibility] = useState<Record<string, boolean>>({});
+  const [apiConnected, setApiConnected] = useState(false);
+  const [wsConnected, setWsConnected] = useState(false);
+  const [dataSource, setDataSource] = useState<'backend' | 'fallback'>('fallback');
+  const [lastUpdateAt, setLastUpdateAt] = useState<string>(FALLBACK_COP_STATE.lastUpdate ?? new Date().toISOString());
+  const [isLoading, setIsLoading] = useState(false);
 
-  const typeColors: any = {
-    HOSTILE: '#EF4444',
-    UNKNOWN: '#EAB308',
-    FRIENDLY: '#22C55E'
-  };
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimerRef = useRef<number | null>(null);
+  const shouldReconnectRef = useRef(true);
+  const isMountedRef = useRef(true);
 
-  const environments = [
-    { id: 'AIR', label: 'AIR', color: '#00B8FF' },
-    { id: 'GROUND', label: 'GROUND', color: '#05DF72' },
-    { id: 'MARITIME', label: 'MARITIME', color: '#00F0FF' },
-    { id: 'CYBER', label: 'CYBER', color: '#8A5CFF' }
-  ];
+  const mapBounds = copState.map.bounds;
 
-  const commandActions = [
-    { id: 'engage', label: 'ENGAGE TRACK', icon: Target, color: '#FF3366' },
-    { id: 'intercept', label: 'INTERCEPT', icon: Zap, color: '#FFB800' },
-    { id: 'defend', label: 'DEFENSIVE POSTURE', icon: Shield, color: '#00F0FF' },
-    { id: 'comms', label: 'ESTABLISH COMMS', icon: Radio, color: '#05DF72' }
-  ];
+  const layerColorMap = useMemo(() => {
+    const next: Record<string, string> = { ...DEFAULT_LAYER_COLORS };
+    copState.map.layers.forEach((layer) => {
+      if (layer.color) {
+        next[layer.id] = layer.color;
+      }
+    });
+    return next;
+  }, [copState.map.layers]);
 
-  const sensorIcons: any = {
-    'EO/IR': Eye,
-    'Radar': Radar,
-    'SIGINT': Radio,
-    'AIS': Satellite,
-    'HUMINT': Target,
-    'Datalink': Radio
-  };
+  const visibleFeatures = useMemo(
+    () => copState.features.filter((feature) => layerVisibility[feature.layer] !== false),
+    [copState.features, layerVisibility]
+  );
 
-  const handleMapDoubleClick = () => {
-    setIsMapExpanded(!isMapExpanded);
-    if (!isMapExpanded) {
-      setAiPanelOpen(false);
+  const selectedTrack = useMemo(() => {
+    if (copState.tracks.length === 0) {
+      return null;
     }
+    return copState.tracks.find((track) => track.id === selectedTrackId) ?? copState.tracks[0];
+  }, [copState.tracks, selectedTrackId]);
+
+  const systemStatusEntries = useMemo(() => {
+    if (!isRecord(copState.systemStatus)) {
+      return [];
+    }
+    return Object.entries(copState.systemStatus).slice(0, 4);
+  }, [copState.systemStatus]);
+
+  const riskPanels = useMemo(
+    () =>
+      copState.panelState.filter((panel) => {
+        const key = panel.key.toLowerCase();
+        const label = panel.label.toLowerCase();
+        return key.includes('risk') || label.includes('risk') || key.includes('threat');
+      }),
+    [copState.panelState]
+  );
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    setLayerVisibility((previous) => {
+      const next: Record<string, boolean> = {};
+      copState.map.layers.forEach((layer) => {
+        next[layer.id] = previous[layer.id] ?? layer.enabled;
+      });
+      return next;
+    });
+  }, [copState.map.layers]);
+
+  useEffect(() => {
+    if (copState.tracks.length === 0) {
+      setSelectedTrackId('');
+      return;
+    }
+    const stillExists = copState.tracks.some((track) => track.id === selectedTrackId);
+    if (!stillExists) {
+      setSelectedTrackId(copState.tracks[0].id);
+    }
+  }, [copState.tracks, selectedTrackId]);
+
+  const applySocketEvent = useCallback((type: string, payload: unknown) => {
+    const normalizedType = type.toLowerCase();
+    setCopState((previous) => {
+      if (normalizedType === 'cop_update') {
+        const payloadRecord = isRecord(payload) ? payload : {};
+        const map =
+          payloadRecord.map || payloadRecord.map_config
+            ? normalizeCopMap(payloadRecord.map || payloadRecord.map_config)
+            : previous.map;
+        const features = payloadRecord.features
+          ? normalizeCopFeatures(payloadRecord.features)
+          : previous.features;
+        const tracks = payloadRecord.tracks ? normalizeCopTracks(payloadRecord.tracks) : previous.tracks;
+        const panelState = payloadRecord.panel_state
+          ? mergePanelState(previous.panelState, normalizeCopPanelStates(payloadRecord.panel_state))
+          : previous.panelState;
+        const systemStatus = isRecord(payloadRecord.system_status)
+          ? payloadRecord.system_status
+          : previous.systemStatus;
+
+        return {
+          ...previous,
+          map,
+          features,
+          tracks,
+          panelState,
+          systemStatus,
+          lastUpdate: new Date().toISOString(),
+        };
+      }
+
+      if (normalizedType === 'intel_feed') {
+        const feedUpdates = normalizeCopFeed(payload);
+        return {
+          ...previous,
+          feed: mergeById(previous.feed, feedUpdates, 150),
+          lastUpdate: new Date().toISOString(),
+        };
+      }
+
+      if (normalizedType === 'risk_card') {
+        return {
+          ...previous,
+          panelState: mergePanelState(previous.panelState, toRiskPanels(payload)),
+          lastUpdate: new Date().toISOString(),
+        };
+      }
+
+      if (normalizedType === 'alert') {
+        const alertUpdates = normalizeCopAlerts(payload);
+        return {
+          ...previous,
+          alerts: mergeById(previous.alerts, alertUpdates, 40),
+          lastUpdate: new Date().toISOString(),
+        };
+      }
+
+      if (normalizedType === 'decision') {
+        const decisionUpdates = normalizeCopDecisions(payload);
+        return {
+          ...previous,
+          decisions: mergeById(previous.decisions, decisionUpdates, 40),
+          lastUpdate: new Date().toISOString(),
+        };
+      }
+
+      if (normalizedType === 'system_status') {
+        return {
+          ...previous,
+          systemStatus: isRecord(payload) ? payload : previous.systemStatus,
+          lastUpdate: new Date().toISOString(),
+        };
+      }
+
+      return previous;
+    });
+  }, []);
+
+  const loadSnapshot = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const state = await copClient.getState();
+      if (!isMountedRef.current) {
+        return;
+      }
+      setApiConnected(true);
+      setDataSource('backend');
+      setCopState(state);
+      setLastUpdateAt(state.lastUpdate ?? new Date().toISOString());
+
+      const [mapResult, tracksResult, alertsResult, decisionsResult, feedResult] =
+        await Promise.allSettled([
+          copClient.getMap(),
+          copClient.getTracks(),
+          copClient.getAlerts(),
+          copClient.getDecisions(),
+          copClient.getFeed(),
+        ]);
+
+      if (!isMountedRef.current) {
+        return;
+      }
+
+      setCopState((previous) => ({
+        ...previous,
+        map: mapResult.status === 'fulfilled' ? mapResult.value : previous.map,
+        tracks: tracksResult.status === 'fulfilled' ? tracksResult.value : previous.tracks,
+        alerts: alertsResult.status === 'fulfilled' ? alertsResult.value : previous.alerts,
+        decisions: decisionsResult.status === 'fulfilled' ? decisionsResult.value : previous.decisions,
+        feed: feedResult.status === 'fulfilled' ? feedResult.value : previous.feed,
+        lastUpdate: new Date().toISOString(),
+      }));
+      setLastUpdateAt(new Date().toISOString());
+    } catch {
+      if (!isMountedRef.current) {
+        return;
+      }
+      setApiConnected(false);
+      setDataSource('fallback');
+      setCopState(FALLBACK_COP_STATE);
+      setLastUpdateAt(new Date().toISOString());
+    } finally {
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
+    }
+  }, []);
+
+  const connectSocket = useCallback(() => {
+    if (
+      wsRef.current &&
+      (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING)
+    ) {
+      return;
+    }
+
+    let wsUrl = '';
+    try {
+      wsUrl = getSaudiModCopWsUrl();
+    } catch {
+      setWsConnected(false);
+      return;
+    }
+
+    const socket = new WebSocket(wsUrl);
+    wsRef.current = socket;
+
+    socket.onopen = () => {
+      setWsConnected(true);
+    };
+
+    socket.onmessage = (messageEvent) => {
+      if (typeof messageEvent.data !== 'string') {
+        return;
+      }
+      const event = parseCopSocketEvent(messageEvent.data);
+      if (!event) {
+        return;
+      }
+      applySocketEvent(event.type, event.payload);
+      setDataSource('backend');
+      setLastUpdateAt(event.receivedAt);
+    };
+
+    socket.onerror = () => {
+      socket.close();
+    };
+
+    socket.onclose = () => {
+      wsRef.current = null;
+      setWsConnected(false);
+      if (!shouldReconnectRef.current) {
+        return;
+      }
+      reconnectTimerRef.current = window.setTimeout(() => {
+        connectSocket();
+      }, 3000);
+    };
+  }, [applySocketEvent]);
+
+  useEffect(() => {
+    shouldReconnectRef.current = true;
+    void (async () => {
+      await loadSnapshot();
+      if (isMountedRef.current) {
+        connectSocket();
+      }
+    })();
+
+    return () => {
+      shouldReconnectRef.current = false;
+      if (reconnectTimerRef.current) {
+        window.clearTimeout(reconnectTimerRef.current);
+      }
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
+  }, [connectSocket, loadSnapshot]);
+
+  const handleLayerToggle = (layerId: string) => {
+    setLayerVisibility((previous) => ({
+      ...previous,
+      [layerId]: !previous[layerId],
+    }));
   };
 
-  const getReliabilityColor = (reliability: string) => {
-    switch (reliability) {
-      case 'HIGH': return '#05DF72';
-      case 'MEDIUM': return '#FFB800';
-      case 'LOW': return '#FF3366';
-      default: return '#6B7C95';
-    }
-  };
-
-  const getDeceptionColor = (level: string) => {
-    switch (level) {
-      case 'NONE': return '#05DF72';
-      case 'LOW': return '#FFB800';
-      case 'MEDIUM': return '#F97316';
-      case 'HIGH': return '#FF3366';
-      default: return '#6B7C95';
-    }
-  };
+  const topFeed = [...copState.feed].slice(-10).reverse();
+  const topAlerts = [...copState.alerts].slice(-6).reverse();
+  const decisionQueue = [...copState.decisions].slice(0, 8);
 
   return (
-    <div className="p-4 h-full flex flex-col gap-4">
-      {/* Environment Tabs */}
-      <div className="flex gap-2">
-        {environments.map((env) => (
+    <div className="p-4 h-full flex flex-col gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div className="rounded-lg border border-cyber-glass-border bg-s3m-card px-3 py-2 flex items-center gap-2">
+          <Activity className="w-3.5 h-3.5 text-cyber-cyan" />
+          <span className="text-[11px] uppercase tracking-wider text-s3m-text-secondary">API</span>
+          <span className={`text-[11px] font-semibold ${apiConnected ? 'text-cyber-green' : 'text-cyber-red'}`}>
+            {apiConnected ? 'connected' : 'disconnected'}
+          </span>
+        </div>
+        <div className="rounded-lg border border-cyber-glass-border bg-s3m-card px-3 py-2 flex items-center gap-2">
+          <Radio className="w-3.5 h-3.5 text-cyber-cyan" />
+          <span className="text-[11px] uppercase tracking-wider text-s3m-text-secondary">WS</span>
+          <span className={`text-[11px] font-semibold ${wsConnected ? 'text-cyber-green' : 'text-cyber-red'}`}>
+            {wsConnected ? 'connected' : 'disconnected'}
+          </span>
+        </div>
+        <div className="rounded-lg border border-cyber-glass-border bg-s3m-card px-3 py-2 flex items-center gap-2">
+          <Clock3 className="w-3.5 h-3.5 text-cyber-cyan" />
+          <span className="text-[11px] uppercase tracking-wider text-s3m-text-secondary">Last update</span>
+          <span className="text-[11px] text-s3m-text-primary">{formatTimestamp(lastUpdateAt)}</span>
+        </div>
+        <div className="rounded-lg border border-cyber-glass-border bg-s3m-card px-3 py-2 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Workflow className="w-3.5 h-3.5 text-cyber-cyan" />
+            <span className="text-[11px] uppercase tracking-wider text-s3m-text-secondary">Source</span>
+            <span className="text-[11px] font-semibold text-cyber-cyan">{dataSource}</span>
+          </div>
           <button
-            key={env.id}
-            onClick={() => setActiveEnvironment(env.id as any)}
-            className={`px-4 py-2 rounded-lg text-[15px] font-semibold uppercase tracking-wider transition-all duration-300`}
-            style={activeEnvironment === env.id ? {
-              background: `${env.color}20`,
-              border: `1px solid ${env.color}60`,
-              color: env.color,
-              boxShadow: `0 0 15px ${env.color}40`
-            } : {
-              background: 'rgba(28, 37, 51, 0.3)',
-              border: '1px solid rgba(0, 240, 255, 0.15)',
-              color: '#6B7C95'
-            }}
+            type="button"
+            onClick={() => void loadSnapshot()}
+            className="p-1 rounded border border-cyber-cyan/30 hover:border-cyber-cyan/60 disabled:opacity-60"
+            disabled={isLoading}
+            title="Refresh COP state"
           >
-            {env.label}
+            <RefreshCw className={`w-3.5 h-3.5 text-cyber-cyan ${isLoading ? 'animate-spin' : ''}`} />
           </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        {copState.panelState.slice(0, 4).map((panel) => (
+          <div key={panel.key} className="rounded-lg border border-cyber-glass-border bg-s3m-card px-3 py-2">
+            <div className="text-[10px] uppercase tracking-wider text-s3m-text-tertiary">{panel.label}</div>
+            <div className="text-[13px] font-semibold text-s3m-text-primary">{asString(panel.value)}</div>
+          </div>
         ))}
-
-        <div className="flex-1" />
-
-        {/* Mission Layer Toggle */}
-        <button
-          onClick={() => setShowMissionLayer(!showMissionLayer)}
-          className="px-3 py-1 rounded-lg flex items-center gap-2 transition-all"
-          style={{
-            background: showMissionLayer ? 'rgba(0, 240, 255, 0.15)' : 'rgba(28, 37, 51, 0.3)',
-            border: `1px solid ${showMissionLayer ? 'rgba(0, 240, 255, 0.4)' : 'rgba(0, 240, 255, 0.15)'}`
-          }}
-        >
-          <Layers className="w-4 h-4 text-cyber-cyan" />
-          <span className="text-[11px] text-cyber-cyan uppercase tracking-wider font-semibold">
-            MISSION LAYER
-          </span>
-          {showMissionLayer ? <ChevronDown className="w-3 h-3 text-cyber-cyan" /> : <ChevronRight className="w-3 h-3 text-cyber-cyan" />}
-        </button>
-
-        <div className="px-3 py-1 rounded-lg flex items-center gap-2" style={{
-          background: 'rgba(0, 240, 255, 0.1)',
-          border: '1px solid rgba(0, 240, 255, 0.3)'
-        }}>
-          <div className="w-2 h-2 rounded-full bg-cyber-cyan glow-cyan animate-pulse" />
-          <span className="text-[15px] text-cyber-cyan uppercase tracking-wider font-semibold">
-            LIVE FEED: {activeEnvironment}
-          </span>
-        </div>
       </div>
 
-      {/* Mission Layer Panel */}
-      {showMissionLayer && (
-        <div className="relative bg-s3m-card border border-cyber-cyan/30 rounded-lg p-3">
-          <CornerBrackets color="#00F0FF" />
-          <div className="grid grid-cols-5 gap-2">
-            {missionLayers.map((layer) => (
-              <button
-                key={layer.id}
-                className="px-3 py-2 rounded text-[11px] uppercase tracking-wider font-semibold transition-all"
-                style={{
-                  background: layer.enabled ? `${layer.color}20` : 'rgba(28, 37, 51, 0.3)',
-                  border: `1px solid ${layer.enabled ? `${layer.color}60` : 'rgba(107, 124, 149, 0.3)'}`,
-                  color: layer.enabled ? layer.color : '#6B7C95'
-                }}
-              >
-                {layer.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Temporal Playback Controls */}
-      <div className="relative bg-s3m-card border border-s3m-border-default rounded-lg p-3">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <Layers className="w-4 h-4 text-cyber-cyan shrink-0" />
+        {copState.map.layers.map((layer) => {
+          const enabled = layerVisibility[layer.id] !== false;
+          const color = layer.color || layerColorMap[layer.id] || '#00F0FF';
+          return (
             <button
-              onClick={() => setIsPlaybackActive(!isPlaybackActive)}
-              className="w-8 h-8 rounded flex items-center justify-center bg-cyber-cyan/20 hover:bg-cyber-cyan/30 border border-cyber-cyan/40 transition-colors"
+              key={layer.id}
+              onClick={() => handleLayerToggle(layer.id)}
+              className="px-3 py-1 rounded text-[11px] uppercase tracking-wider border transition-colors whitespace-nowrap"
+              style={{
+                color: enabled ? color : '#6B7C95',
+                borderColor: enabled ? `${color}88` : 'rgba(107, 124, 149, 0.35)',
+                background: enabled ? `${color}1A` : 'rgba(28, 37, 51, 0.25)',
+              }}
             >
-              {isPlaybackActive ? <Pause className="w-4 h-4 text-cyber-cyan" /> : <Play className="w-4 h-4 text-cyber-cyan" />}
+              {layer.name}
             </button>
-            <button
-              className="w-8 h-8 rounded flex items-center justify-center bg-s3m-elevated hover:bg-s3m-card border border-s3m-border-default transition-colors"
-            >
-              <SkipBack className="w-4 h-4 text-s3m-text-secondary" />
-            </button>
-          </div>
-
-          <div className="h-6 w-px bg-s3m-border-default" />
-
-          <div className="flex items-center gap-2">
-            <span className="text-[15px] uppercase tracking-wider text-s3m-text-tertiary">REPLAY:</span>
-            {(['5m', '30m', '6h'] as const).map((speed) => (
-              <button
-                key={speed}
-                onClick={() => setPlaybackSpeed(speed)}
-                className="px-2 py-1 rounded text-[15px] uppercase tracking-wider font-semibold transition-all"
-                style={{
-                  background: playbackSpeed === speed ? 'rgba(0, 240, 255, 0.2)' : 'rgba(28, 37, 51, 0.3)',
-                  border: `1px solid ${playbackSpeed === speed ? 'rgba(0, 240, 255, 0.5)' : 'rgba(107, 124, 149, 0.3)'}`,
-                  color: playbackSpeed === speed ? '#00F0FF' : '#6B7C95'
-                }}
-              >
-                {speed}
-              </button>
-            ))}
-          </div>
-
-          <div className="h-6 w-px bg-s3m-border-default" />
-
-          <div className="flex-1 flex items-center gap-2">
-            <span className="text-[15px] uppercase tracking-wider text-s3m-text-tertiary">MARKERS:</span>
-            <div className="flex gap-2 text-[15px]">
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-cyber-green" />
-                <span className="text-s3m-text-tertiary">Decisions: 3</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-cyber-cyan" />
-                <span className="text-s3m-text-tertiary">Interventions: 2</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-s3m-warning" />
-                <span className="text-s3m-text-tertiary">Track Divergence: 1</span>
-              </div>
-            </div>
-          </div>
-        </div>
+          );
+        })}
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex gap-4 overflow-hidden">
-        {/* Map */}
-        <div
-          className={`bg-[#030810] rounded-xl border border-cyber-glass-border relative overflow-hidden transition-all duration-500 ${isMapExpanded ? 'flex-[3.5]' : 'flex-[2.2]'}`}
-          onDoubleClick={handleMapDoubleClick}
-          style={{ cursor: 'pointer' }}
-        >
-          {/* Expand indicator */}
-          <div className="absolute top-4 right-4 z-10 flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{
-            background: 'rgba(0, 240, 255, 0.1)',
-            border: '1px solid rgba(0, 240, 255, 0.2)'
-          }}>
-            <Maximize2 className="w-3 h-3 text-cyber-cyan" />
-            <span className="text-[15px] text-cyber-cyan uppercase tracking-wider">DOUBLE CLICK TO {isMapExpanded ? 'COLLAPSE' : 'EXPAND'}</span>
-          </div>
-
-          {/* Grid pattern */}
+      <div className="flex-1 min-h-0 grid grid-cols-12 gap-3">
+        <div className="col-span-12 lg:col-span-7 bg-[#030810] rounded-xl border border-cyber-glass-border relative overflow-hidden">
           <div
             className="absolute inset-0"
             style={{
-              backgroundImage: 'linear-gradient(rgba(0, 240, 255, 0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 240, 255, 0.06) 1px, transparent 1px)',
-              backgroundSize: '40px 40px'
+              backgroundImage:
+                'linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px)',
+              backgroundSize: '42px 42px',
             }}
           />
+          <div className="absolute top-3 left-3 z-10 px-2 py-1 rounded bg-black/40 border border-cyber-cyan/30 text-[11px] text-cyber-cyan">
+            COP MAP · {asString(copState.theater?.name, 'Saudi MOD')} · center {copState.map.center[1].toFixed(2)}N /{' '}
+            {copState.map.center[0].toFixed(2)}E
+          </div>
 
-          {/* Radial glow */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background: 'radial-gradient(circle at center, rgba(0, 240, 255, 0.08) 0%, transparent 70%)'
-            }}
-          />
-
-          {/* Range rings */}
-          {[30, 50, 70].map((percent, i) => (
-            <svg key={i} className="absolute inset-0 w-full h-full" style={{ opacity: 0.12 }}>
-              <circle
-                cx="50%"
-                cy="50%"
-                r={`${percent}%`}
-                fill="none"
-                stroke="#00F0FF"
-                strokeWidth="1"
-                strokeDasharray="5,5"
-              />
-            </svg>
-          ))}
-
-          {/* Corner HUD ticks */}
-          {['top-left', 'top-right', 'bottom-left', 'bottom-right'].map((pos) => {
-            const positions: any = {
-              'top-left': 'top-4 left-4',
-              'top-right': 'top-4 right-4',
-              'bottom-left': 'bottom-4 left-4',
-              'bottom-right': 'bottom-4 right-4'
-            };
-
+          {visibleFeatures.map((feature) => {
+            const position = coordinateToPercent(feature.coordinates, mapBounds);
+            if (!position) {
+              return null;
+            }
+            const color = layerColorMap[feature.layer] || '#00F0FF';
             return (
-              <svg key={pos} className={`absolute w-5 h-5 ${positions[pos]}`} style={{ opacity: 0.4 }}>
-                {pos === 'top-left' && <path d="M 20 0 L 0 0 L 0 20" stroke="#00F0FF" strokeWidth="1" fill="none" />}
-                {pos === 'top-right' && <path d="M 0 0 L 20 0 L 20 20" stroke="#00F0FF" strokeWidth="1" fill="none" />}
-                {pos === 'bottom-left' && <path d="M 0 0 L 0 20 L 20 20" stroke="#00F0FF" strokeWidth="1" fill="none" />}
-                {pos === 'bottom-right' && <path d="M 20 0 L 20 20 L 0 20" stroke="#00F0FF" strokeWidth="1" fill="none" />}
-              </svg>
+              <div
+                key={feature.id}
+                className="absolute -translate-x-1/2 -translate-y-1/2"
+                style={position}
+                title={`${feature.label || feature.id} (${feature.layer})`}
+              >
+                <div className="w-2.5 h-2.5 rounded-full border" style={{ borderColor: color, background: `${color}66` }} />
+              </div>
             );
           })}
 
-          {/* Tracks (simplified representation) */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            {/* T-218 Hostile with threat ring */}
-            <div className="absolute" style={{ top: '30%', left: '45%' }}>
-              <svg width="30" height="30" className="relative">
-                <circle
-                  cx="15"
-                  cy="15"
-                  r="13"
-                  fill="none"
-                  stroke="#FF3366"
-                  strokeWidth="1"
-                  strokeDasharray="3,3"
-                  opacity="0.5"
-                  style={{ filter: 'drop-shadow(0 0 8px rgba(255, 51, 102, 0.6))' }}
+          {copState.tracks.map((track) => {
+            const position = coordinateToPercent(track.coordinates, mapBounds);
+            if (!position) {
+              return null;
+            }
+            const color = TRACK_COLOR[track.type] || '#EAB308';
+            const isSelected = selectedTrack?.id === track.id;
+            return (
+              <button
+                key={track.id}
+                className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer"
+                style={position}
+                onClick={() => setSelectedTrackId(track.id)}
+                title={`${track.id} · ${track.type}`}
+              >
+                <div
+                  className="w-3.5 h-3.5 rounded-full border-2"
+                  style={{
+                    borderColor: color,
+                    background: `${color}55`,
+                    boxShadow: isSelected ? `0 0 18px ${color}` : `0 0 8px ${color}`,
+                  }}
                 />
-                <path
-                  d="M 15 5 L 20 18 L 15 15 L 10 18 Z"
-                  fill="none"
-                  stroke="#FF3366"
-                  strokeWidth="2"
-                  style={{ filter: 'drop-shadow(0 0 4px rgba(255, 51, 102, 0.8))' }}
-                />
-              </svg>
-              <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[15px] font-mono text-cyber-red whitespace-nowrap glow-red">
-                T-218
-              </div>
-            </div>
-
-            {/* UAVs */}
-            {['35%', '40%', '50%', '60%'].map((top, i) => (
-              <div key={i} className="absolute" style={{ top, left: `${55 + i * 5}%` }}>
-                <svg width="16" height="16">
-                  <circle
-                    cx="8"
-                    cy="8"
-                    r="6"
-                    fill="none"
-                    stroke="#05DF72"
-                    strokeWidth="2"
-                    style={{ filter: 'drop-shadow(0 0 4px rgba(5, 223, 114, 0.6))' }}
-                  />
-                </svg>
-              </div>
-            ))}
-
-            {/* Unknown track */}
-            <div className="absolute" style={{ top: '55%', left: '35%' }}>
-              <svg width="18" height="18">
-                <rect
-                  x="4"
-                  y="4"
-                  width="10"
-                  height="10"
-                  fill="none"
-                  stroke="#FFB800"
-                  strokeWidth="2"
-                  transform="rotate(45 9 9)"
-                  style={{ filter: 'drop-shadow(0 0 4px rgba(255, 184, 0, 0.6))' }}
-                />
-              </svg>
-            </div>
-          </div>
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 text-[10px] font-mono whitespace-nowrap" style={{ color }}>
+                  {track.id}
+                </div>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Track Panel */}
-        {!isMapExpanded && (
-          <div className="flex-1 space-y-2 overflow-y-auto">
-            {tracks.map((track) => (
-              <div key={track.id}>
-                <CommandCard
-                  className="hover:bg-cyber-glass/20 transition-colors cursor-pointer"
-                  onClick={() => setExpandedTrack(expandedTrack === track.id ? null : track.id)}
-                >
-                  <div
-                    className="absolute left-0 top-0 bottom-0 w-0.5"
-                    style={{
-                      backgroundColor: typeColors[track.type],
-                      boxShadow: `0 0 8px ${typeColors[track.type]}`
-                    }}
-                  />
-                  <div className="pl-2 space-y-2">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="font-mono text-[13px] font-semibold"
-                          style={{
-                            color: typeColors[track.type],
-                            textShadow: `0 0 8px ${typeColors[track.type]}80`
-                          }}
-                        >
-                          {track.id}
-                        </span>
-                        <span
-                          className="text-[15px] uppercase tracking-wider px-1.5 py-0.5 rounded"
-                          style={{
-                            color: typeColors[track.type],
-                            backgroundColor: `${typeColors[track.type]}20`,
-                            border: `1px solid ${typeColors[track.type]}40`
-                          }}
-                        >
-                          {track.type}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <ConfidenceBadge value={track.conf} size="sm" />
-                        {expandedTrack === track.id ? <ChevronDown className="w-3 h-3 text-cyber-cyan" /> : <ChevronRight className="w-3 h-3 text-cyber-cyan" />}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <StatusIndicator
-                        status={track.status as any}
-                        label={track.status.toUpperCase()}
-                        size="sm"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 text-[11px]">
-                      <div>
-                        <span className="text-cyber-text-tertiary">Speed:</span>{' '}
-                        <span className="font-mono text-cyber-text-secondary">{track.speed}</span>
-                      </div>
-                      <div>
-                        <span className="text-cyber-text-tertiary">Alt:</span>{' '}
-                        <span className="font-mono text-cyber-text-secondary">{track.alt}</span>
-                      </div>
-                    </div>
-                  </div>
-                </CommandCard>
-
-                {/* Expanded Track Details */}
-                {expandedTrack === track.id && (
-                  <div className="mt-2 bg-s3m-elevated border border-cyber-cyan/30 rounded-lg p-3 space-y-3">
-                    {/* Identity Probability */}
-                    <div>
-                      <div className="text-[15px] uppercase tracking-wider text-s3m-text-tertiary mb-2">
-                        IDENTITY PROBABILITY
-                      </div>
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-2 bg-s3m-card rounded-full overflow-hidden">
-                            <div
-                              className="h-full transition-all"
-                              style={{
-                                width: `${track.hostileProbability}%`,
-                                background: '#FF3366'
-                              }}
-                            />
-                          </div>
-                          <span className="text-[15px] font-mono text-cyber-red w-12 text-right">{track.hostileProbability}% H</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-2 bg-s3m-card rounded-full overflow-hidden">
-                            <div
-                              className="h-full transition-all"
-                              style={{
-                                width: `${track.friendlyProbability}%`,
-                                background: '#05DF72'
-                              }}
-                            />
-                          </div>
-                          <span className="text-[15px] font-mono text-cyber-green w-12 text-right">{track.friendlyProbability}% F</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-2 bg-s3m-card rounded-full overflow-hidden">
-                            <div
-                              className="h-full transition-all"
-                              style={{
-                                width: `${track.unknownProbability}%`,
-                                background: '#FFB800'
-                              }}
-                            />
-                          </div>
-                          <span className="text-[15px] font-mono text-s3m-warning w-12 text-right">{track.unknownProbability}% U</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Source & Status */}
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <div className="text-[15px] uppercase tracking-wider text-s3m-text-tertiary mb-1">
-                          SOURCE RELIABILITY
-                        </div>
-                        <div
-                          className="text-[11px] uppercase tracking-wider font-semibold px-2 py-1 rounded inline-block"
-                          style={{
-                            color: getReliabilityColor(track.sourceReliability),
-                            backgroundColor: `${getReliabilityColor(track.sourceReliability)}20`
-                          }}
-                        >
-                          {track.sourceReliability}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[15px] uppercase tracking-wider text-s3m-text-tertiary mb-1">
-                          LAST UPDATE
-                        </div>
-                        <div className="text-[11px] font-mono text-s3m-text-secondary">
-                          {track.lastUpdate}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Cross-Domain Correlation */}
-                    <div>
-                      <div className="text-[15px] uppercase tracking-wider text-s3m-text-tertiary mb-2">
-                        CROSS-DOMAIN CORRELATION
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {track.sensors.map((sensor, i) => {
-                          const SensorIcon = sensorIcons[sensor] || Target;
-                          return (
-                            <div
-                              key={i}
-                              className="flex items-center gap-1.5 px-2 py-1 rounded bg-cyber-cyan/20 border border-cyber-cyan/40"
-                            >
-                              <SensorIcon className="w-3 h-3 text-cyber-cyan" />
-                              <span className="text-[15px] text-cyber-cyan uppercase tracking-wider">{sensor}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Track History */}
-                    <div>
-                      <div className="text-[15px] uppercase tracking-wider text-s3m-text-tertiary mb-2">
-                        TRACK ANALYSIS
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="bg-s3m-card rounded p-2">
-                          <div className="text-[11px] text-s3m-text-tertiary mb-0.5">SPLITS</div>
-                          <div className="text-[15px] font-mono text-s3m-text-primary">{track.trackHistory.splits}</div>
-                        </div>
-                        <div className="bg-s3m-card rounded p-2">
-                          <div className="text-[11px] text-s3m-text-tertiary mb-0.5">MERGES</div>
-                          <div className="text-[15px] font-mono text-s3m-text-primary">{track.trackHistory.merges}</div>
-                        </div>
-                        <div className="bg-s3m-card rounded p-2">
-                          <div className="text-[11px] text-s3m-text-tertiary mb-0.5">DECEPTION</div>
-                          <div
-                            className="text-[15px] uppercase tracking-wider font-semibold"
-                            style={{ color: getDeceptionColor(track.trackHistory.deception) }}
-                          >
-                            {track.trackHistory.deception}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Recommended Action */}
-                    <div className="bg-cyber-cyan/10 border border-cyber-cyan/30 rounded p-2">
-                      <div className="text-[15px] uppercase tracking-wider text-cyber-cyan mb-1 flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" />
-                        RECOMMENDED ACTION
-                      </div>
-                      <div className="text-[11px] text-s3m-text-primary leading-relaxed">
-                        {track.recommendedAction}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Command Actions Bar (appears when map is expanded) */}
-      {isMapExpanded && (
-        <div className="glass-panel rounded-xl p-4 border-cyber-cyan/30" style={{
-          boxShadow: '0 0 20px rgba(0, 240, 255, 0.2)'
-        }}>
-          <div className="flex items-center gap-3 mb-3">
-            <Zap className="w-4 h-4 text-cyber-cyan" style={{ filter: 'drop-shadow(0 0 4px rgba(0, 240, 255, 0.8))' }} />
-            <span className="text-[13px] text-cyber-cyan font-display font-semibold tracking-[0.12em] uppercase">
-              AUTOMATED COMMAND OPTIONS
-            </span>
-          </div>
-
-          <div className="grid grid-cols-4 gap-3">
-            {commandActions.map((action) => {
-              const Icon = action.icon;
+        <div className="col-span-12 lg:col-span-2 min-h-0 bg-s3m-card border border-cyber-glass-border rounded-xl p-2 overflow-y-auto">
+          <div className="text-[11px] uppercase tracking-wider text-s3m-text-tertiary mb-2">Tracks</div>
+          <div className="space-y-2">
+            {copState.tracks.map((track) => {
+              const color = TRACK_COLOR[track.type] || '#EAB308';
+              const isSelected = selectedTrack?.id === track.id;
               return (
                 <button
-                  key={action.id}
-                  className="glass-panel rounded-lg p-3 hover:scale-105 transition-all duration-300 cursor-pointer"
+                  key={track.id}
+                  onClick={() => setSelectedTrackId(track.id)}
+                  className="w-full text-left rounded border p-2 transition-colors"
                   style={{
-                    border: `1px solid ${action.color}40`
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.boxShadow = `0 0 20px ${action.color}60`;
-                    e.currentTarget.style.borderColor = `${action.color}80`;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.boxShadow = '';
-                    e.currentTarget.style.borderColor = `${action.color}40`;
+                    borderColor: isSelected ? `${color}AA` : 'rgba(107, 124, 149, 0.4)',
+                    background: isSelected ? `${color}22` : 'rgba(12, 18, 30, 0.65)',
                   }}
                 >
-                  <div className="flex flex-col items-center gap-2">
-                    <Icon className="w-5 h-5" style={{
-                      color: action.color,
-                      filter: `drop-shadow(0 0 6px ${action.color}80)`
-                    }} />
-                    <span className="text-[11px] font-semibold uppercase tracking-wider" style={{
-                      color: action.color,
-                      textShadow: `0 0 8px ${action.color}60`
-                    }}>
-                      {action.label}
+                  <div className="flex items-center justify-between">
+                    <span className="text-[12px] font-semibold" style={{ color }}>
+                      {track.id}
                     </span>
+                    <span className="text-[10px] uppercase tracking-wider text-s3m-text-tertiary">{track.type}</span>
                   </div>
+                  <div className="mt-1 text-[10px] text-s3m-text-secondary">{track.status}</div>
+                  <div className="mt-1 text-[10px] text-cyber-cyan">Conf {Math.round(track.confidence)}%</div>
                 </button>
               );
             })}
           </div>
+
+          {selectedTrack && (
+            <div className="mt-3 rounded border border-cyber-cyan/30 bg-cyber-cyan/5 p-2 text-[10px] space-y-1">
+              <div className="text-[11px] uppercase tracking-wider text-cyber-cyan flex items-center gap-1">
+                <MapPin className="w-3 h-3" />
+                Selected {selectedTrack.id}
+              </div>
+              <div className="text-s3m-text-secondary">Speed: {selectedTrack.speed ?? '--'}</div>
+              <div className="text-s3m-text-secondary">Altitude: {selectedTrack.altitude ?? '--'}</div>
+              <div className="text-s3m-text-secondary">Last update: {selectedTrack.lastUpdate ?? '--'}</div>
+              <div className="text-s3m-text-secondary">Action: {selectedTrack.recommendedAction ?? '--'}</div>
+            </div>
+          )}
         </div>
-      )}
+
+        <div className="col-span-12 lg:col-span-3 min-h-0 grid grid-rows-4 gap-2">
+          <div className="row-span-1 rounded-xl border border-cyber-glass-border bg-s3m-card p-2 overflow-y-auto">
+            <div className="text-[11px] uppercase tracking-wider text-s3m-text-tertiary mb-1 flex items-center gap-1">
+              <ShieldAlert className="w-3.5 h-3.5 text-cyber-red" />
+              Alert ticker
+            </div>
+            <div className="space-y-1">
+              {topAlerts.map((alert: CopAlert) => (
+                <div key={alert.id} className="rounded border p-1.5 text-[10px]" style={{ borderColor: `${severityColor(alert.severity)}77` }}>
+                  <div className="font-semibold" style={{ color: severityColor(alert.severity) }}>{alert.title}</div>
+                  <div className="text-s3m-text-secondary">{alert.message}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="row-span-1 rounded-xl border border-cyber-glass-border bg-s3m-card p-2 overflow-y-auto">
+            <div className="text-[11px] uppercase tracking-wider text-s3m-text-tertiary mb-1 flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-cyber-green" />
+              Decision queue
+            </div>
+            <div className="space-y-1">
+              {decisionQueue.map((decision: CopDecision) => (
+                <div key={decision.id} className="rounded border border-cyber-glass-border p-1.5 text-[10px]">
+                  <div className="font-semibold text-s3m-text-primary">{decision.title}</div>
+                  <div className="text-s3m-text-secondary">{decision.status}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="row-span-1 rounded-xl border border-cyber-glass-border bg-s3m-card p-2 overflow-y-auto">
+            <div className="text-[11px] uppercase tracking-wider text-s3m-text-tertiary mb-1 flex items-center gap-1">
+              <AlertTriangle className="w-3.5 h-3.5 text-s3m-warning" />
+              Risk panel
+            </div>
+            <div className="space-y-1">
+              {riskPanels.length > 0 ? (
+                riskPanels.map((panel) => (
+                  <div key={panel.key} className="rounded border border-cyber-glass-border p-1.5 text-[10px]">
+                    <div className="text-s3m-text-tertiary">{panel.label}</div>
+                    <div className="text-s3m-text-primary font-semibold">{asString(panel.value)}</div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-[10px] text-s3m-text-secondary">No risk updates received.</div>
+              )}
+            </div>
+          </div>
+
+          <div className="row-span-1 rounded-xl border border-cyber-glass-border bg-s3m-card p-2 overflow-y-auto">
+            <div className="text-[11px] uppercase tracking-wider text-s3m-text-tertiary mb-1 flex items-center gap-1">
+              <Radio className="w-3.5 h-3.5 text-cyber-cyan" />
+              Live intel feed
+            </div>
+            <div className="space-y-1">
+              {topFeed.map((item: CopFeedItem) => (
+                <div key={item.id} className="rounded border border-cyber-glass-border p-1.5 text-[10px]">
+                  <div className="font-semibold text-cyber-cyan uppercase tracking-wider">{item.type}</div>
+                  <div className="text-s3m-text-secondary">{item.message}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-cyber-glass-border bg-s3m-card px-3 py-2 text-[11px]">
+        <div className="font-semibold text-cyber-cyan uppercase tracking-wider mb-1">System status</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          {systemStatusEntries.length > 0 ? (
+            systemStatusEntries.map(([key, value]) => (
+              <div key={key} className="rounded border border-cyber-glass-border px-2 py-1">
+                <div className="text-[10px] uppercase tracking-wider text-s3m-text-tertiary">{key.replace(/_/g, ' ')}</div>
+                <div className="text-s3m-text-primary">{asString(value)}</div>
+              </div>
+            ))
+          ) : (
+            <div className="text-s3m-text-secondary">No system status updates yet.</div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
