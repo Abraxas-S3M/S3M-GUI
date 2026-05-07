@@ -1033,7 +1033,7 @@ export function COPWorkspace() {
                       </div>
                       <div>
                         <div className="text-[15px] uppercase tracking-wider text-s3m-text-tertiary mb-1">
-                          LAST UPDATE
+                          RECENCY
                         </div>
                         <div className="text-[11px] font-mono text-s3m-text-secondary">
                           {track.lastUpdate}
