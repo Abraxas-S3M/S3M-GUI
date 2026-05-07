@@ -1,6 +1,12 @@
 import { useMemo, useState } from 'react';
 
 type MapBounds = [[number, number], [number, number]];
+type CardinalBounds = {
+  north: number;
+  south: number;
+  west: number;
+  east: number;
+};
 
 type MapTrack = {
   id: string;
@@ -45,10 +51,17 @@ interface LiveCopMapProps {
   showFallbackUnknownTrack: boolean;
 }
 
-const DEFAULT_BOUNDS: MapBounds = [
+const DEFAULT_MAP_BOUNDS: MapBounds = [
   [34.0, 15.0],
   [57.5, 31.5],
 ];
+
+const DEFAULT_BOUNDS: CardinalBounds = {
+  north: 31.5,
+  south: 15.0,
+  west: 34.0,
+  east: 57.5,
+};
 
 const normalizeTrackType = (trackType: string): NormalizedTrackType => {
   const normalized = trackType.toUpperCase();
@@ -96,6 +109,13 @@ const isValidBounds = (bounds: MapBounds): boolean => {
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 
+const toCardinalBounds = (mapBounds?: MapBounds | null): CardinalBounds => ({
+  north: mapBounds?.[1]?.[1] ?? DEFAULT_BOUNDS.north,
+  south: mapBounds?.[0]?.[1] ?? DEFAULT_BOUNDS.south,
+  west: mapBounds?.[0]?.[0] ?? DEFAULT_BOUNDS.west,
+  east: mapBounds?.[1]?.[0] ?? DEFAULT_BOUNDS.east,
+});
+
 const hashTrackId = (id: string): number =>
   id.split('').reduce((accumulator, char) => accumulator + char.charCodeAt(0), 0);
 
@@ -120,13 +140,10 @@ const toPercentCoordinate = (
   latitude: number,
   bounds: MapBounds
 ): { x: number; y: number } => {
-  const [southWest, northEast] = bounds;
-  const west = southWest[0];
-  const east = northEast[0];
-  const north = northEast[1];
+  const scopedBounds = toCardinalBounds(bounds);
   // Explicit emergency projection formula for deterministic rendering.
-  const x = ((longitude - west) / (east - west)) * 100;
-  const y = ((north - latitude) / (north - south)) * 100;
+  const x = ((longitude - scopedBounds.west) / (scopedBounds.east - scopedBounds.west)) * 100;
+  const y = ((scopedBounds.north - latitude) / (scopedBounds.north - scopedBounds.south)) * 100;
   return {
     x: clamp(x, 2, 98),
     y: clamp(y, 2, 98),
@@ -287,7 +304,7 @@ export function LiveCopMap({
   const [hoveredTrackId, setHoveredTrackId] = useState<string | null>(null);
 
   const effectiveBounds = useMemo<MapBounds>(
-    () => (mapBounds && isValidBounds(mapBounds) ? mapBounds : DEFAULT_BOUNDS),
+    () => (mapBounds && isValidBounds(mapBounds) ? mapBounds : DEFAULT_MAP_BOUNDS),
     [mapBounds]
   );
 
