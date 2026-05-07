@@ -6,8 +6,8 @@ const runtimeEnv: RuntimeEnv = (
   (import.meta as unknown as { env?: RuntimeEnv }).env ?? {}
 );
 
-const COP_PATH_PREFIX = '/api/cop/saudi_mod';
 const R2_HOST_MARKERS = ['r2.cloudflarestorage.com', '.r2.dev'];
+const DEFAULT_COP_TRACK = 'saudi_mod';
 
 export type CopDataSource = 'backend' | 'fallback';
 
@@ -386,10 +386,21 @@ const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, '');
 
 const stripApiSuffix = (value: string): string => value.replace(/\/api(\/v\d+)?$/i, '');
 
+const normalizeCopTrack = (track: string | undefined): string => {
+  if (typeof track !== 'string') {
+    return DEFAULT_COP_TRACK;
+  }
+  const normalized = track.trim().toLowerCase().replace(/^\/+|\/+$/g, '');
+  return normalized || DEFAULT_COP_TRACK;
+};
+
+const getCopPathPrefix = (track: string | undefined): string =>
+  `/api/cop/${encodeURIComponent(normalizeCopTrack(track))}`;
+
 const readCopApiBaseUrl = (): string => {
   const rawValue = runtimeEnv.VITE_S3M_API_URL;
   if (typeof rawValue === 'string' && rawValue.trim().length > 0) {
-    return trimTrailingSlash(rawValue.trim());
+    return trimTrailingSlash(stripApiSuffix(rawValue.trim()));
   }
   return trimTrailingSlash(stripApiSuffix(API_CONFIG.baseUrl));
 };
@@ -435,21 +446,38 @@ const fetchJson = async (path: string): Promise<unknown> => {
 };
 
 export const getSaudiModCopWsUrl = (): string => {
-  validateNonR2Target(COP_API_BASE_URL);
-  return `${toWsUrl(COP_API_BASE_URL)}/ws/cop/saudi_mod`;
+  return getCopWsUrl(DEFAULT_COP_TRACK);
 };
+
+export const getCopWsUrl = (track = DEFAULT_COP_TRACK): string => {
+  validateNonR2Target(COP_API_BASE_URL);
+  return `${toWsUrl(COP_API_BASE_URL)}/ws/cop/${encodeURIComponent(normalizeCopTrack(track))}`;
+};
+
+export const connectCopWebSocket = (track = DEFAULT_COP_TRACK): WebSocket =>
+  new WebSocket(getCopWsUrl(track));
 
 export const parseCopSocketEvent = (rawMessage: string): CopSocketEvent | null => {
   try {
     const parsed = JSON.parse(rawMessage) as Record<string, unknown>;
     const eventType = asString(parsed.event_type || parsed.type || parsed.kind, 'unknown');
     const payload = parsed.payload ?? parsed.data ?? parsed;
+    const payloadRecord = isRecord(payload) ? payload : {};
+    const receivedAt =
+      toTimestamp(
+        parsed.timestamp ||
+          parsed.last_update ||
+          parsed.updated_at ||
+          payloadRecord.timestamp ||
+          payloadRecord.last_update ||
+          payloadRecord.updated_at
+      ) ?? new Date().toISOString();
 
     return {
       type: eventType,
       payload,
       raw: parsed,
-      receivedAt: new Date().toISOString(),
+      receivedAt,
     };
   } catch {
     return null;
@@ -505,33 +533,61 @@ export const normalizeCopPanelStates = (payload: unknown): CopPanelState[] =>
   normalizePanelStateCollection(payload);
 
 export const copClient = {
-  async getState(): Promise<CopState> {
-    const payload = await fetchJson(`${COP_PATH_PREFIX}/state`);
+  async getCopState(track = DEFAULT_COP_TRACK): Promise<CopState> {
+    const payload = await fetchJson(`${getCopPathPrefix(track)}/state`);
     return normalizeCopState(payload);
   },
 
-  async getMap(): Promise<CopMapConfig> {
-    const payload = await fetchJson(`${COP_PATH_PREFIX}/map`);
+  async getCopMap(track = DEFAULT_COP_TRACK): Promise<CopMapConfig> {
+    const payload = await fetchJson(`${getCopPathPrefix(track)}/map`);
     return normalizeCopMap(payload);
   },
 
-  async getTracks(): Promise<CopTrack[]> {
-    const payload = await fetchJson(`${COP_PATH_PREFIX}/tracks`);
+  async getCopTracks(track = DEFAULT_COP_TRACK): Promise<CopTrack[]> {
+    const payload = await fetchJson(`${getCopPathPrefix(track)}/tracks`);
     return normalizeCopTracks(payload);
   },
 
-  async getAlerts(): Promise<CopAlert[]> {
-    const payload = await fetchJson(`${COP_PATH_PREFIX}/alerts`);
+  async getCopAlerts(track = DEFAULT_COP_TRACK): Promise<CopAlert[]> {
+    const payload = await fetchJson(`${getCopPathPrefix(track)}/alerts`);
     return normalizeCopAlerts(payload);
   },
 
-  async getDecisions(): Promise<CopDecision[]> {
-    const payload = await fetchJson(`${COP_PATH_PREFIX}/decisions`);
+  async getCopDecisions(track = DEFAULT_COP_TRACK): Promise<CopDecision[]> {
+    const payload = await fetchJson(`${getCopPathPrefix(track)}/decisions`);
     return normalizeCopDecisions(payload);
   },
 
-  async getFeed(): Promise<CopFeedItem[]> {
-    const payload = await fetchJson(`${COP_PATH_PREFIX}/feed`);
+  async getCopFeed(track = DEFAULT_COP_TRACK): Promise<CopFeedItem[]> {
+    const payload = await fetchJson(`${getCopPathPrefix(track)}/feed`);
     return normalizeCopFeed(payload);
+  },
+
+  connectCopWebSocket(track = DEFAULT_COP_TRACK): WebSocket {
+    return connectCopWebSocket(track);
+  },
+
+  async getState(): Promise<CopState> {
+    return copClient.getCopState(DEFAULT_COP_TRACK);
+  },
+
+  async getMap(): Promise<CopMapConfig> {
+    return copClient.getCopMap(DEFAULT_COP_TRACK);
+  },
+
+  async getTracks(): Promise<CopTrack[]> {
+    return copClient.getCopTracks(DEFAULT_COP_TRACK);
+  },
+
+  async getAlerts(): Promise<CopAlert[]> {
+    return copClient.getCopAlerts(DEFAULT_COP_TRACK);
+  },
+
+  async getDecisions(): Promise<CopDecision[]> {
+    return copClient.getCopDecisions(DEFAULT_COP_TRACK);
+  },
+
+  async getFeed(): Promise<CopFeedItem[]> {
+    return copClient.getCopFeed(DEFAULT_COP_TRACK);
   },
 };

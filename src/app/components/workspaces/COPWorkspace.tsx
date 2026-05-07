@@ -27,15 +27,16 @@ import {
   type CopMapConfig,
   type CopDecision,
   type CopFeedItem,
-  getSaudiModCopWsUrl,
   normalizeCopAlerts,
   normalizeCopDecisions,
   normalizeCopFeed,
   normalizeCopMap,
   normalizeCopTracks,
   parseCopSocketEvent,
+  type CopTheater,
   type CopTrack,
 } from '../../../services/api/copClient';
+import { useConnectionStore } from '../../../services/connectionStore';
 import { LiveCopMap } from './LiveCopMap';
 
 type EnvironmentType = 'AIR' | 'GROUND' | 'MARITIME' | 'CYBER';
@@ -315,7 +316,54 @@ const mergeMissionLayers = (incomingLayers: ReturnType<typeof normalizeCopMap>['
     };
   });
 
+const COP_TRACK = 'saudi_mod';
+
+const toIsoTimestamp = (value: unknown): string | null => {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    return null;
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+  return parsed.toISOString();
+};
+
+const resolveBackendTimestamp = (payload: unknown): string | null => {
+  if (typeof payload !== 'object' || payload === null) {
+    return null;
+  }
+  const record = payload as Record<string, unknown>;
+  return (
+    toIsoTimestamp(record.timestamp) ??
+    toIsoTimestamp(record.last_update) ??
+    toIsoTimestamp(record.updated_at) ??
+    null
+  );
+};
+
+const formatLastUpdate = (timestamp: string | null): string => {
+  if (!timestamp) {
+    return 'WAITING FOR LIVE DATA';
+  }
+  const parsed = new Date(timestamp);
+  if (Number.isNaN(parsed.getTime())) {
+    return timestamp.toUpperCase();
+  }
+  return parsed.toLocaleTimeString('en-US', {
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+};
+
 export function COPWorkspace() {
+  const setApiStatus = useConnectionStore((state) => state.setApiStatus);
+  const setWsStatus = useConnectionStore((state) => state.setWsStatus);
+  const recordApiResponse = useConnectionStore((state) => state.recordApiResponse);
+  const recordApiError = useConnectionStore((state) => state.recordApiError);
+  const recordWsMessage = useConnectionStore((state) => state.recordWsMessage);
   const [activeEnvironment, setActiveEnvironment] = useState<EnvironmentType>('AIR');
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [expandedTrack, setExpandedTrack] = useState<string | null>(null);
@@ -330,9 +378,11 @@ export function COPWorkspace() {
   const [alerts, setAlerts] = useState<CopAlert[]>(FALLBACK_ALERTS);
   const [apiConnected, setApiConnected] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
-  const [lastUpdateAt, setLastUpdateAt] = useState<string>(new Date().toISOString());
+  const [lastUpdateAt, setLastUpdateAt] = useState<string | null>(null);
   const [dataSource, setDataSource] = useState<'backend' | 'fallback'>('fallback');
   const [mapBounds, setMapBounds] = useState<CopMapConfig['bounds'] | null>(null);
+  const [theaterMetadata, setTheaterMetadata] = useState<CopTheater | null>(null);
+  const [mapMetadata, setMapMetadata] = useState<CopMapConfig | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<number | null>(null);
@@ -382,6 +432,7 @@ export function COPWorkspace() {
   const applySocketEvent = useCallback(
     (eventType: string, payload: unknown) => {
       const normalizedType = eventType.toLowerCase();
+      const payloadTimestamp = resolveBackendTimestamp(payload);
       if (normalizedType === 'cop_update' && typeof payload === 'object' && payload !== null) {
         const record = payload as Record<string, unknown>;
         if (record.tracks) {
@@ -391,6 +442,7 @@ export function COPWorkspace() {
           const mapState = normalizeCopMap(record.map || record.map_config);
           setMissionLayers(mergeMissionLayers(mapState.layers));
           setMapBounds(mapState.bounds);
+          setMapMetadata(mapState);
         }
         if (record.decisions) {
           setDecisions((previous) => mergeById(previous, normalizeCopDecisions(record.decisions), 40));
@@ -401,6 +453,10 @@ export function COPWorkspace() {
         if (record.alerts) {
           setAlerts((previous) => mergeById(previous, normalizeCopAlerts(record.alerts), 80));
         }
+        if (record.theater || record.theater_info) {
+          const theater = record.theater ?? record.theater_info;
+          setTheaterMetadata(typeof theater === 'object' && theater !== null ? (theater as CopTheater) : null);
+        }
       } else if (normalizedType === 'decision') {
         setDecisions((previous) => mergeById(previous, normalizeCopDecisions(payload), 40));
       } else if (normalizedType === 'intel_feed') {
@@ -409,18 +465,26 @@ export function COPWorkspace() {
         setAlerts((previous) => mergeById(previous, normalizeCopAlerts(payload), 80));
       }
       setDataSource('backend');
-      setLastUpdateAt(new Date().toISOString());
+      if (payloadTimestamp) {
+        setLastUpdateAt(payloadTimestamp);
+      }
     },
     [hydrateTracks]
   );
 
   const loadSnapshot = useCallback(async () => {
+    const requestStartedAt = Date.now();
+    setApiStatus('degraded');
     try {
-      const state = await copClient.getState();
+      const state = await copClient.getCopState(COP_TRACK);
       setApiConnected(true);
+      setApiStatus('healthy');
+      recordApiResponse(Date.now() - requestStartedAt);
       setDataSource('backend');
       hydrateTracks(state.tracks);
       setMapBounds(state.map.bounds);
+      setMapMetadata(state.map);
+      setTheaterMetadata(state.theater ?? null);
       if (state.map.layers.length > 0) {
         setMissionLayers(mergeMissionLayers(state.map.layers));
       }
@@ -433,14 +497,14 @@ export function COPWorkspace() {
       if (state.alerts.length > 0) {
         setAlerts(state.alerts);
       }
-      setLastUpdateAt(state.lastUpdate ?? new Date().toISOString());
+      setLastUpdateAt(state.lastUpdate ?? resolveBackendTimestamp(state));
 
       const [tracksResult, decisionsResult, feedResult, alertsResult, mapResult] = await Promise.allSettled([
-        copClient.getTracks(),
-        copClient.getDecisions(),
-        copClient.getFeed(),
-        copClient.getAlerts(),
-        copClient.getMap(),
+        copClient.getCopTracks(COP_TRACK),
+        copClient.getCopDecisions(COP_TRACK),
+        copClient.getCopFeed(COP_TRACK),
+        copClient.getCopAlerts(COP_TRACK),
+        copClient.getCopMap(COP_TRACK),
       ]);
 
       if (tracksResult.status === 'fulfilled') {
@@ -458,12 +522,15 @@ export function COPWorkspace() {
       if (mapResult.status === 'fulfilled' && mapResult.value.layers.length > 0) {
         setMissionLayers(mergeMissionLayers(mapResult.value.layers));
         setMapBounds(mapResult.value.bounds);
+        setMapMetadata(mapResult.value);
       } else if (mapResult.status === 'fulfilled') {
         setMapBounds(mapResult.value.bounds);
+        setMapMetadata(mapResult.value);
       }
-      setLastUpdateAt(new Date().toISOString());
     } catch {
       setApiConnected(false);
+      setApiStatus('unavailable');
+      recordApiError();
       setDataSource('fallback');
       setTracks(FALLBACK_TRACKS);
       setMissionLayers(FALLBACK_MISSION_LAYERS);
@@ -471,9 +538,11 @@ export function COPWorkspace() {
       setFeedItems(FALLBACK_FEED);
       setAlerts(FALLBACK_ALERTS);
       setMapBounds(null);
-      setLastUpdateAt(new Date().toISOString());
+      setMapMetadata(null);
+      setTheaterMetadata(null);
+      setLastUpdateAt(null);
     }
-  }, [hydrateTracks]);
+  }, [hydrateTracks, recordApiError, recordApiResponse, setApiStatus]);
 
   const connectSocket = useCallback(() => {
     if (
@@ -483,19 +552,21 @@ export function COPWorkspace() {
       return;
     }
 
-    let wsUrl = '';
+    let socket: WebSocket;
     try {
-      wsUrl = getSaudiModCopWsUrl();
+      setWsStatus('connecting');
+      socket = copClient.connectCopWebSocket(COP_TRACK);
     } catch {
       setWsConnected(false);
+      setWsStatus('disconnected');
       return;
     }
 
-    const socket = new WebSocket(wsUrl);
     wsRef.current = socket;
 
     socket.onopen = () => {
       setWsConnected(true);
+      setWsStatus('connected');
     };
 
     socket.onmessage = (messageEvent) => {
@@ -508,6 +579,7 @@ export function COPWorkspace() {
       }
       applySocketEvent(event.type, event.payload);
       setLastUpdateAt(event.receivedAt);
+      recordWsMessage();
     };
 
     socket.onerror = () => {
@@ -518,19 +590,23 @@ export function COPWorkspace() {
       wsRef.current = null;
       setWsConnected(false);
       if (!shouldReconnectRef.current) {
+        setWsStatus('disconnected');
         return;
       }
+      setWsStatus('reconnecting');
       reconnectTimerRef.current = window.setTimeout(() => {
         connectSocket();
       }, 3000);
     };
-  }, [applySocketEvent]);
+  }, [applySocketEvent, recordWsMessage, setWsStatus]);
 
   useEffect(() => {
+    shouldReconnectRef.current = true;
     void loadSnapshot();
     connectSocket();
     return () => {
       shouldReconnectRef.current = false;
+      setWsStatus('disconnected');
       if (reconnectTimerRef.current) {
         window.clearTimeout(reconnectTimerRef.current);
       }
@@ -538,7 +614,7 @@ export function COPWorkspace() {
         wsRef.current.close();
       }
     };
-  }, [connectSocket, loadSnapshot]);
+  }, [connectSocket, loadSnapshot, setWsStatus]);
 
   const safeTracks = Array.isArray(tracks) ? tracks : FALLBACK_TRACKS;
   const safeMissionLayers = Array.isArray(missionLayers) ? missionLayers : FALLBACK_MISSION_LAYERS;
@@ -589,6 +665,19 @@ export function COPWorkspace() {
   const markerDecisions = safeDecisions.length;
   const markerInterventions = safeFeedItems.length;
   const markerTrackDivergence = Math.max(1, safeAlerts.length);
+  const apiStatusLabel = apiConnected ? 'API ONLINE' : 'API UNAVAILABLE';
+  const wsStatusLabel = wsConnected ? 'WS CONNECTED' : 'WS DISCONNECTED';
+  const lastUpdateLabel = formatLastUpdate(lastUpdateAt);
+  const theaterLabel = asString(theaterMetadata?.name || theaterMetadata?.region, 'SAUDI MOD');
+  const mapBoundsLabel = mapMetadata?.bounds
+    ? mapMetadata.bounds
+        .map((pair) =>
+          Array.isArray(pair) && pair.length >= 2
+            ? `${Number(pair[0]).toFixed(2)},${Number(pair[1]).toFixed(2)}`
+            : '--'
+        )
+        .join(' -> ')
+    : 'N/A';
 
   const handleMapDoubleClick = () => {
     setIsMapExpanded(!isMapExpanded);
@@ -664,11 +753,29 @@ export function COPWorkspace() {
             background: 'rgba(0, 240, 255, 0.1)',
             border: '1px solid rgba(0, 240, 255, 0.3)',
           }}
-          title={`API ${apiConnected ? 'connected' : 'disconnected'} · WS ${wsConnected ? 'connected' : 'disconnected'} · Source ${dataSource} · Updated ${lastUpdateAt}`}
+          title={`${apiStatusLabel} · ${wsStatusLabel} · LAST UPDATE ${lastUpdateLabel} · THEATER ${theaterLabel} · BOUNDS ${mapBoundsLabel}`}
         >
           <div className="w-2 h-2 rounded-full bg-cyber-cyan glow-cyan animate-pulse" />
           <span className="text-[15px] text-cyber-cyan uppercase tracking-wider font-semibold">
             LIVE FEED: {activeEnvironment}
+          </span>
+          <span className="text-[15px] text-s3m-text-tertiary">|</span>
+          <span
+            className="text-[15px] uppercase tracking-wider font-semibold"
+            style={{ color: apiConnected ? '#05DF72' : '#FF3366' }}
+          >
+            {apiStatusLabel}
+          </span>
+          <span className="text-[15px] text-s3m-text-tertiary">|</span>
+          <span
+            className="text-[15px] uppercase tracking-wider font-semibold"
+            style={{ color: wsConnected ? '#05DF72' : '#FF3366' }}
+          >
+            {wsStatusLabel}
+          </span>
+          <span className="text-[15px] text-s3m-text-tertiary">|</span>
+          <span className="text-[15px] text-cyber-cyan uppercase tracking-wider font-semibold">
+            LAST UPDATE: {lastUpdateLabel}
           </span>
         </div>
       </div>
