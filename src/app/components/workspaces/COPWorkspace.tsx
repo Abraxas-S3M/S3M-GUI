@@ -318,46 +318,6 @@ const mergeMissionLayers = (incomingLayers: ReturnType<typeof normalizeCopMap>['
 
 const COP_TRACK = 'saudi_mod';
 
-const toIsoTimestamp = (value: unknown): string | null => {
-  if (typeof value !== 'string' || value.trim().length === 0) {
-    return null;
-  }
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return value;
-  }
-  return parsed.toISOString();
-};
-
-const resolveBackendTimestamp = (payload: unknown): string | null => {
-  if (typeof payload !== 'object' || payload === null) {
-    return null;
-  }
-  const record = payload as Record<string, unknown>;
-  return (
-    toIsoTimestamp(record.timestamp) ??
-    toIsoTimestamp(record.last_update) ??
-    toIsoTimestamp(record.updated_at) ??
-    null
-  );
-};
-
-const formatLastUpdate = (timestamp: string | null): string => {
-  if (!timestamp) {
-    return 'WAITING FOR LIVE DATA';
-  }
-  const parsed = new Date(timestamp);
-  if (Number.isNaN(parsed.getTime())) {
-    return timestamp.toUpperCase();
-  }
-  return parsed.toLocaleTimeString('en-US', {
-    hour12: false,
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-};
-
 export function COPWorkspace() {
   const setApiStatus = useConnectionStore((state) => state.setApiStatus);
   const setWsStatus = useConnectionStore((state) => state.setWsStatus);
@@ -378,7 +338,6 @@ export function COPWorkspace() {
   const [alerts, setAlerts] = useState<CopAlert[]>(FALLBACK_ALERTS);
   const [apiConnected, setApiConnected] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
-  const [lastUpdateAt, setLastUpdateAt] = useState<string | null>(null);
   const [dataSource, setDataSource] = useState<'backend' | 'fallback'>('fallback');
   const [mapBounds, setMapBounds] = useState<CopMapConfig['bounds'] | null>(null);
   const [theaterMetadata, setTheaterMetadata] = useState<CopTheater | null>(null);
@@ -432,7 +391,6 @@ export function COPWorkspace() {
   const applySocketEvent = useCallback(
     (eventType: string, payload: unknown) => {
       const normalizedType = eventType.toLowerCase();
-      const payloadTimestamp = resolveBackendTimestamp(payload);
       if (normalizedType === 'cop_update' && typeof payload === 'object' && payload !== null) {
         const record = payload as Record<string, unknown>;
         if (record.tracks) {
@@ -465,9 +423,6 @@ export function COPWorkspace() {
         setAlerts((previous) => mergeById(previous, normalizeCopAlerts(payload), 80));
       }
       setDataSource('backend');
-      if (payloadTimestamp) {
-        setLastUpdateAt(payloadTimestamp);
-      }
     },
     [hydrateTracks]
   );
@@ -497,8 +452,6 @@ export function COPWorkspace() {
       if (state.alerts.length > 0) {
         setAlerts(state.alerts);
       }
-      setLastUpdateAt(state.lastUpdate ?? resolveBackendTimestamp(state));
-
       const [tracksResult, decisionsResult, feedResult, alertsResult, mapResult] = await Promise.allSettled([
         copClient.getCopTracks(COP_TRACK),
         copClient.getCopDecisions(COP_TRACK),
@@ -540,7 +493,6 @@ export function COPWorkspace() {
       setMapBounds(null);
       setMapMetadata(null);
       setTheaterMetadata(null);
-      setLastUpdateAt(null);
     }
   }, [hydrateTracks, recordApiError, recordApiResponse, setApiStatus]);
 
@@ -578,7 +530,6 @@ export function COPWorkspace() {
         return;
       }
       applySocketEvent(event.type, event.payload);
-      setLastUpdateAt(event.receivedAt);
       recordWsMessage();
     };
 
@@ -665,19 +616,19 @@ export function COPWorkspace() {
   const markerDecisions = safeDecisions.length;
   const markerInterventions = safeFeedItems.length;
   const markerTrackDivergence = Math.max(1, safeAlerts.length);
-  const apiStatusLabel = apiConnected ? 'API ONLINE' : 'API UNAVAILABLE';
-  const wsStatusLabel = wsConnected ? 'WS CONNECTED' : 'WS DISCONNECTED';
-  const lastUpdateLabel = formatLastUpdate(lastUpdateAt);
   const theaterLabel = asString(theaterMetadata?.name || theaterMetadata?.region, 'SAUDI MOD');
-  const mapBoundsLabel = mapMetadata?.bounds
-    ? mapMetadata.bounds
-        .map((pair) =>
-          Array.isArray(pair) && pair.length >= 2
-            ? `${Number(pair[0]).toFixed(2)},${Number(pair[1]).toFixed(2)}`
-            : '--'
-        )
-        .join(' -> ')
-    : 'N/A';
+  const mapCenter =
+    mapMetadata?.center && Array.isArray(mapMetadata.center) && mapMetadata.center.length >= 2
+      ? ([Number(mapMetadata.center[0]), Number(mapMetadata.center[1])] as [number, number])
+      : null;
+  const operationalStatusLabel =
+    dataSource === 'backend'
+      ? apiConnected && wsConnected
+        ? 'OPERATIONAL'
+        : 'LIVE FEED'
+      : 'SIMULATION READY';
+  const operationalStatusColor =
+    dataSource === 'backend' ? (apiConnected && wsConnected ? '#05DF72' : '#00F0FF') : '#FFB800';
 
   const handleMapDoubleClick = () => {
     setIsMapExpanded(!isMapExpanded);
@@ -753,29 +704,22 @@ export function COPWorkspace() {
             background: 'rgba(0, 240, 255, 0.1)',
             border: '1px solid rgba(0, 240, 255, 0.3)',
           }}
-          title={`${apiStatusLabel} · ${wsStatusLabel} · LAST UPDATE ${lastUpdateLabel} · THEATER ${theaterLabel} · BOUNDS ${mapBoundsLabel}`}
+          title={`THEATER ${theaterLabel} · STATUS ${operationalStatusLabel}`}
         >
           <div className="w-2 h-2 rounded-full bg-cyber-cyan glow-cyan animate-pulse" />
           <span className="text-[15px] text-cyber-cyan uppercase tracking-wider font-semibold">
             LIVE FEED: {activeEnvironment}
           </span>
           <span className="text-[15px] text-s3m-text-tertiary">|</span>
-          <span
-            className="text-[15px] uppercase tracking-wider font-semibold"
-            style={{ color: apiConnected ? '#05DF72' : '#FF3366' }}
-          >
-            {apiStatusLabel}
-          </span>
-          <span className="text-[15px] text-s3m-text-tertiary">|</span>
-          <span
-            className="text-[15px] uppercase tracking-wider font-semibold"
-            style={{ color: wsConnected ? '#05DF72' : '#FF3366' }}
-          >
-            {wsStatusLabel}
-          </span>
-          <span className="text-[15px] text-s3m-text-tertiary">|</span>
           <span className="text-[15px] text-cyber-cyan uppercase tracking-wider font-semibold">
-            LAST UPDATE: {lastUpdateLabel}
+            {theaterLabel}
+          </span>
+          <span className="text-[15px] text-s3m-text-tertiary">|</span>
+          <span
+            className="text-[15px] uppercase tracking-wider font-semibold"
+            style={{ color: operationalStatusColor }}
+          >
+            {operationalStatusLabel}
           </span>
         </div>
       </div>
@@ -932,11 +876,13 @@ export function COPWorkspace() {
           <LiveCopMap
             tracks={displayTracks}
             mapBounds={mapBounds}
+            mapCenter={mapCenter}
             dataSource={dataSource}
             selectedTrackId={expandedTrack}
             onTrackSelect={(trackId) => setExpandedTrack(trackId)}
             fallbackHostileTrackId={primaryHostileTrack?.id ?? 'T-218'}
             fallbackFriendlyTrackIds={fallbackFriendlyTrackIds}
+            fallbackUnknownTrackId={unknownTrack?.id}
             showFallbackUnknownTrack={Boolean(unknownTrack)}
           />
         </div>
