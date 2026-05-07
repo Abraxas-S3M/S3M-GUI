@@ -568,9 +568,10 @@ export function LiveCopMap({
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
-  const markersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
-  const [mapReady, setMapReady] = useState(false);
-  const [maplibreFailed, setMaplibreFailed] = useState(false);
+  const markersRef = useRef<maplibregl.Marker[]>([]);
+  const hasEverLoadedMapRef = useRef(false);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapFailed, setMapFailed] = useState(false);
 
   const effectiveBounds = useMemo<MapBounds>(
     () => (mapBounds && isValidBounds(mapBounds) ? mapBounds : DEFAULT_MAP_BOUNDS),
@@ -583,6 +584,8 @@ export function LiveCopMap({
         : DEFAULT_MAP_CENTER,
     [mapCenter]
   );
+  const initialBoundsRef = useRef<MapBounds>(effectiveBounds);
+  const initialCenterRef = useRef<[number, number]>(effectiveCenter);
 
   const backendTracks = useMemo(
     () => tracks.map((track, index) => toMappedTrack(track, effectiveBounds, index)),
@@ -612,51 +615,76 @@ export function LiveCopMap({
   ]);
 
   useEffect(() => {
-    if (!ENABLE_MAPLIBRE || maplibreFailed || mapRef.current || !mapContainerRef.current) {
+    if (!ENABLE_MAPLIBRE) {
+      setMapFailed(true);
+      return;
+    }
+    if (mapRef.current || !mapContainerRef.current) {
+      return;
+    }
+
+    const mapContainer = mapContainerRef.current;
+    if (!mapContainer) {
       return;
     }
 
     try {
       const map = new maplibregl.Map({
-        container: mapContainerRef.current,
+        container: mapContainer,
         style: MAPLIBRE_STYLE_URL,
-        center: effectiveCenter,
+        center: initialCenterRef.current,
         zoom: DEFAULT_MAP_ZOOM,
         minZoom: 3.5,
         maxZoom: 11.5,
-        maxBounds: effectiveBounds,
+        maxBounds: initialBoundsRef.current,
         attributionControl: false,
       });
       map.touchZoomRotate.disableRotation();
 
-      const handleLoad = () => setMapReady(true);
+      const handleLoad = () => {
+        hasEverLoadedMapRef.current = true;
+        setMapLoaded(true);
+        setMapFailed(false);
+        map.resize();
+      };
       const handleError = () => {
-        setMaplibreFailed(true);
+        if (!hasEverLoadedMapRef.current) {
+          setMapFailed(true);
+          popupRef.current?.remove();
+          popupRef.current = null;
+          markersRef.current.forEach((marker) => marker.remove());
+          markersRef.current = [];
+          map.remove();
+          mapRef.current = null;
+        }
       };
 
       map.on('load', handleLoad);
       map.on('error', handleError);
       mapRef.current = map;
-    } catch {
-      setMaplibreFailed(true);
-    }
 
-    return () => {
-      popupRef.current?.remove();
-      popupRef.current = null;
-      markersRef.current.forEach((marker) => marker.remove());
-      markersRef.current.clear();
-      setMapReady(false);
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
+      return () => {
+        map.off('load', handleLoad);
+        map.off('error', handleError);
+        popupRef.current?.remove();
+        popupRef.current = null;
+        markersRef.current.forEach((marker) => marker.remove());
+        markersRef.current = [];
+        if (mapRef.current) {
+          mapRef.current.remove();
+          mapRef.current = null;
+        }
+      };
+    } catch {
+      if (!hasEverLoadedMapRef.current) {
+        setMapFailed(true);
       }
-    };
-  }, [effectiveBounds, effectiveCenter, maplibreFailed]);
+    }
+  }, []);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !mapReady) {
+    if (!map || !mapLoaded) {
       return;
     }
     map.setMaxBounds(effectiveBounds);
@@ -665,16 +693,39 @@ export function LiveCopMap({
       return;
     }
     map.jumpTo({ center: effectiveCenter, zoom: DEFAULT_MAP_ZOOM });
-  }, [effectiveBounds, effectiveCenter, mapBounds, mapReady]);
+    map.resize();
+  }, [effectiveBounds, effectiveCenter, mapBounds, mapLoaded]);
+
+  useEffect(() => {
+    if (!ENABLE_MAPLIBRE || mapFailed) {
+      return;
+    }
+    const map = mapRef.current;
+    const container = mapContainerRef.current;
+    if (!map || !container) {
+      return;
+    }
+
+    const resizeMap = () => map.resize();
+    resizeMap();
+    window.addEventListener('resize', resizeMap);
+    const observer = new ResizeObserver(() => resizeMap());
+    observer.observe(container);
+
+    return () => {
+      window.removeEventListener('resize', resizeMap);
+      observer.disconnect();
+    };
+  }, [mapLoaded, mapFailed]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !mapReady || maplibreFailed) {
+    if (!map || !mapLoaded || !hasEverLoadedMapRef.current) {
       return;
     }
 
     markersRef.current.forEach((marker) => marker.remove());
-    markersRef.current.clear();
+    markersRef.current = [];
 
     const showPopup = (track: MappedTrack) => {
       if (!popupRef.current) {
@@ -748,7 +799,7 @@ export function LiveCopMap({
         .setLngLat([track.longitude, track.latitude])
         .addTo(map);
 
-      markersRef.current.set(track.id, marker);
+      markersRef.current.push(marker);
     });
 
     const selectedTrack = activeTracks.find((track) => track.id === selectedTrackId);
@@ -757,9 +808,9 @@ export function LiveCopMap({
     } else {
       popupRef.current?.remove();
     }
-  }, [activeTracks, mapReady, maplibreFailed, onTrackSelect, selectedTrackId]);
+  }, [activeTracks, mapLoaded, onTrackSelect, selectedTrackId]);
 
-  if (!ENABLE_MAPLIBRE || maplibreFailed) {
+  if (!ENABLE_MAPLIBRE || mapFailed) {
     return (
       <TacticalFallbackMap
         activeTracks={activeTracks}
@@ -774,15 +825,6 @@ export function LiveCopMap({
   return (
     <div className="absolute inset-0 z-0" style={MAP_CONTAINER_STYLE}>
       <div ref={mapContainerRef} className="absolute inset-0" style={MAP_CONTAINER_STYLE} />
-      {!mapReady && (
-        <TacticalFallbackMap
-          activeTracks={activeTracks}
-          effectiveBounds={effectiveBounds}
-          selectedTrackId={selectedTrackId}
-          onTrackSelect={onTrackSelect}
-          dataSource={dataSource}
-        />
-      )}
       {dataSource !== 'backend' && (
         <div
           className="absolute bottom-4 left-4 px-2 py-1 rounded text-[10px] uppercase tracking-wider"
