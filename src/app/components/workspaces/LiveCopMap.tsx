@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
 
 type MapBounds = [[number, number], [number, number]];
 type CardinalBounds = {
@@ -19,6 +21,8 @@ type MapTrack = {
   heading?: string | number;
   domain?: string;
   affiliation?: string;
+  confidence?: number | string;
+  conf?: number | string;
 };
 
 type NormalizedTrackType = 'HOSTILE' | 'FRIENDLY' | 'UNKNOWN';
@@ -32,6 +36,7 @@ type MappedTrack = {
   speed: string;
   altitude: string;
   heading: string;
+  confidence: string;
   longitude: number;
   latitude: number;
   x: number;
@@ -55,6 +60,11 @@ const DEFAULT_MAP_BOUNDS: MapBounds = [
   [34.0, 15.0],
   [57.5, 31.5],
 ];
+const DEFAULT_MAP_CENTER: [number, number] = [45.0792, 23.8859];
+const DEFAULT_MAP_ZOOM = 4.7;
+const MAPLIBRE_STYLE_URL = 'https://demotiles.maplibre.org/style.json';
+const ENABLE_MAPLIBRE = true;
+const MAP_CONTAINER_STYLE = { width: '100%', height: '100%', minHeight: '420px' } as const;
 
 const DEFAULT_BOUNDS: CardinalBounds = {
   north: 31.5,
@@ -170,6 +180,17 @@ const inferDomain = (track: MapTrack): string => {
   return 'AIR';
 };
 
+const toConfidence = (track: MapTrack): string => {
+  const candidate = track.confidence ?? track.conf;
+  if (typeof candidate === 'number' && Number.isFinite(candidate)) {
+    return `${Math.round(candidate)}%`;
+  }
+  if (typeof candidate === 'string' && candidate.trim().length > 0) {
+    return candidate.trim();
+  }
+  return '--';
+};
+
 const toMappedTrack = (track: MapTrack, bounds: MapBounds, index: number): MappedTrack => {
   const callsign = track.callsign?.trim() || track.id;
   const coordinates = isValidCoordinate(track.coordinates)
@@ -191,6 +212,7 @@ const toMappedTrack = (track: MapTrack, bounds: MapBounds, index: number): Mappe
       typeof track.heading === 'number'
         ? `${Math.round(track.heading)}°`
         : track.heading?.toString() || '--',
+    confidence: toConfidence(track),
     longitude,
     latitude,
     x,
@@ -222,6 +244,7 @@ const buildFallbackTracks = (
       speed: metadata.speed,
       altitude: metadata.altitude,
       heading: metadata.heading,
+      confidence: '--',
       longitude: coordinates[0],
       latitude: coordinates[1],
       x,
@@ -299,51 +322,67 @@ const getReferenceLabelPosition = (
   return { left: `${x}%`, top: `${y}%` };
 };
 
-export function LiveCopMap({
-  tracks,
-  mapBounds,
-  mapCenter: _mapCenter,
-  dataSource,
+const buildPopupContent = (track: MappedTrack): HTMLDivElement => {
+  const popupContainer = document.createElement('div');
+  popupContainer.style.minWidth = '190px';
+  popupContainer.style.color = '#D9E9F5';
+  popupContainer.style.fontSize = '11px';
+  popupContainer.style.textTransform = 'uppercase';
+  popupContainer.style.letterSpacing = '0.04em';
+
+  const title = document.createElement('div');
+  title.textContent = track.callsign;
+  title.style.marginBottom = '6px';
+  title.style.fontWeight = '700';
+  title.style.color = getTrackColor(track.affiliation).fill;
+  popupContainer.appendChild(title);
+
+  const grid = document.createElement('div');
+  grid.style.display = 'grid';
+  grid.style.gridTemplateColumns = '1fr 1fr';
+  grid.style.columnGap = '12px';
+  grid.style.rowGap = '4px';
+
+  const rows: Array<[string, string]> = [
+    ['Domain', track.domain],
+    ['Affiliation', track.affiliation],
+    ['Speed', track.speed],
+    ['Altitude', track.altitude],
+    ['Heading', track.heading],
+    ['Confidence', track.confidence],
+  ];
+
+  rows.forEach(([label, value]) => {
+    const left = document.createElement('span');
+    left.textContent = label;
+    left.style.opacity = '0.8';
+    const right = document.createElement('span');
+    right.textContent = value;
+    right.style.textAlign = 'right';
+    grid.appendChild(left);
+    grid.appendChild(right);
+  });
+
+  popupContainer.appendChild(grid);
+  return popupContainer;
+};
+
+interface TacticalFallbackMapProps {
+  activeTracks: MappedTrack[];
+  effectiveBounds: MapBounds;
+  selectedTrackId: string | null;
+  onTrackSelect: (trackId: string) => void;
+  dataSource: 'backend' | 'fallback';
+}
+
+function TacticalFallbackMap({
+  activeTracks,
+  effectiveBounds,
   selectedTrackId,
   onTrackSelect,
-  fallbackHostileTrackId,
-  fallbackFriendlyTrackIds,
-  fallbackUnknownTrackId,
-  showFallbackUnknownTrack,
-}: LiveCopMapProps) {
+  dataSource,
+}: TacticalFallbackMapProps) {
   const [hoveredTrackId, setHoveredTrackId] = useState<string | null>(null);
-
-  const effectiveBounds = useMemo<MapBounds>(
-    () => (mapBounds && isValidBounds(mapBounds) ? mapBounds : DEFAULT_MAP_BOUNDS),
-    [mapBounds]
-  );
-
-  const backendTracks = useMemo(
-    () => tracks.map((track, index) => toMappedTrack(track, effectiveBounds, index)),
-    [effectiveBounds, tracks]
-  );
-
-  const activeTracks = useMemo(() => {
-    if (dataSource === 'backend' && tracks.length > 0) {
-      return backendTracks;
-    }
-    return buildFallbackTracks(
-      effectiveBounds,
-      fallbackHostileTrackId,
-      fallbackFriendlyTrackIds,
-      fallbackUnknownTrackId,
-      showFallbackUnknownTrack
-    );
-  }, [
-    backendTracks,
-    dataSource,
-    effectiveBounds,
-    fallbackFriendlyTrackIds,
-    fallbackHostileTrackId,
-    fallbackUnknownTrackId,
-    showFallbackUnknownTrack,
-    tracks.length,
-  ]);
 
   const tracksById = useMemo(
     () => new Map(activeTracks.map((track) => [track.id, track])),
@@ -357,7 +396,7 @@ export function LiveCopMap({
   const hormuzLabel = getReferenceLabelPosition(26.6, 56.3, effectiveBounds);
 
   return (
-    <div className="absolute inset-0 z-0">
+    <div className="absolute inset-0 z-0" style={MAP_CONTAINER_STYLE}>
       <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
         <defs>
           <linearGradient id="copSeaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -492,10 +531,258 @@ export function LiveCopMap({
             <span className="text-right">{focusedTrack.altitude}</span>
             <span>Heading</span>
             <span className="text-right">{focusedTrack.heading}</span>
+            <span>Confidence</span>
+            <span className="text-right">{focusedTrack.confidence}</span>
           </div>
         </div>
       )}
 
+      {dataSource !== 'backend' && (
+        <div
+          className="absolute bottom-4 left-4 px-2 py-1 rounded text-[10px] uppercase tracking-wider"
+          style={{
+            color: '#00F0FF',
+            background: 'rgba(0, 240, 255, 0.12)',
+            border: '1px solid rgba(0, 240, 255, 0.3)',
+          }}
+        >
+          SIM TRACK VIEW
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function LiveCopMap({
+  tracks,
+  mapBounds,
+  mapCenter,
+  dataSource,
+  selectedTrackId,
+  onTrackSelect,
+  fallbackHostileTrackId,
+  fallbackFriendlyTrackIds,
+  fallbackUnknownTrackId,
+  showFallbackUnknownTrack,
+}: LiveCopMapProps) {
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const popupRef = useRef<maplibregl.Popup | null>(null);
+  const markersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
+  const [mapReady, setMapReady] = useState(false);
+  const [maplibreFailed, setMaplibreFailed] = useState(false);
+
+  const effectiveBounds = useMemo<MapBounds>(
+    () => (mapBounds && isValidBounds(mapBounds) ? mapBounds : DEFAULT_MAP_BOUNDS),
+    [mapBounds]
+  );
+  const effectiveCenter = useMemo<[number, number]>(
+    () =>
+      isValidCoordinate(mapCenter)
+        ? [Number(mapCenter[0]), Number(mapCenter[1])]
+        : DEFAULT_MAP_CENTER,
+    [mapCenter]
+  );
+
+  const backendTracks = useMemo(
+    () => tracks.map((track, index) => toMappedTrack(track, effectiveBounds, index)),
+    [effectiveBounds, tracks]
+  );
+
+  const activeTracks = useMemo(() => {
+    if (dataSource === 'backend' && tracks.length > 0) {
+      return backendTracks;
+    }
+    return buildFallbackTracks(
+      effectiveBounds,
+      fallbackHostileTrackId,
+      fallbackFriendlyTrackIds,
+      fallbackUnknownTrackId,
+      showFallbackUnknownTrack
+    );
+  }, [
+    backendTracks,
+    dataSource,
+    effectiveBounds,
+    fallbackFriendlyTrackIds,
+    fallbackHostileTrackId,
+    fallbackUnknownTrackId,
+    showFallbackUnknownTrack,
+    tracks.length,
+  ]);
+
+  useEffect(() => {
+    if (!ENABLE_MAPLIBRE || maplibreFailed || mapRef.current || !mapContainerRef.current) {
+      return;
+    }
+
+    try {
+      const map = new maplibregl.Map({
+        container: mapContainerRef.current,
+        style: MAPLIBRE_STYLE_URL,
+        center: effectiveCenter,
+        zoom: DEFAULT_MAP_ZOOM,
+        minZoom: 3.5,
+        maxZoom: 11.5,
+        maxBounds: effectiveBounds,
+        attributionControl: false,
+      });
+      map.touchZoomRotate.disableRotation();
+
+      const handleLoad = () => setMapReady(true);
+      const handleError = () => {
+        setMaplibreFailed(true);
+      };
+
+      map.on('load', handleLoad);
+      map.on('error', handleError);
+      mapRef.current = map;
+    } catch {
+      setMaplibreFailed(true);
+    }
+
+    return () => {
+      popupRef.current?.remove();
+      popupRef.current = null;
+      markersRef.current.forEach((marker) => marker.remove());
+      markersRef.current.clear();
+      setMapReady(false);
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, [effectiveBounds, effectiveCenter, maplibreFailed]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) {
+      return;
+    }
+    map.setMaxBounds(effectiveBounds);
+    if (mapBounds && isValidBounds(mapBounds)) {
+      map.fitBounds(effectiveBounds, { padding: 24, duration: 0 });
+      return;
+    }
+    map.jumpTo({ center: effectiveCenter, zoom: DEFAULT_MAP_ZOOM });
+  }, [effectiveBounds, effectiveCenter, mapBounds, mapReady]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady || maplibreFailed) {
+      return;
+    }
+
+    markersRef.current.forEach((marker) => marker.remove());
+    markersRef.current.clear();
+
+    const showPopup = (track: MappedTrack) => {
+      if (!popupRef.current) {
+        popupRef.current = new maplibregl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+          className: 'cop-maplibre-popup',
+          offset: 14,
+        });
+      }
+      popupRef.current
+        .setLngLat([track.longitude, track.latitude])
+        .setDOMContent(buildPopupContent(track))
+        .addTo(map);
+    };
+
+    activeTracks.forEach((track) => {
+      const colors = getTrackColor(track.affiliation);
+      const isSelected = selectedTrackId === track.id;
+      const markerElement = document.createElement('button');
+      markerElement.type = 'button';
+      markerElement.setAttribute('aria-label', `${track.callsign} ${track.affiliation}`);
+      markerElement.style.width = isSelected ? '20px' : '16px';
+      markerElement.style.height = isSelected ? '20px' : '16px';
+      markerElement.style.borderRadius = track.affiliation === 'HOSTILE' ? '3px' : '9999px';
+      markerElement.style.border = `1px solid ${colors.stroke}`;
+      markerElement.style.background = colors.fill;
+      markerElement.style.boxShadow = isSelected ? colors.glow : '0 0 10px rgba(3, 8, 16, 0.62)';
+      markerElement.style.transform = `rotate(${track.affiliation === 'HOSTILE' ? 45 : 0}deg)`;
+      markerElement.style.cursor = 'pointer';
+
+      const coreDot = document.createElement('span');
+      coreDot.style.position = 'absolute';
+      coreDot.style.left = '50%';
+      coreDot.style.top = '50%';
+      coreDot.style.transform = 'translate(-50%, -50%)';
+      coreDot.style.width = '6px';
+      coreDot.style.height = '6px';
+      coreDot.style.borderRadius = '9999px';
+      coreDot.style.background = colors.accent;
+      markerElement.style.position = 'relative';
+      markerElement.appendChild(coreDot);
+
+      markerElement.addEventListener('mouseenter', () => showPopup(track));
+      markerElement.addEventListener('mouseleave', () => {
+        const selectedTrack = activeTracks.find((entry) => entry.id === selectedTrackId);
+        if (selectedTrack) {
+          showPopup(selectedTrack);
+        } else {
+          popupRef.current?.remove();
+        }
+      });
+      markerElement.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onTrackSelect(track.id);
+        showPopup(track);
+      });
+      markerElement.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onTrackSelect(track.id);
+          showPopup(track);
+        }
+      });
+
+      const marker = new maplibregl.Marker({
+        element: markerElement,
+        anchor: 'center',
+      })
+        .setLngLat([track.longitude, track.latitude])
+        .addTo(map);
+
+      markersRef.current.set(track.id, marker);
+    });
+
+    const selectedTrack = activeTracks.find((track) => track.id === selectedTrackId);
+    if (selectedTrack) {
+      showPopup(selectedTrack);
+    } else {
+      popupRef.current?.remove();
+    }
+  }, [activeTracks, mapReady, maplibreFailed, onTrackSelect, selectedTrackId]);
+
+  if (!ENABLE_MAPLIBRE || maplibreFailed) {
+    return (
+      <TacticalFallbackMap
+        activeTracks={activeTracks}
+        effectiveBounds={effectiveBounds}
+        selectedTrackId={selectedTrackId}
+        onTrackSelect={onTrackSelect}
+        dataSource={dataSource}
+      />
+    );
+  }
+
+  return (
+    <div className="absolute inset-0 z-0" style={MAP_CONTAINER_STYLE}>
+      <div ref={mapContainerRef} className="absolute inset-0" style={MAP_CONTAINER_STYLE} />
+      {!mapReady && (
+        <TacticalFallbackMap
+          activeTracks={activeTracks}
+          effectiveBounds={effectiveBounds}
+          selectedTrackId={selectedTrackId}
+          onTrackSelect={onTrackSelect}
+          dataSource={dataSource}
+        />
+      )}
       {dataSource !== 'backend' && (
         <div
           className="absolute bottom-4 left-4 px-2 py-1 rounded text-[10px] uppercase tracking-wider"
