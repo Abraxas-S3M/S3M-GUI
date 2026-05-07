@@ -46,6 +46,10 @@ const readEnvBoolean = (key: string, fallback: boolean): boolean => {
   return fallback;
 };
 
+const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, '');
+
+const isApiPath = (value: string): boolean => /\/api(\/v\d+)?$/i.test(value);
+
 const resolveWsUrl = (baseUrl: string): string => {
   if (baseUrl.startsWith('https://')) {
     return baseUrl.replace('https://', 'wss://');
@@ -58,9 +62,19 @@ const resolveWsUrl = (baseUrl: string): string => {
   return baseUrl;
 };
 
+const s3mApiBaseUrlRaw = readRawEnvString('VITE_S3M_API_URL');
+
+export const S3M_API_BASE_URL = s3mApiBaseUrlRaw ? trimTrailingSlash(s3mApiBaseUrlRaw) : undefined;
+
+const defaultApiBaseUrl = S3M_API_BASE_URL
+  ? isApiPath(S3M_API_BASE_URL)
+    ? S3M_API_BASE_URL
+    : `${S3M_API_BASE_URL}/api/v1`
+  : 'http://localhost:8080/api/v1';
+
 export const API_BASE_URL = readEnvString(
   'VITE_API_BASE_URL',
-  'http://localhost:8080/api/v1',
+  defaultApiBaseUrl,
 );
 
 export const API_TRANSPORT = readEnvString('VITE_API_TRANSPORT', 'fetch')
@@ -69,11 +83,11 @@ export const API_TRANSPORT = readEnvString('VITE_API_TRANSPORT', 'fetch')
 export const API_BACKEND_MODE = readEnvString('VITE_API_BACKEND_MODE', 'mock')
   .toLowerCase() as 'mock' | 'real';
 
-const apiBaseUrl = readEnvString('VITE_API_BASE_URL', 'http://localhost:8080/api/v1');
+const apiBaseUrl = readEnvString('VITE_API_BASE_URL', defaultApiBaseUrl);
 
 export const API_CONFIG = {
   baseUrl: apiBaseUrl,
-  wsUrl: readEnvString('VITE_WS_URL', resolveWsUrl(apiBaseUrl)),
+  wsUrl: readEnvString('VITE_WS_URL', resolveWsUrl(S3M_API_BASE_URL ?? apiBaseUrl)),
   useMock: readEnvBoolean('VITE_USE_MOCK_BACKEND', runtimeEnv.DEV === true),
   timeoutMs: readEnvNumber('VITE_API_TIMEOUT_MS', 8000),
   retryAttempts: 2,
