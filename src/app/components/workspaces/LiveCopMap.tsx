@@ -570,6 +570,8 @@ export function LiveCopMap({
   const popupRef = useRef<maplibregl.Popup | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const hasEverLoadedMapRef = useRef(false);
+  const hasInitializedCameraRef = useRef(false);
+  const userHasInteractedRef = useRef(false);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapFailed, setMapFailed] = useState(false);
 
@@ -641,8 +643,23 @@ export function LiveCopMap({
       });
       map.touchZoomRotate.disableRotation();
 
+      const applyInitialCamera = () => {
+        if (hasInitializedCameraRef.current || userHasInteractedRef.current) {
+          return;
+        }
+        hasInitializedCameraRef.current = true;
+        map.setMaxBounds(initialBoundsRef.current);
+        map.fitBounds(initialBoundsRef.current, { padding: 24, duration: 0 });
+      };
+      const handleUserInteraction = (event?: { originalEvent?: Event }) => {
+        if (!event || event.originalEvent) {
+          userHasInteractedRef.current = true;
+        }
+      };
+
       const handleLoad = () => {
         hasEverLoadedMapRef.current = true;
+        applyInitialCamera();
         setMapLoaded(true);
         setMapFailed(false);
         map.resize();
@@ -659,11 +676,23 @@ export function LiveCopMap({
         }
       };
 
+      map.on('dragstart', handleUserInteraction);
+      map.on('zoomstart', handleUserInteraction);
+      map.on('movestart', handleUserInteraction);
+      map.on('mousedown', handleUserInteraction);
+      map.on('touchstart', handleUserInteraction);
+      map.on('wheel', handleUserInteraction);
       map.on('load', handleLoad);
       map.on('error', handleError);
       mapRef.current = map;
 
       return () => {
+        map.off('dragstart', handleUserInteraction);
+        map.off('zoomstart', handleUserInteraction);
+        map.off('movestart', handleUserInteraction);
+        map.off('mousedown', handleUserInteraction);
+        map.off('touchstart', handleUserInteraction);
+        map.off('wheel', handleUserInteraction);
         map.off('load', handleLoad);
         map.off('error', handleError);
         popupRef.current?.remove();
@@ -681,20 +710,6 @@ export function LiveCopMap({
       }
     }
   }, []);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !mapLoaded) {
-      return;
-    }
-    map.setMaxBounds(effectiveBounds);
-    if (mapBounds && isValidBounds(mapBounds)) {
-      map.fitBounds(effectiveBounds, { padding: 24, duration: 0 });
-      return;
-    }
-    map.jumpTo({ center: effectiveCenter, zoom: DEFAULT_MAP_ZOOM });
-    map.resize();
-  }, [effectiveBounds, effectiveCenter, mapBounds, mapLoaded]);
 
   useEffect(() => {
     if (!ENABLE_MAPLIBRE || mapFailed) {
