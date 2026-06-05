@@ -107,6 +107,7 @@ export const WORKSPACE_ENDPOINTS = {
   simulation: '/workspaces/simulation',
   communication: '/workspaces/communication',
   surveillance: '/workspaces/surveillance',
+  worldIntelligence: '/world-intelligence/runtime',
 } as const;
 
 export const COMMAND_ENDPOINTS = {
