@@ -388,7 +388,8 @@ export function WorldIntelligenceWorkspace() {
   );
 
   const runtimeUnavailable =
-    runtimeHealth === 'offline' || iframeLoadError || iframeLoadTimedOut;
+    !isLoadingStatus &&
+    (runtimeHealth === 'offline' || iframeLoadError || iframeLoadTimedOut);
   const showIframeLoading = !runtimeUnavailable && !iframeLoaded;
 
   return (
