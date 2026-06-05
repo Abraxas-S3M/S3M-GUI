@@ -18,8 +18,9 @@ export type WorkspaceType =
   | 'cyber'
   | 'simulation'
   | 'communication'
-  | 'surveillance'
-  | 'world-intelligence';
+  | 'surveillance';
+
+export type DashboardMode = 's3m' | 'world_intelligence';
 
 export interface ThreatTrack {
   id: string;
@@ -187,6 +188,9 @@ const persistDemoRoomSelection = (selection: DemoRoomSelection | null): void => 
 };
 
 interface AppState {
+  dashboardMode: DashboardMode;
+  setDashboardMode: (mode: DashboardMode) => void;
+
   activeWorkspace: WorkspaceType;
   setActiveWorkspace: (workspace: WorkspaceType) => void;
 
@@ -238,8 +242,11 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
+  dashboardMode: 's3m',
+  setDashboardMode: (mode) => set({ dashboardMode: mode }),
+
   activeWorkspace: 'command',
-  setActiveWorkspace: (workspace) => set({ activeWorkspace: workspace }),
+  setActiveWorkspace: (workspace) => set({ activeWorkspace: workspace, dashboardMode: 's3m' }),
 
   aiPanelOpen: true,
   toggleAiPanel: () => set((state) => ({ aiPanelOpen: !state.aiPanelOpen })),
