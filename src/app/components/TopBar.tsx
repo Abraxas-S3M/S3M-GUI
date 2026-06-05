@@ -15,14 +15,14 @@ export function TopBar() {
     backendEvolutionPanelOpen,
     toggleBackendEvolutionPanel,
     selectedDemoRoomSelection,
-    activeWorkspace,
-    setActiveWorkspace,
+    dashboardMode,
+    setDashboardMode,
   } = useAppStore();
   const apiStatus = useConnectionStore((state) => state.apiStatus);
-  const isWorldIntelligenceActive = activeWorkspace === 'world-intelligence';
+  const isWorldIntelligenceActive = dashboardMode === 'world_intelligence';
 
   const openWorldIntelligence = () => {
-    setActiveWorkspace('world-intelligence');
+    setDashboardMode('world_intelligence');
     navigate('/dashboard');
   };
 

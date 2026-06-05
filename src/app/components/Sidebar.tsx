@@ -1,6 +1,6 @@
 import { useAppStore, WorkspaceType } from '../store';
 import { useNavigate } from 'react-router';
-import { Home, Target, CheckSquare, AlertTriangle, Map, Package, Activity, Shield, Play, Radio, Eye, Globe2 } from 'lucide-react';
+import { Home, Target, CheckSquare, AlertTriangle, Map, Package, Activity, Shield, Play, Radio, Eye } from 'lucide-react';
 
 const workspaceIcons: Record<WorkspaceType, any> = {
   command: Home,
@@ -13,8 +13,7 @@ const workspaceIcons: Record<WorkspaceType, any> = {
   cyber: Shield,
   simulation: Play,
   communication: Radio,
-  surveillance: Eye,
-  'world-intelligence': Globe2
+  surveillance: Eye
 };
 
 const workspaceLabels: Record<WorkspaceType, string> = {
@@ -28,8 +27,7 @@ const workspaceLabels: Record<WorkspaceType, string> = {
   cyber: 'CYBER',
   simulation: 'SIMULATION',
   communication: 'COMMUNICATION',
-  surveillance: 'SURVEILLANCE',
-  'world-intelligence': 'WORLD INTELLIGENCE'
+  surveillance: 'SURVEILLANCE'
 };
 
 export function Sidebar() {
@@ -47,8 +45,7 @@ export function Sidebar() {
     'readiness',
     'cyber',
     'communication',
-    'surveillance',
-    'world-intelligence'
+    'surveillance'
   ];
 
   return (
