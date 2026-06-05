@@ -18,7 +18,8 @@ export type WorkspaceType =
   | 'cyber'
   | 'simulation'
   | 'communication'
-  | 'surveillance';
+  | 'surveillance'
+  | 'world-intelligence';
 
 export interface ThreatTrack {
   id: string;
