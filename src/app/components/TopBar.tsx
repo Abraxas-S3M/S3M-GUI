@@ -15,8 +15,16 @@ export function TopBar() {
     backendEvolutionPanelOpen,
     toggleBackendEvolutionPanel,
     selectedDemoRoomSelection,
+    activeWorkspace,
+    setActiveWorkspace,
   } = useAppStore();
   const apiStatus = useConnectionStore((state) => state.apiStatus);
+  const isWorldIntelligenceActive = activeWorkspace === 'world-intelligence';
+
+  const openWorldIntelligence = () => {
+    setActiveWorkspace('world-intelligence');
+    navigate('/dashboard');
+  };
 
   const connectionStyle =
     apiStatus === 'healthy'
@@ -33,6 +41,29 @@ export function TopBar() {
       <div className="font-display text-[22px] font-bold tracking-[0.15em] text-cyber-cyan" style={{ textShadow: '0 0 20px rgba(0, 240, 255, 0.8)' }}>
         ABRAXAS S3M
       </div>
+
+      <button
+        type="button"
+        onClick={openWorldIntelligence}
+        aria-pressed={isWorldIntelligenceActive}
+        className={`px-3 py-1.5 rounded-lg transition-all duration-300 text-[10px] font-semibold uppercase tracking-[0.18em] ${
+          isWorldIntelligenceActive
+            ? 'text-cyber-void'
+            : 'text-cyber-cyan hover:text-cyber-text-primary'
+        }`}
+        style={isWorldIntelligenceActive ? {
+          background: '#00F0FF',
+          border: '1px solid rgba(0, 240, 255, 0.85)',
+          boxShadow: '0 0 22px rgba(0, 240, 255, 0.65)'
+        } : {
+          background: 'rgba(0, 240, 255, 0.06)',
+          border: '1px solid rgba(0, 240, 255, 0.45)',
+          boxShadow: '0 0 14px rgba(0, 240, 255, 0.18)'
+        }}
+        title="Open World Intelligence"
+      >
+        WORLD INTELLIGENCE
+      </button>
 
       <div className="flex-1" />
 
