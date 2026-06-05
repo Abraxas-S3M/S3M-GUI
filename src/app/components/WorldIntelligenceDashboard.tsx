@@ -1,22 +1,15 @@
-import { useState } from 'react';
-import { ArrowLeft, AlertTriangle, Globe2, RadioTower } from 'lucide-react';
+import { ArrowLeft, RadioTower } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import { S3M_API_BASE_URL } from '../../services/api/config';
 import { useConnectionStore } from '../connectionStore';
 import { useAppStore } from '../store';
 
-const WORLD_INTELLIGENCE_RUNTIME_URL = S3M_API_BASE_URL
-  ? `${S3M_API_BASE_URL}/world-intelligence/runtime/`
-  : undefined;
+const WORLD_MONITOR_URL =
+  'https://www.worldmonitor.app/?lat=17.5390&lon=0.0000&zoom=1.00&view=global&timeRange=7d&layers=conflicts%2Cbases%2Chotspots%2Cnuclear%2Csanctions%2Cweather%2Ceconomic%2Cwaterways%2Coutages%2Cmilitary%2Cnatural%2CiranAttacks';
 
 export function WorldIntelligenceDashboard() {
   const navigate = useNavigate();
   const { currentTime, setDashboardMode } = useAppStore();
   const apiStatus = useConnectionStore((state) => state.apiStatus);
-  const [isRuntimeLoading, setIsRuntimeLoading] = useState(Boolean(WORLD_INTELLIGENCE_RUNTIME_URL));
-  const [hasRuntimeError, setHasRuntimeError] = useState(false);
-
-  const runtimeUnavailable = !WORLD_INTELLIGENCE_RUNTIME_URL || hasRuntimeError;
 
   const returnToS3M = () => {
     setDashboardMode('s3m');
@@ -95,61 +88,19 @@ export function WorldIntelligenceDashboard() {
               boxShadow: 'inset 0 0 40px rgba(0, 240, 255, 0.08)'
             }}
           >
-            {runtimeUnavailable ? (
-              <div className="flex h-full items-center justify-center bg-s3m-base p-6">
-                <div
-                  className="max-w-2xl rounded-2xl p-8 text-center"
-                  style={{
-                    background: 'rgba(10, 10, 18, 0.92)',
-                    border: '1px solid rgba(255, 184, 0, 0.35)',
-                    boxShadow: '0 0 28px rgba(255, 184, 0, 0.14)'
-                  }}
-                >
-                  <AlertTriangle className="mx-auto mb-4 h-10 w-10 text-s3m-warning" />
-                  <h1 className="mb-3 text-sm font-semibold uppercase tracking-[0.24em] text-s3m-text-primary">
-                    World Intelligence
-                  </h1>
-                  <p className="text-sm leading-6 text-s3m-text-secondary">
-                    World Intelligence is temporarily unavailable. Backend fallback remains active if configured.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <>
-                {isRuntimeLoading && (
-                  <div
-                    className="absolute inset-0 z-10 flex items-center justify-center bg-s3m-base/92"
-                    style={{ backdropFilter: 'blur(10px)' }}
-                  >
-                    <div
-                      className="flex items-center gap-3 rounded-xl px-5 py-4"
-                      style={{
-                        border: '1px solid rgba(0, 240, 255, 0.32)',
-                        background: 'rgba(0, 240, 255, 0.06)',
-                        boxShadow: '0 0 24px rgba(0, 240, 255, 0.16)'
-                      }}
-                    >
-                      <Globe2 className="h-5 w-5 text-cyber-cyan" />
-                      <span className="text-[12px] font-semibold uppercase tracking-[0.2em] text-cyber-cyan">
-                        World Intelligence runtime loading...
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                <iframe
-                  title="World Intelligence"
-                  src={WORLD_INTELLIGENCE_RUNTIME_URL}
-                  className="h-full w-full border-0 bg-cyber-void"
-                  referrerPolicy="no-referrer"
-                  onLoad={() => setIsRuntimeLoading(false)}
-                  onError={() => {
-                    setIsRuntimeLoading(false);
-                    setHasRuntimeError(true);
-                  }}
-                />
-              </>
-            )}
+            <iframe
+              title="World Intelligence"
+              src={WORLD_MONITOR_URL}
+              className="w-full"
+              style={{
+                width: '100%',
+                height: 'calc(100vh - 4rem)',
+                border: 'none',
+                background: '#020617'
+              }}
+              allow="fullscreen; geolocation; clipboard-read; clipboard-write"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
           </div>
         </div>
       </div>
