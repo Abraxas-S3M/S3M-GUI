@@ -3,8 +3,11 @@ import { useNavigate } from 'react-router';
 import { useConnectionStore } from '../connectionStore';
 import { useAppStore } from '../store';
 
-const WORLD_MONITOR_URL =
-  'https://www.worldmonitor.app/?lat=17.5390&lon=0.0000&zoom=1.00&view=global&timeRange=7d&layers=conflicts%2Cbases%2Chotspots%2Cnuclear%2Csanctions%2Cweather%2Ceconomic%2Cwaterways%2Coutages%2Cmilitary%2Cnatural%2CiranAttacks';
+const S3M_API_BASE =
+  import.meta.env.VITE_S3M_API_URL || 'https://api.abraxas-s3m.com';
+
+const WORLD_INTELLIGENCE_RUNTIME_URL =
+  `${S3M_API_BASE.replace(/\/$/, '')}/world-intelligence/runtime/`;
 
 export function WorldIntelligenceDashboard() {
   const navigate = useNavigate();
@@ -90,7 +93,7 @@ export function WorldIntelligenceDashboard() {
           >
             <iframe
               title="World Intelligence"
-              src={WORLD_MONITOR_URL}
+              src={WORLD_INTELLIGENCE_RUNTIME_URL}
               className="w-full"
               style={{
                 width: '100%',
