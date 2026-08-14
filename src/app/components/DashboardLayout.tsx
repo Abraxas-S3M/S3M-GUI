@@ -17,6 +17,7 @@ import { CyberWorkspace } from './workspaces/CyberWorkspace';
 import { SimulationWorkspace } from './workspaces/SimulationWorkspace';
 import { CommunicationWorkspace } from './workspaces/CommunicationWorkspace';
 import { SurveillanceWorkspace } from './workspaces/SurveillanceWorkspace';
+import { WorldIntelligenceWorkspace } from './workspaces/WorldIntelligenceWorkspace';
 import { ConnectionStatusBar } from './ConnectionStatusBar';
 import { WorkspaceCrashBoundary } from './WorkspaceCrashBoundary';
 import { WorldIntelligenceDashboard } from './WorldIntelligenceDashboard';
@@ -71,6 +72,8 @@ export function DashboardLayout() {
         return <CommunicationWorkspace />;
       case 'surveillance':
         return <SurveillanceWorkspace />;
+      case 'world-intelligence':
+        return <WorldIntelligenceWorkspace />;
       default:
         return <CommandOverview />;
     }
